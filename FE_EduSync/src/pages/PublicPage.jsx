@@ -52,33 +52,41 @@ const PublicPage = () => {
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-800">
-      {/* 1. HEADER (Thanh điều hướng trên cùng) */}
-      <header className="max-w-7xl mx-auto px-8 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <img src={myLogo} alt="EduSync Logo" className="w-28 h-28" />
-          {/* Placeholder Logo */}
-          <span className="font-bold text-3xl text-blue-900 tracking-tight font-serif">
-            EduSync
-          </span>
-        </div>
+      {/* 1. HEADER */}
+      <header className="w-full bg-blue-950 shadow-md">
+        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src={myLogo}
+              alt="EduSync Logo"
+              className=" h-16 w-auto object-contain "
+            />
+            <span className="font-semibold text-3xl text-white tracking-widest font-irish">
+              EduSync
+            </span>
+          </div>
 
-        <div className="flex items-center gap-4">
-          <Link
-            to="/login"
-            className="px-6 py-2.5 rounded-md text-sm font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"
-          >
-            Sign in
-          </Link>
-          <Link
-            to="/register"
-            className="px-6 py-2.5 rounded-md text-sm font-semibold bg-blue-900 text-white hover:bg-blue-800 transition-colors shadow-md"
-          >
-            Sign up
-          </Link>
+          <div className="flex items-center gap-4">
+            {/* Nút Sign In */}
+            <Link
+              to="/login"
+              className="px-6 py-2.5 rounded-md text-sm font-semibold text-white bg-blue-900 hover:bg-blue-900 transition-colors"
+            >
+              Sign in
+            </Link>
+
+            {/* Nút Sign Up */}
+            <Link
+              to="/register"
+              className="px-6 py-2.5 rounded-md text-sm font-semibold bg-white text-blue-950 hover:bg-gray-100 transition-colors shadow-md"
+            >
+              Sign up
+            </Link>
+          </div>
         </div>
       </header>
 
-      {/* 2. HERO SECTION (Phần giới thiệu chính) */}
+      {/* 2. HERO SECTION */}
       <section className="max-w-7xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Cột trái: Text & Buttons */}
         <div>
@@ -110,18 +118,20 @@ const PublicPage = () => {
           </div>
         </div>
 
-        {/* Cột phải: Video Placeholder */}
-        <div className="bg-gray-200 rounded-xl aspect-video relative flex items-center justify-center shadow-inner">
-          <button className="w-20 h-20 bg-blue-300 rounded-full flex items-center justify-center hover:bg-blue-400 transition-transform hover:scale-105 shadow-lg">
-            <FontAwesomeIcon
-              icon={faPlay}
-              className="text-blue-900 text-2xl ml-2"
-            />
-          </button>
+        {/* Cột phải: Video Demo (YouTube Embed) */}
+        <div className="rounded-xl aspect-video relative overflow-hidden shadow-2xl border border-gray-100">
+          <iframe
+            className="absolute top-0 left-0 w-full h-full"
+            // Thay mã ID video youtube của bạn vào chỗ "dQw4w9WgXcQ" nhé
+            src="https://www.youtube.com/embed/rO1ANdXvdTg"
+            title="EduSync Demo Video"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          ></iframe>
         </div>
       </section>
 
-      {/* Đường kẻ ngang */}
       <div className="max-w-7xl mx-auto px-8">
         <hr className="border-gray-300 my-8" />
       </div>
@@ -152,7 +162,6 @@ const PublicPage = () => {
         </div>
       </section>
 
-      {/* Đường kẻ ngang */}
       <div className="max-w-7xl mx-auto px-8">
         <hr className="border-gray-300 my-12" />
       </div>

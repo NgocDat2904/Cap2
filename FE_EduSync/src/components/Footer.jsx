@@ -16,9 +16,9 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Cột 1: Thông tin thương hiệu */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-1">
-              <img src={myLogo} alt="EduSync Logo" className="w-16 h-16" />
-              <span className="font-bold text-2xl text-white font-serif">
+            <div className="flex items-center gap-2">
+              <img src={myLogo} alt="EduSync Logo" className="w-12 h-12" />
+              <span className="font-semibold text-2xl text-white tracking-widest font-irish">
                 EduSync
               </span>
             </div>
