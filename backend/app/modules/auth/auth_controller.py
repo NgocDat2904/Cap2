@@ -1,12 +1,12 @@
 from fastapi import APIRouter
 from app.modules.auth.auth_service import register, login
-from app.modules.auth.auth_model import User, LoginRequest
+from app.modules.auth.auth_model import RegisterRequest, LoginRequest
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
 @router.post("/register")
-def register_user(user: User):
+def register_user(user: RegisterRequest):
     return register(user)
 
 
