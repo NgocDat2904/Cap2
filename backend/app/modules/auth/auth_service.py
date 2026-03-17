@@ -5,6 +5,9 @@ from app.utils.jwt import create_access_token
 
 def register(user):
 
+    if user.password != user.confirm_password:
+        raise Exception("Passwords do not match")
+
     existing = get_user_by_email(user.email)
 
     if existing:
@@ -15,7 +18,8 @@ def register(user):
     new_user = {
         "name": user.name,
         "email": user.email,
-        "password": hashed
+        "password": hashed,
+        "role": user.role
     }
 
     create_user(new_user)
@@ -35,7 +39,8 @@ def login(user):
 
     token = create_access_token({
         "user_id": str(db_user["_id"]),
-        "email": db_user["email"]
+        "email": db_user["email"],
+         "role": db_user["role"]
     })
 
     return {
