@@ -1,6 +1,7 @@
 import React, { useState } from "react"; // Bổ sung useState
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import myLogo from "../assets/logo.png";
 import {
   faSearch,
   faBell,
@@ -21,10 +22,10 @@ const LearnerLayout = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const navLinks = [
-    { name: "Trang chủ", icon: faHouse, path: "/learner/home" },
-    { name: "Khóa học", icon: faBook, path: "/learner/courses" },
-    { name: "Khóa học của tôi", icon: faBookOpen, path: "/learner/my-courses" },
-    { name: "Video yêu thích", icon: faHeart, path: "/learner/favorites" },
+    { name: "Trang chủ", icon: faHouse, path: "/home" },
+    { name: "Khóa học", icon: faBook, path: "/courses" },
+    { name: "Khóa học của tôi", icon: faBookOpen, path: "/my-courses" },
+    { name: "Video yêu thích", icon: faHeart, path: "/favorites" },
   ];
 
   return (
@@ -34,8 +35,12 @@ const LearnerLayout = () => {
         {/* TẦNG 1 */}
         <div className="flex items-center justify-between px-8 py-4 max-w-7xl mx-auto w-full">
           <Link to="/learner/home" className="flex items-center gap-3">
-            <div className="w-12 h-10 bg-gray-200 rounded"></div>
-            <div className="font-bold text-3xl text-blue-900 tracking-tight font-serif">
+            <img
+              src={myLogo}
+              alt="EduSync Logo"
+              className=" h-12 w-auto object-contain "
+            />
+            <div className="font-semibold text-3xl  tracking-widest font-irish text-blue-900 ">
               EduSync
             </div>
           </Link>
@@ -77,7 +82,7 @@ const LearnerLayout = () => {
                   <Link
                     to="/learner/profile"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors "
-                    onClick={() => setIsDropdownOpen(false)} // Click xong thì tự đóng menu
+                    onClick={() => setIsDropdownOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
                     Hồ sơ cá nhân
@@ -125,7 +130,7 @@ const LearnerLayout = () => {
                   key={link.name}
                   to={link.path}
                   className={`flex items-center gap-3 text-sm font-medium transition-colors
-                    ${isActive ? "text-blue-900" : "text-gray-600 hover:text-blue-900 font-bold"}
+                    ${isActive ? "text-blue-700 font-bold" : "text-gray-600 hover:text-blue-700 font-bold"}
                   `}
                 >
                   <FontAwesomeIcon icon={link.icon} className="text-lg" />

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
+// 1. IMPORT HÀM TỪ FILE SERVICE VÀO (Xóa import axios đi)
+import { loginAPI, registerAPI } from "../../services/Learner/authService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
@@ -13,23 +15,104 @@ import myLogo from "../../assets/logo.png";
 
 const LearnerAuthPage = () => {
   const navigate = useNavigate();
-
-  // Khia báo useLocation để lấy đường dẫn hiện tại trên trình duyệt
   const location = useLocation();
 
-  //Khởi tại isLogin dựa trên đường dẫn hiện tại. Nếu URL chó chữ login thì isLogin = true (hiện form đăng nhập),
   const [isLogin, setIsLogin] = useState(location.pathname.includes("/login"));
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  //useEffect để theo dõi sự thay đổi của URL
+  // STATE CHO FORM ĐĂNG NHẬP
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
+
+  // STATE CHO FORM ĐĂNG KÝ
+  const [regName, setRegName] = useState("");
+  const [regEmail, setRegEmail] = useState("");
+  const [regPassword, setRegPassword] = useState("");
+  const [regConfirmPassword, setRegConfirmPassword] = useState("");
+  const [isRegLoading, setIsRegLoading] = useState(false);
+  const [regError, setRegError] = useState("");
+
   useEffect(() => {
     setIsLogin(location.pathname.includes("/login"));
   }, [location.pathname]);
 
+  // ==========================================
+  // HÀM ĐĂNG NHẬP (ĐÃ GỌN GÀNG HƠN)
+  // ==========================================
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setLoginError("");
+
+    try {
+      // 2. GỌI HÀM API TỪ SERVICE
+      const data = await loginAPI(loginEmail, loginPassword);
+
+      console.log("Login Success:", data);
+      localStorage.setItem("access_token", data.access_token);
+      navigate("/learner/home");
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+      if (error.response) {
+        setLoginError(
+          error.response.data.detail ||
+            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!",
+        );
+      } else {
+        setLoginError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng!");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ==========================================
+  // HÀM ĐĂNG KÝ (ĐÃ GỌN GÀNG HƠN)
+  // ==========================================
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setRegError("");
+
+    if (regPassword !== regConfirmPassword) {
+      setRegError("Mật khẩu xác nhận không khớp!");
+      return;
+    }
+
+    setIsRegLoading(true);
+
+    try {
+      // 3. GỌI HÀM API TỪ SERVICE
+      const data = await registerAPI(regName, regEmail, regPassword);
+
+      console.log("Register Success:", data);
+      alert("Đăng ký thành công! Đăng nhập ngay để bắt đầu.");
+      setRegName("");
+      setRegEmail("");
+      setRegPassword("");
+      setRegConfirmPassword("");
+
+      setIsLogin(true);
+      navigate("/learner/login", { replace: true });
+    } catch (error) {
+      console.error("Lỗi kết nối:", error);
+      if (error.response) {
+        setRegError(
+          error.response.data.detail ||
+            "Đăng ký thất bại. Email này có thể đã tồn tại!",
+        );
+      } else {
+        setRegError("Không thể kết nối đến máy chủ.");
+      }
+    } finally {
+      setIsRegLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-8 font-sans relative">
-      {/* Nút Quay lại */}
       <button
         onClick={() => navigate(-1)}
         className="absolute top-6 left-6 md:top-10 md:left-10 flex items-center gap-2 text-gray-500 hover:text-blue-900 transition-colors font-medium z-50 group"
@@ -43,17 +126,22 @@ const LearnerAuthPage = () => {
 
       <div className="relative w-full max-w-5xl h-[750px] bg-white rounded-2xl shadow-2xl overflow-hidden flex">
         {/* ========================================================= */}
-        {/* FORM 1: SIGN IN (ở nửa BÊN TRÁI) */}
+        {/* FORM 1: SIGN IN */}
         {/* ========================================================= */}
         <div
-          className={`absolute top-0 left-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 
-          ${isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[-20%]"}`}
+          className={`absolute top-0 left-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 ${isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[-20%]"}`}
         >
           <div className="max-w-md w-full mx-auto">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h2>
             <p className="text-gray-500 mb-8">Chào mừng trở lại EduSync!</p>
 
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+            {loginError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+                {loginError}
+              </div>
+            )}
+
+            <form className="space-y-5" onSubmit={handleLogin}>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
                   Email
@@ -62,6 +150,8 @@ const LearnerAuthPage = () => {
                   type="email"
                   required
                   placeholder="Nhập email đã đăng ký của bạn"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
                   className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 outline-none transition-colors"
                 />
               </div>
@@ -83,6 +173,8 @@ const LearnerAuthPage = () => {
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
                     className="block w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 outline-none transition-colors"
                   />
                   <button
@@ -97,9 +189,10 @@ const LearnerAuthPage = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white bg-blue-800 hover:bg-blue-900 transition-colors mt-6"
+                disabled={isLoading}
+                className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-6 ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                Sign In
+                {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
               </button>
 
               <div className="mt-6 relative">
@@ -124,11 +217,14 @@ const LearnerAuthPage = () => {
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-600">
-              Don't have an account? {/* Nút bấm kích hoạt hiệu ứng trượt */}
+              Don't have an account?
               <button
                 type="button"
-                onClick={() => setIsLogin(false)}
-                className="font-bold text-blue-800 hover:underline transition-colors"
+                onClick={() => {
+                  setIsLogin(false);
+                  navigate("/learner/register", { replace: true });
+                }}
+                className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >
                 Sign Up
               </button>
@@ -137,20 +233,25 @@ const LearnerAuthPage = () => {
         </div>
 
         {/* ========================================================= */}
-        {/* FORM 2: SIGN UP (Cố định ở nửa BÊN PHẢI) */}
+        {/* FORM 2: SIGN UP */}
         {/* ========================================================= */}
         <div
-          className={`absolute top-0 right-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10
-          ${!isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[20%]"}`}
+          className={`absolute top-0 right-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 ${!isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[20%]"}`}
         >
           <div className="max-w-md w-full mx-auto">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h2>
             <p className="text-gray-500 mb-6">
               Tạo tài khoản của bạn để học tập với lộ trình được cá nhân hóa do
-              AI định hướng và đồ thị kiến ​​thức liên kết.
+              AI định hướng.
             </p>
 
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            {regError && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
+                {regError}
+              </div>
+            )}
+
+            <form className="space-y-4" onSubmit={handleRegister}>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
                   Họ Tên
@@ -159,6 +260,8 @@ const LearnerAuthPage = () => {
                   type="text"
                   required
                   placeholder="Nhập họ tên của bạn"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
                 />
               </div>
@@ -171,6 +274,8 @@ const LearnerAuthPage = () => {
                   type="email"
                   required
                   placeholder="Nhập email của bạn"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
                 />
               </div>
@@ -184,6 +289,8 @@ const LearnerAuthPage = () => {
                     type={showPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
                     className="block w-full pl-4 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
                   />
                   <button
@@ -205,6 +312,8 @@ const LearnerAuthPage = () => {
                     type={showConfirmPassword ? "text" : "password"}
                     required
                     placeholder="••••••••"
+                    value={regConfirmPassword}
+                    onChange={(e) => setRegConfirmPassword(e.target.value)}
                     className="block w-full pl-4 pr-12 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
                   />
                   <button
@@ -221,9 +330,10 @@ const LearnerAuthPage = () => {
 
               <button
                 type="submit"
-                className="w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white bg-blue-800 hover:bg-blue-900 transition-colors mt-4"
+                disabled={isRegLoading}
+                className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-4 ${isRegLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                Sign Up
+                {isRegLoading ? "Đang xử lý..." : "Sign Up"}
               </button>
 
               <div className="mt-4 relative">
@@ -245,11 +355,14 @@ const LearnerAuthPage = () => {
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-600">
-              Already have an account? {/* Nút bấm kích hoạt hiệu ứng trượt */}
+              Already have an account?
               <button
                 type="button"
-                onClick={() => setIsLogin(true)}
-                className="font-bold text-blue-800 hover:underline transition-colors"
+                onClick={() => {
+                  setIsLogin(true);
+                  navigate("/learner/login", { replace: true });
+                }}
+                className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >
                 Sign In
               </button>
@@ -257,10 +370,11 @@ const LearnerAuthPage = () => {
           </div>
         </div>
 
+        {/* ========================================================= */}
+        {/* TẤM MÀN XANH (OVERLAY) */}
+        {/* ========================================================= */}
         <div
-          // Mặc định nằm bên TRÁI. Nếu isLogin = true, nó bị kéo sang PHẢI (translate-x-full)
-          className={`absolute top-0 left-0 w-1/2 h-full bg-blue-950 text-white transition-transform duration-700 ease-in-out z-20 overflow-hidden
-          ${isLogin ? "translate-x-full" : "translate-x-0"}`}
+          className={`absolute top-0 left-0 w-1/2 h-full bg-blue-950 text-white transition-transform duration-700 ease-in-out z-20 overflow-hidden ${isLogin ? "translate-x-full" : "translate-x-0"}`}
         >
           <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-blue-900 to-transparent opacity-50 pointer-events-none"></div>
 
