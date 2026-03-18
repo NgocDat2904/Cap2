@@ -22,7 +22,7 @@ const AppRoutes = () => {
       <Route path="/instructor/*" element={<InstructorRoutes />} />
 
       {/* 3. Tương tự cho Learner */}
-      <Route path="/learner/*" element={<LearnerRoutes />} />
+      <Route path="/*" element={<LearnerRoutes />} />
     </Routes>
   );
 };
