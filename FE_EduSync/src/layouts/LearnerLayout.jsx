@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
-import Footer from "../components/Footer";
+import Footer from "../components/LearnerFooter";
 import {
   faSearch,
   faBell,
