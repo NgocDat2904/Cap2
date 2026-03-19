@@ -16,7 +16,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const PublicPage = () => {
-  // Dữ liệu cho phần AI Features để map ra cho gọn code
   const aiFeatures = [
     {
       title: "AI Mind Maps",
@@ -51,7 +50,7 @@ const PublicPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white font-sans text-gray-800">
+    <div className="animate-fade-slide-up min-h-screen bg-white font-sans text-gray-800">
       {/* 1. HEADER */}
       <header className="w-full bg-blue-950 shadow-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
