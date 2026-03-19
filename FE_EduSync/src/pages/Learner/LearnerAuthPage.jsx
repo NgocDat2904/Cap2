@@ -13,6 +13,33 @@ import {
 import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import myLogo from "../../assets/logo.png";
 
+const toErrorMessage = (error, fallback) => {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === "string" && detail.trim()) return detail;
+
+  // FastAPI 422 thường có dạng: { detail: [{ loc, msg, type, ...}, ...] }
+  if (Array.isArray(detail)) {
+    const msgs = detail
+      .map((x) => (typeof x?.msg === "string" ? x.msg : null))
+      .filter(Boolean);
+    if (msgs.length) return msgs.join("\n");
+  }
+
+  if (detail && typeof detail === "object") {
+    if (typeof detail.msg === "string" && detail.msg.trim()) return detail.msg;
+    try {
+      return JSON.stringify(detail);
+    } catch {
+      // ignore
+    }
+  }
+
+  const message = error?.message;
+  if (typeof message === "string" && message.trim()) return message;
+
+  return fallback;
+};
+
 const LearnerAuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,6 +53,7 @@ const LearnerAuthPage = () => {
   const [loginPassword, setLoginPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [loginSuccess, setLoginSuccess] = useState("");
 
   // STATE CHO FORM ĐĂNG KÝ
   const [regName, setRegName] = useState("");
@@ -39,8 +67,18 @@ const LearnerAuthPage = () => {
     setIsLogin(location.pathname.includes("/login"));
   }, [location.pathname]);
 
+  useEffect(() => {
+    if (location.pathname.includes("/login")) {
+      const msg = localStorage.getItem("register_success");
+      if (msg) {
+        setLoginSuccess(msg);
+        localStorage.removeItem("register_success");
+      }
+    }
+  }, [location.pathname]);
+
   // ==========================================
-  // HÀM ĐĂNG NHẬP (ĐÃ GỌN GÀNG HƠN)
+  // HÀM ĐĂNG NHẬP
   // ==========================================
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -53,13 +91,17 @@ const LearnerAuthPage = () => {
 
       console.log("Login Success:", data);
       localStorage.setItem("access_token", data.access_token);
-      navigate("/learner/home");
+      navigate("/home");
     } catch (error) {
       console.error("Lỗi kết nối:", error);
       if (error.response) {
         setLoginError(
-          error.response.data.detail ||
-            "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!",
+          String(
+            toErrorMessage(
+              error,
+              "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!",
+            ),
+          ),
         );
       } else {
         setLoginError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng!");
@@ -85,23 +127,37 @@ const LearnerAuthPage = () => {
 
     try {
       // 3. GỌI HÀM API TỪ SERVICE
-      const data = await registerAPI(regName, regEmail, regPassword);
+      const data = await registerAPI(
+        regName,
+        regEmail,
+        regPassword,
+        regConfirmPassword,
+        "learner",
+      );
 
       console.log("Register Success:", data);
-      alert("Đăng ký thành công! Đăng nhập ngay để bắt đầu.");
       setRegName("");
       setRegEmail("");
       setRegPassword("");
       setRegConfirmPassword("");
 
-      setIsLogin(true);
-      navigate("/learner/login", { replace: true });
+      localStorage.setItem(
+        "register_success",
+        "Đăng ký thành công! Vui lòng đăng nhập để bắt đầu.",
+        // alert("Đăng ký thành công! Vui lòng đăng nhập để bắt đầu."),
+      );
+
+      navigate("/login");
     } catch (error) {
       console.error("Lỗi kết nối:", error);
       if (error.response) {
         setRegError(
-          error.response.data.detail ||
-            "Đăng ký thất bại. Email này có thể đã tồn tại!",
+          String(
+            toErrorMessage(
+              error,
+              "Đăng ký thất bại. Vui lòng kiểm tra lại dữ liệu.",
+            ),
+          ),
         );
       } else {
         setRegError("Không thể kết nối đến máy chủ.");
@@ -112,7 +168,7 @@ const LearnerAuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-8 font-sans relative">
+    <div className="animate-fade-slide-up min-h-screen bg-gray-100 flex items-center justify-center p-4 sm:p-8 font-sans relative">
       <button
         onClick={() => navigate(-1)}
         className="absolute top-6 left-6 md:top-10 md:left-10 flex items-center gap-2 text-gray-500 hover:text-blue-900 transition-colors font-medium z-50 group"
@@ -137,7 +193,14 @@ const LearnerAuthPage = () => {
 
             {loginError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
-                {loginError}
+                {typeof loginError === "string"
+                  ? loginError
+                  : JSON.stringify(loginError)}
+              </div>
+            )}
+            {loginSuccess && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
+                {loginSuccess}
               </div>
             )}
 
@@ -151,7 +214,10 @@ const LearnerAuthPage = () => {
                   required
                   placeholder="Nhập email đã đăng ký của bạn"
                   value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    if (loginSuccess) setLoginSuccess("");
+                  }}
                   className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 outline-none transition-colors"
                 />
               </div>
@@ -174,7 +240,10 @@ const LearnerAuthPage = () => {
                     required
                     placeholder="••••••••"
                     value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
+                    onChange={(e) => {
+                      setLoginPassword(e.target.value);
+                      if (loginSuccess) setLoginSuccess("");
+                    }}
                     className="block w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 focus:border-blue-700 outline-none transition-colors"
                   />
                   <button
@@ -222,7 +291,8 @@ const LearnerAuthPage = () => {
                 type="button"
                 onClick={() => {
                   setIsLogin(false);
-                  navigate("/learner/register", { replace: true });
+                  setLoginSuccess("");
+                  navigate("/register", { replace: true });
                 }}
                 className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >
@@ -247,7 +317,9 @@ const LearnerAuthPage = () => {
 
             {regError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
-                {regError}
+                {typeof regError === "string"
+                  ? regError
+                  : JSON.stringify(regError)}
               </div>
             )}
 
@@ -360,7 +432,8 @@ const LearnerAuthPage = () => {
                 type="button"
                 onClick={() => {
                   setIsLogin(true);
-                  navigate("/learner/login", { replace: true });
+                  setLoginSuccess("");
+                  navigate("/login", { replace: true });
                 }}
                 className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >

@@ -1,7 +1,8 @@
-import React, { useState } from "react"; // Bổ sung useState
+import React, { useState } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
+import Footer from "../components/Footer";
 import {
   faSearch,
   faBell,
@@ -17,8 +18,6 @@ import {
 
 const LearnerLayout = () => {
   const location = useLocation();
-
-  // State quản lý việc Đóng/Mở dropdown của Avatar (Mặc định là false - Đóng)
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const navLinks = [
@@ -31,35 +30,43 @@ const LearnerLayout = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800">
       {/* HEADER */}
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        {/* TẦNG 1 */}
-        <div className="flex items-center justify-between px-8 py-4 max-w-7xl mx-auto w-full">
-          <Link to="/learner/home" className="flex items-center gap-3">
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
+        {/* TẦNG 1: Logo + Search + Actions */}
+        {/* Responsive: px-4 trên mobile, px-8 trên PC, gap-4 để các thành phần không dính vào nhau */}
+        <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 max-w-7xl mx-auto w-full gap-2 sm:gap-4">
+          {/* Logo */}
+          <Link
+            to="/home"
+            className="flex items-center gap-2 sm:gap-3 shrink-0"
+          >
             <img
               src={myLogo}
               alt="EduSync Logo"
-              className=" h-12 w-auto object-contain "
+              className="h-8 sm:h-12 w-auto object-contain"
             />
-            <div className="font-semibold text-3xl  tracking-widest font-irish text-blue-900 ">
+            {/* Chữ EduSync: Ẩn trên mobile cực nhỏ (hidden), hiện trên màn hình lớn hơn (md:block) */}
+            <div className="hidden md:block font-semibold text-2xl sm:text-3xl tracking-widest font-irish text-blue-900">
               EduSync
             </div>
           </Link>
 
-          <div className="flex-1 max-w-3xl mx-8">
+          {/* Thanh tìm kiếm */}
+          {/* Responsive: Thu nhỏ margin trên mobile (mx-2 sm:mx-8), linh hoạt theo chiều rộng */}
+          <div className="flex-1 max-w-3xl mx-2 sm:mx-8">
             <div className="relative">
               <input
                 type="text"
                 placeholder="Tìm kiếm ..."
-                className="w-full pl-6 pr-12 py-2 rounded-full border border-blue-900 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 text-sm text-gray-700"
+                className="w-full pl-4 sm:pl-6 pr-10 py-2 rounded-full border border-blue-900 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 text-sm text-gray-700"
               />
-              <button className="absolute right-4 top-2 text-gray-500 hover:text-blue-900">
+              <button className="absolute right-3 sm:right-4 top-2 text-gray-500 hover:text-blue-900 transition-colors">
                 <FontAwesomeIcon icon={faSearch} />
               </button>
             </div>
           </div>
 
-          {/* User Actions (Bao gồm Chuông và Avatar) */}
-          <div className="flex items-center gap-6 text-gray-600">
+          {/* User Actions */}
+          <div className="flex items-center gap-4 sm:gap-6 text-gray-600 shrink-0">
             <button className="hover:text-blue-900 relative transition-colors">
               <FontAwesomeIcon icon={faBell} className="text-xl" />
               <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
@@ -67,7 +74,6 @@ const LearnerLayout = () => {
 
             {/* BỘ PHẬN AVATAR VÀ DROPDOWN */}
             <div className="relative">
-              {/* Nút Avatar */}
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="hover:text-blue-900 transition-colors flex items-center focus:outline-none"
@@ -75,22 +81,27 @@ const LearnerLayout = () => {
                 <FontAwesomeIcon icon={faUserCircle} className="text-3xl" />
               </button>
 
-              {/* Hộp thoại Dropdown (Chỉ hiện khi isDropdownOpen = true) */}
+              {/* Màng che tàng hình (Overlay) để click ra ngoài đóng Dropdown */}
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 transition-all">
-                  {/* Link Profile */}
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsDropdownOpen(false)}
+                ></div>
+              )}
+
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-3 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 transition-all origin-top-right animate-fade-slide-up">
                   <Link
-                    to="/learner/profile"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors "
+                    to="/profile"
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
                     onClick={() => setIsDropdownOpen(false)}
                   >
                     <FontAwesomeIcon icon={faUser} className="w-4 h-4" />
                     Hồ sơ cá nhân
                   </Link>
 
-                  {/* Link Settings */}
                   <Link
-                    to="/learner/settings"
+                    to="/settings"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
                     onClick={() => setIsDropdownOpen(false)}
                   >
@@ -98,10 +109,8 @@ const LearnerLayout = () => {
                     Cài đặt
                   </Link>
 
-                  {/* Đường kẻ ngang phân cách */}
                   <div className="border-t border-gray-100 my-1"></div>
 
-                  {/* Link Logout */}
                   <Link
                     to="/logout"
                     className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
@@ -116,20 +125,21 @@ const LearnerLayout = () => {
                 </div>
               )}
             </div>
-            {/* KẾT THÚC BỘ PHẬN AVATAR */}
           </div>
         </div>
 
         {/* TẦNG 2: Navbar */}
         <div className="border-t border-gray-100">
-          <nav className="flex items-center justify-start gap-12 px-8 max-w-7xl mx-auto w-full py-3">
+          {/* Responsive: Thêm overflow-x-auto để vuốt ngang trên mobile, thu nhỏ gap */}
+          {/* Lớp 'scrollbar-hide' cần thêm vào CSS (xem hướng dẫn bên dưới) */}
+          <nav className="flex items-center justify-start gap-6 sm:gap-12 px-4 sm:px-8 max-w-7xl mx-auto w-full py-3 overflow-x-auto scrollbar-hide">
             {navLinks.map((link) => {
               const isActive = location.pathname.includes(link.path);
               return (
                 <Link
                   key={link.name}
                   to={link.path}
-                  className={`flex items-center gap-3 text-sm font-medium transition-colors
+                  className={`flex items-center gap-2 sm:gap-3 text-sm font-medium transition-colors shrink-0 whitespace-nowrap
                     ${isActive ? "text-blue-700 font-bold" : "text-gray-600 hover:text-blue-700 font-bold"}
                   `}
                 >
@@ -143,9 +153,13 @@ const LearnerLayout = () => {
       </header>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 w-full max-w-7xl mx-auto p-8">
+      {/* Responsive: Giảm padding trên mobile */}
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 sm:p-8">
         <Outlet />
       </main>
+
+      {/* FOOTER */}
+      <Footer />
     </div>
   );
 };

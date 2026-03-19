@@ -8,7 +8,7 @@ const ProtectedRoute = () => {
 
   // 2. Nếu chưa có vé (chưa đăng nhập) -> Đá văng về trang Login
   if (!token) {
-    return <Navigate to="/learner/login" replace />;
+    return <Navigate to="/login" replace />;
   }
 
   // 3. Nếu có vé rồi -> Mở cổng cho phép đi tiếp vào giao diện bên trong (<Outlet />)
