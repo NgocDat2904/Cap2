@@ -60,14 +60,14 @@ def login(user):
 
 def update_user_role(user_id, role):
 
-    # ✅ validate role
+    #  validate role
     if role not in ["admin", "instructor", "learner"]:
         raise Exception("Invalid role")
 
-    # ✅ update DB
+    #  update DB
     result = update_user_role_repo(user_id, role)
 
-    # ✅ check có update thành công không
+    #  check có update thành công không
     if result.modified_count == 0:
         raise Exception("User not found or role unchanged")
 

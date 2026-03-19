@@ -1,26 +1,34 @@
-from fastapi import APIRouter, Depends
-from app.modules.auth.auth_service import register, login, update_user_role
+from fastapi import APIRouter
+from app.modules.auth.auth_service import register, login
 from app.modules.auth.auth_model import RegisterRequest, LoginRequest
-from app.middleware.auth_middleware import require_role
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
-@router.post("/register")
-def register_user(user: RegisterRequest):
+
+@router.post("/learner/register")
+def register_learner(user: RegisterRequest):
     return register(user)
 
 
-@router.post("/login")
-def login_user(user: LoginRequest):
+@router.post("/instructor/register")
+def register_instructor(user: RegisterRequest):
+    return register(user)
+
+
+
+@router.post("/learner/login")
+def login_learner(user: LoginRequest):
     return login(user)
 
 
-# Admin mới có quyền cập nhật role
-@router.put("/users/{user_id}/role")
-def update_role(
-    user_id: str,
-    role: str,
-    user=Depends(require_role(["admin"]))  # 👈 chỉ admin mới dùng được
-):
-    return update_user_role(user_id, role)
+
+@router.post("/instructor/login")
+def login_instructor(user: LoginRequest):
+    return login(user)
+
+
+
+@router.post("/admin/login")
+def login_admin(user: LoginRequest):
+    return login(user)
