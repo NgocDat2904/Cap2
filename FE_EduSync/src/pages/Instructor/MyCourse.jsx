@@ -78,7 +78,7 @@ const InstructorMyCourses = () => {
         {/* Nút Create Course: Nổi bật với màu blue gradient */}
         <Link
           to="/instructor/courses/create"
-          className="flex items-center gap-2.5 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-xl hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-lg shadow-blue-500/20 active:scale-95"
+          className="flex items-center gap-2.5 px-6 py-3.5  bg-blue-600  text-white font-bold rounded-xl hover:from-blue-700 hover:to-purple-700 transition duration-300 shadow-lg shadow-blue-500/20 active:scale-95"
         >
           <FontAwesomeIcon icon={faPlus} />
           Create Course
