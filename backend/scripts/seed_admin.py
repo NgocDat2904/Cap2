@@ -28,7 +28,7 @@ def seed_admin():
 
     create_user(admin_user)
 
-    print("✅ Admin account created successfully!")
+    print(" Admin account created successfully!")
 
 
 if __name__ == "__main__":

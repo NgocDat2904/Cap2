@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from jose import jwt, JWTError
 
-SECRET_KEY = "your_secret_key"   # 👉 có thể đổi sau
+SECRET_KEY = "your_secret_key"   #  có thể đổi sau
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 
-# 🔐 Tạo token
+#  Tạo token
 def create_access_token(data: dict):
     to_encode = data.copy()
 
@@ -16,7 +16,7 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# 🔓 Decode token (🔥 BẠN ĐANG THIẾU HÀM NÀY)
+#  Decode token 
 def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
