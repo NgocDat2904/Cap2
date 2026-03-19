@@ -11,18 +11,14 @@ const AppRoutes = () => {
       {/* 1. Trang chủ công khai cho khách vãng lai */}
       <Route path="/" element={<PublicPage />} />
 
-      {/* Compat: route cũ -> route mới */}
-      <Route path="/login" element={<Navigate to="/learner/login" replace />} />
-      <Route
-        path="/register"
-        element={<Navigate to="/learner/register" replace />}
-      />
-
       {/* 2. Dấu /* báo cho React biết bên trong InstructorRoutes còn nhiều đường dẫn con khác */}
       <Route path="/instructor/*" element={<InstructorRoutes />} />
 
       {/* 3. Tương tự cho Learner */}
       <Route path="/*" element={<LearnerRoutes />} />
+
+      {/* 3. Tương tự cho Admin */}
+      {/* <Route path="/admin/*" element={<AdminRoutes />} /> */}
     </Routes>
   );
 };

@@ -12,11 +12,19 @@ export const loginAPI = async (email, password) => {
 };
 
 // Register learner
-export const registerAPI = async (name, email, password) => {
+export const registerAPI = async (
+  name,
+  email,
+  password,
+  confirm_password,
+  role = "learner",
+) => {
   const response = await axios.post(`${API_URL}/register`, {
     name,
     email,
     password,
+    confirm_password,
+    role,
   });
   return response.data;
 };

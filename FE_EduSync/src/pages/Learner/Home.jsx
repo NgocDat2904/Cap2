@@ -1,9 +1,6 @@
 import React from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faHeart,
-  faStar,
-  faWandMagicSparkles,
   faLaptopCode,
   faDatabase,
   faShieldHalved,
@@ -12,7 +9,6 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const EduSyncHome = () => {
-  // Mock Data: Khóa học nổi bật đã được cập nhật thêm data cho giống UI mới
   const featuredCourses = [
     {
       id: 1,
@@ -68,7 +64,6 @@ const EduSyncHome = () => {
     },
   ];
 
-  // Mock Data: Chuyên ngành CNTT
   const categories = [
     {
       name: "Kỹ thuật Phần mềm",
@@ -114,9 +109,6 @@ const EduSyncHome = () => {
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 sm:p-10 shadow-sm border border-blue-100 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex-1 space-y-4 text-center md:text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold">
-            <FontAwesomeIcon icon={faWandMagicSparkles} /> Gợi ý từ AI
-          </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
             Khám phá tiềm năng của bạn <br className="hidden sm:block" /> với lộ
             trình cá nhân hóa
