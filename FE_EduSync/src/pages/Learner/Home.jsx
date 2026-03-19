@@ -1,64 +1,74 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLaptopCode,
   faDatabase,
   faShieldHalved,
   faRobot,
-  faEllipsisVertical, // Thêm icon 3 chấm dọc
+  faPlayCircle,
+  faCheckCircle,
+  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 
 const EduSyncHome = () => {
+  // =========================================================================
+  // MOCK DATA: Cập nhật dữ liệu để hiển thị phong phú hơn
+  // =========================================================================
   const featuredCourses = [
     {
       id: 1,
       title: "Lập trình Python cơ bản đến nâng cao",
-      description:
-        "Khóa học lập trình python từ cơ bản đến nâng cao bao gồm các kiến thức nền tảng và thực chiến",
       instructor: "Nguyễn Văn A",
-      videos: 15,
-      purchases: 30,
-      timeAgo: "4 giờ trước",
-      price: "1.222.000đ",
+      avatar: "https://i.pravatar.cc/150?img=11",
+      videoCount: 15,
+      rating: 4.8,
+      students: 1520,
+      price: 1222000,
+      originalPrice: 1500000,
+      isBestseller: true,
       image:
         "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 2,
       title: "UI/UX Design Thực chiến với Figma",
-      description:
-        "Làm chủ quy trình thiết kế UI/UX, từ wireframe đến prototype chuyên nghiệp",
       instructor: "Trần Thị B.",
-      videos: 24,
-      purchases: 120,
-      timeAgo: "1 ngày trước",
-      price: "499.000đ",
+      avatar: "https://i.pravatar.cc/150?img=5",
+      videoCount: 24,
+      rating: 4.9,
+      students: 3420,
+      price: 499000,
+      originalPrice: 800000,
+      isBestseller: true,
       image:
         "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 3,
       title: "Kiến trúc Hệ thống (Architecture Design)",
-      description:
-        "Thiết kế hệ thống chịu tải cao, microservices và cloud architecture",
       instructor: "Lê Văn C.",
-      videos: 32,
-      purchases: 85,
-      timeAgo: "3 ngày trước",
-      price: "899.000đ",
+      avatar: "https://i.pravatar.cc/150?img=8",
+      videoCount: 32,
+      rating: 4.7,
+      students: 890,
+      price: 899000,
+      originalPrice: null,
+      isBestseller: false,
       image:
         "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     },
     {
       id: 4,
       title: "Data Analysis Cơ bản đến Nâng cao",
-      description:
-        "Phân tích dữ liệu với SQL, Excel và BI Tools cho người mới bắt đầu",
       instructor: "Phạm D.",
-      videos: 18,
-      purchases: 210,
-      timeAgo: "1 tuần trước",
-      price: "599.000đ",
+      avatar: "https://i.pravatar.cc/150?img=12",
+      videoCount: 18,
+      rating: 4.6,
+      students: 2100,
+      price: 599000,
+      originalPrice: null,
+      isBestseller: false,
       image:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
     },
@@ -104,21 +114,30 @@ const EduSyncHome = () => {
     },
   ];
 
+  // Hàm format tiền tệ VNĐ
+  const formatCurrency = (amount) => {
+    if (amount === 0) return "Miễn phí";
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(amount);
+  };
+
   return (
-    <main className="w-full space-y-12">
+    <main className="animate-fade-slide-up w-full space-y-12">
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 sm:p-10 shadow-sm border border-blue-100 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex-1 space-y-4 text-center md:text-left">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 leading-tight">
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
             Khám phá tiềm năng của bạn <br className="hidden sm:block" /> với lộ
             trình cá nhân hóa
           </h1>
-          <p className="text-gray-600 max-w-lg mx-auto md:mx-0">
+          <p className="text-slate-600 max-w-lg mx-auto md:mx-0">
             Dựa trên sở thích và mục tiêu nghề nghiệp của bạn, hệ thống AI của
             EduSync đã thiết kế một lộ trình học tập tối ưu nhất dành riêng cho
             bạn.
           </p>
-          <button className="mt-4 px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md hover:shadow-lg">
+          <button className="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-md hover:shadow-lg active:scale-95">
             Xem lộ trình đề xuất
           </button>
         </div>
@@ -126,7 +145,7 @@ const EduSyncHome = () => {
           <img
             src="https://cdni.iconscout.com/illustration/premium/thumb/online-learning-4382583-3640242.png"
             alt="AI Learning"
-            className="w-full h-auto drop-shadow-xl"
+            className="w-full h-auto drop-shadow-xl hover:-translate-y-2 transition-transform duration-500"
           />
         </div>
       </section>
@@ -134,12 +153,12 @@ const EduSyncHome = () => {
       {/* Categories Section - IT Majors */}
       <section>
         <div className="flex justify-between items-end mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-slate-900">
             Chuyên ngành đào tạo
           </h2>
           <a
             href="#"
-            className="text-sm font-medium text-blue-600 hover:underline"
+            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors"
           >
             Xem tất cả
           </a>
@@ -148,14 +167,18 @@ const EduSyncHome = () => {
           {categories.map((cat, index) => (
             <div
               key={index}
-              className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition cursor-pointer flex items-center gap-4 group"
+              className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 cursor-pointer flex items-center gap-4 group"
             >
-              <div className="p-3 bg-gray-50 rounded-lg group-hover:bg-blue-50 transition">
+              <div className="p-3 bg-slate-50 rounded-xl group-hover:bg-blue-50 transition-colors duration-300">
                 {cat.icon}
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900">{cat.name}</h3>
-                <p className="text-sm text-gray-500">{cat.courses} khóa học</p>
+                <h3 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
+                  {cat.name}
+                </h3>
+                <p className="text-sm text-slate-500 font-medium">
+                  {cat.courses} khóa học
+                </p>
               </div>
             </div>
           ))}
@@ -165,74 +188,111 @@ const EduSyncHome = () => {
       {/* Featured Courses Section */}
       <section>
         <div className="flex justify-between items-end mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Khóa học nổi bật</h2>
-          <a
-            href="#"
-            className="text-sm font-medium text-blue-600 hover:underline"
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">
+              Khóa học nổi bật
+            </h2>
+            <p className="text-slate-500 text-sm mt-1 font-medium">
+              Những khóa học được đăng ký nhiều nhất tuần qua
+            </p>
+          </div>
+          <Link
+            to="/courses"
+            className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors hidden sm:block"
           >
             Khám phá thêm
-          </a>
+          </Link>
         </div>
 
-        {/* Lưới chứa các Card mới */}
+        {/* Lưới chứa các Card chuẩn "Premium" */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           {featuredCourses.map((course) => (
             <div
               key={course.id}
-              className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 hover:shadow-lg transition duration-300 flex flex-col group"
+              className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer"
             >
-              {/* Ảnh khóa học */}
-              <div className="relative h-44 overflow-hidden rounded-xl cursor-pointer">
+              {/* Ảnh bìa & Badge */}
+              <div className="relative aspect-video overflow-hidden bg-slate-200">
                 <img
                   src={course.image}
                   alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                {/* Badge số video */}
-                <div className="absolute top-2 right-2 px-3 py-1 bg-white/80 backdrop-blur-sm rounded-full text-sm font-medium text-gray-800">
-                  {course.videos} video
+                {/* Lớp overlay đen mờ hiện ra khi hover */}
+                <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-blue-600 transform scale-50 group-hover:scale-100 transition-transform duration-300">
+                    <FontAwesomeIcon icon={faPlayCircle} className="text-2xl" />
+                  </div>
                 </div>
+
+                {/* Badge Bestseller */}
+                {/* {course.isBestseller && (
+                  <span className="absolute top-3 left-3 px-2.5 py-1 bg-amber-400 text-amber-950 text-xs font-black tracking-wider uppercase rounded-md shadow-sm">
+                    Bán chạy
+                  </span>
+                )} */}
+                {/* Số lượng video */}
+                <span className="absolute bottom-3 right-3 px-2 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded flex items-center gap-1.5">
+                  <FontAwesomeIcon icon={faPlayCircle} /> {course.videoCount}{" "}
+                  video
+                </span>
               </div>
 
-              {/* Thông tin Giảng viên */}
-              <div className="flex items-center justify-between mt-4">
-                <div className="flex items-center gap-3">
-                  {/* Hình đại diện giả lập (màu xám) */}
-                  <div className="w-8 h-8 rounded-full bg-gray-300"></div>
-                  <span className="font-semibold text-gray-900">
+              {/* Nội dung Card */}
+              <div className="p-5 flex-1 flex flex-col">
+                {/* Tác giả */}
+                <div className="flex items-center gap-2 mb-3">
+                  <img
+                    src={course.avatar}
+                    alt="Avatar"
+                    className="w-6 h-6 rounded-full object-cover border border-slate-100"
+                  />
+                  <span className="text-xs font-bold text-slate-500">
                     {course.instructor}
                   </span>
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    className="text-blue-500 text-[10px]"
+                    title="Đã xác minh"
+                  />
                 </div>
-                <button className="text-gray-500 hover:text-gray-800 px-2">
-                  <FontAwesomeIcon icon={faEllipsisVertical} />
-                </button>
-              </div>
 
-              {/* Tiêu đề & Mô tả */}
-              <h3 className="font-bold text-[17px] text-gray-900 mt-3 line-clamp-2 leading-snug  transition">
-                {course.title}
-              </h3>
-              <p className="text-gray-600 mt-2 text-sm line-clamp-2">
-                {course.description}
-              </p>
+                {/* Tiêu đề */}
+                <h3 className="font-bold text-[17px] text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors mb-2">
+                  {course.title}
+                </h3>
 
-              {/* Thống kê (Lượt mua - Thời gian) */}
-              <div className="flex justify-between items-center text-sm text-gray-500 mt-4">
-                <span>{course.purchases} lượt mua</span>
-                <span>{course.timeAgo}</span>
-              </div>
-
-              {/* Đường kẻ ngang */}
-              <hr className="my-4 border-gray-200" />
-
-              {/* Giá & Nút hành động */}
-              <div className="mt-auto">
-                <div className="font-bold text-xl text-green-700">
-                  {course.price}
+                {/* Thống kê (Rating & Students) */}
+                <div className="flex items-center gap-4 text-sm mt-auto pt-4">
+                  {/* <div className="flex items-center gap-1 text-amber-500 font-bold">
+                    <FontAwesomeIcon icon={faStar} />
+                    <span className="text-slate-700">{course.rating}</span>
+                  </div> */}
+                  <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
+                    <FontAwesomeIcon icon={faUsers} />
+                    {course.students.toLocaleString()} học viên
+                  </div>
                 </div>
-                <button className="mt-4 w-full py-2.5 border border-gray-300 rounded-xl text-gray-800 font-semibold hover:bg-gray-50 transition">
-                  Xem khóa học
-                </button>
+
+                {/* Giá tiền & Nút xem */}
+                <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
+                  <div className="flex flex-col">
+                    {course.originalPrice && (
+                      <span className="text-xs text-slate-400 font-medium line-through mb-0.5">
+                        {formatCurrency(course.originalPrice)}
+                      </span>
+                    )}
+                    <span
+                      className={`font-black text-xl ${course.price === 0 ? "text-green-600" : "text-slate-900"}`}
+                    >
+                      {formatCurrency(course.price)}
+                    </span>
+                  </div>
+
+                  <button className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg transition-colors">
+                    Xem chi tiết
+                  </button>
+                </div>
               </div>
             </div>
           ))}

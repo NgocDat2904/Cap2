@@ -3,6 +3,9 @@ import LearnerLayout from "../layouts/LearnerLayout";
 import LearnerAuthPage from "../pages/Learner/LearnerAuthPage";
 import ProtectedRoute from "./ProtectedRoute";
 import EduSyncHome from "../pages/Learner/Home";
+import LearnerCoursesPage from "../pages/Learner/Courses";
+import CourseDetailPage from "../pages/Learner/CourseDetail";
+import CourseLearningWorkspace from "../pages/Learner/PlayVideo";
 
 const LearnerRoutes = () => {
   return (
@@ -11,6 +14,12 @@ const LearnerRoutes = () => {
       <Route element={<LearnerLayout />}>
         {/* Đường dẫn thực tế sẽ là /learner/home */}
         <Route path="home" element={<EduSyncHome />} />
+        <Route path="courses" element={<LearnerCoursesPage />} />
+        <Route path="courses/:courseId" element={<CourseDetailPage />} />
+        <Route
+          path="courses/:courseId/lessons/:lessonId"
+          element={<CourseLearningWorkspace />}
+        />
       </Route>{" "}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />

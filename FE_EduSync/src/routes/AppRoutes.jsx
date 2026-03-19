@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import InstructorRoutes from "./InstructorRoutes";
 import LearnerRoutes from "./LearnerRoutes";
 import PublicPage from "../pages/PublicPage";
+import AdminRoutes from "./AdminRoutes";
 
 const AppRoutes = () => {
   return (
@@ -18,7 +19,7 @@ const AppRoutes = () => {
       <Route path="/*" element={<LearnerRoutes />} />
 
       {/* 3. Tương tự cho Admin */}
-      {/* <Route path="/admin/*" element={<AdminRoutes />} /> */}
+      <Route path="/admin/*" element={<AdminRoutes />} />
     </Routes>
   );
 };

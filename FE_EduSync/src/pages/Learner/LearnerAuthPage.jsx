@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-// 1. IMPORT HÀM TỪ FILE SERVICE VÀO (Xóa import axios đi)
 import { loginAPI, registerAPI } from "../../services/Learner/authService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,7 +9,6 @@ import {
   faNetworkWired,
   faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
-import { faGoogle } from "@fortawesome/free-brands-svg-icons";
 import myLogo from "../../assets/logo.png";
 
 const toErrorMessage = (error, fallback) => {
@@ -268,21 +266,7 @@ const LearnerAuthPage = () => {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
-                <div className="relative flex justify-center text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                  <span className="px-4 bg-white">OR</span>
-                </div>
               </div>
-
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 mt-6 transition-colors"
-              >
-                <FontAwesomeIcon
-                  icon={faGoogle}
-                  className="text-red-500 text-base"
-                />{" "}
-                Continue with Google
-              </button>
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-600">
@@ -412,18 +396,7 @@ const LearnerAuthPage = () => {
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200"></div>
                 </div>
-                <div className="relative flex justify-center text-xs font-semibold text-gray-400 uppercase tracking-widest">
-                  <span className="px-4 bg-white">OR</span>
-                </div>
               </div>
-
-              <button
-                type="button"
-                className="w-full flex items-center justify-center gap-3 py-2.5 px-4 border border-gray-300 rounded-lg shadow-sm bg-white text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                <FontAwesomeIcon icon={faGoogle} className="text-red-500" />{" "}
-                Continue with Google
-              </button>
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-600">
