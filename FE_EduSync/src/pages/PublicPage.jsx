@@ -2,7 +2,7 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Footer from "../components/Footer";
+import Footer from "../components/LearnerFooter";
 import myLogo from "../assets/logo.png";
 import {
   faUpload,
@@ -52,7 +52,7 @@ const PublicPage = () => {
   return (
     <div className="animate-fade-slide-up min-h-screen bg-white font-sans text-gray-800">
       {/* 1. HEADER */}
-      <header className="w-full bg-blue-950 shadow-md">
+      <header className="w-full bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
@@ -60,7 +60,7 @@ const PublicPage = () => {
               alt="EduSync Logo"
               className=" h-16 w-auto object-contain "
             />
-            <span className="font-semibold text-3xl text-white tracking-widest font-irish">
+            <span className="font-semibold text-3xl text-blue-900 tracking-widest font-irish">
               EduSync
             </span>
           </div>
@@ -77,7 +77,7 @@ const PublicPage = () => {
             {/* Nút Sign Up */}
             <Link
               to="/register"
-              className="px-6 py-2.5 rounded-md text-sm font-semibold bg-white text-blue-950 hover:bg-gray-100 transition-colors shadow-md"
+              className="px-6 py-2.5 rounded-md text-sm font-semibold bg-gray-200 text-blue-950 hover:bg-gray-100 transition-colors shadow-md"
             >
               Sign up
             </Link>

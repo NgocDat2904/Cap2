@@ -3,12 +3,12 @@ import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEnvelope,
+  faLock,
   faEye,
   faEyeSlash,
-  faArrowRight,
+  faCircleNotch,
 } from "@fortawesome/free-solid-svg-icons";
-import myLogo from "../../assets/logo.png"; // Điều chỉnh lại đường dẫn logo nếu cần
-// import { loginInstructorAPI } from "../../services/authService"; // Mở khóa dòng này khi ghép API
+import myLogo from "../../assets/logo.png";
 
 const InstructorLoginPage = () => {
   const navigate = useNavigate();
@@ -26,17 +26,11 @@ const InstructorLoginPage = () => {
     setIsLoading(true);
 
     try {
-      // GỢI Ý GHÉP API SAU NÀY:
-      // const data = await loginInstructorAPI(email, password);
-      // localStorage.setItem("instructor_token", data.access_token);
-
-      console.log("Đăng nhập với:", { email, password, rememberMe });
-
-      // Giả lập delay 1 giây để thấy hiệu ứng loading
+      // Giả lập delay 1.5 giây để thấy hiệu ứng loading cực mượt
       setTimeout(() => {
         setIsLoading(false);
-        navigate("/instructor/dashboard"); // Chuyển vào Dashboard Giảng viên
-      }, 1000);
+        navigate("/instructor/dashboard");
+      }, 1500);
     } catch (err) {
       console.error(err);
       setError("Email hoặc mật khẩu không chính xác!");
@@ -45,36 +39,45 @@ const InstructorLoginPage = () => {
   };
 
   return (
-    // Thêm overflow-hidden và min-h-screen để căn giữa nội dung hoàn hảo
-    <div className="animate-fade-slide-up min-h-screen bg-[#F8FAFC] flex flex-col items-center justify-center py-10 px-4 font-sans relative overflow-hidden">
+    // Nền xám nhạt kết hợp với các hình tròn mờ (blobs) tạo cảm giác nghệ thuật
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-10 px-4 font-sans relative overflow-hidden">
+      {/* HIỆU ỨNG TRANG TRÍ NỀN (DECORATIVE BACKGROUND BLOBS) */}
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
+
       {/* CONTAINER CHÍNH */}
-      <div className="w-full max-w-xl z-10 flex flex-col items-center">
+      <div className="animate-fade-slide-up w-full max-w-[520px] z-10 flex flex-col items-center">
         {/* HEADER LOGO */}
-        <div className="w-full flex items-center gap-3 mb-8 justify-start sm:justify-center">
-          <img src={myLogo} alt="EduSync Logo" className="w-auto h-12" />
-          <div>
-            <h1 className="font-irish text-[28px] tracking-wider text-blue-900 font-semibold">
+        <div className="w-full flex items-center justify-center gap-3 mb-8">
+          <img
+            src={myLogo}
+            alt="EduSync Logo"
+            className="w-auto h-12 drop-shadow-sm"
+          />
+          <div className="flex flex-col items-start">
+            <h1 className="font-irish text-3xl tracking-wider text-blue-900 font-bold leading-none">
               EduSync
             </h1>
-            <p className="text-sm text-gray-500 font-medium">
+            <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
               Instructor Portal
             </p>
           </div>
         </div>
 
-        <div className="w-full text-left sm:text-center mb-8">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+        {/* TIÊU ĐỀ */}
+        <div className="w-full text-center mb-8">
+          <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
             Chào mừng trở lại!
           </h2>
-          <p className="text-gray-500 text-sm sm:text-base">
-            Đăng nhập để quản lý khóa học và kết nối với học viên của bạn
+          <p className="text-slate-500 font-medium">
+            Đăng nhập để quản lý khóa học và kết nối với học viên
           </p>
         </div>
 
-        {/* MAIN FORM CARD */}
-        <div className="w-full bg-white rounded-3xl shadow-xl shadow-blue-900/5 p-6 sm:p-10 border border-gray-100">
+        {/* MAIN FORM CARD (Glassmorphism tinh tế) */}
+        <div className="w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-blue-900/10 p-8 sm:p-10 border border-white">
           {error && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl text-center">
+            <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-2xl text-center flex items-center justify-center gap-2 animate-fade-slide-up">
               {error}
             </div>
           )}
@@ -82,14 +85,14 @@ const InstructorLoginPage = () => {
           <form onSubmit={handleLogin} className="space-y-6">
             {/* Email Input */}
             <div>
-              <label className="block text-sm font-bold text-gray-700 mb-2">
+              <label className="block text-sm font-bold text-slate-700 mb-2.5">
                 Email
               </label>
-              <div className="relative">
+              <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <FontAwesomeIcon
                     icon={faEnvelope}
-                    className="text-gray-400"
+                    className="text-slate-400 group-focus-within:text-blue-600 transition-colors"
                   />
                 </div>
                 <input
@@ -98,37 +101,43 @@ const InstructorLoginPage = () => {
                   placeholder="instructor@edusync.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700"
+                  className="block w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium placeholder-slate-400"
                 />
               </div>
             </div>
 
             {/* Password Input */}
             <div>
-              <div className="flex justify-between items-center mb-2">
-                <label className="block text-sm font-bold text-gray-700">
+              <div className="flex justify-between items-center mb-2.5">
+                <label className="block text-sm font-bold text-slate-700">
                   Mật khẩu
                 </label>
                 <a
                   href="#"
-                  className="text-sm font-semibold text-blue-600 hover:underline"
+                  className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
                 >
                   Quên mật khẩu?
                 </a>
               </div>
-              <div className="relative">
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FontAwesomeIcon
+                    icon={faLock}
+                    className="text-slate-400 group-focus-within:text-blue-600 transition-colors"
+                  />
+                </div>
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-4 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-600 focus:border-blue-600 outline-none transition-all text-gray-700 tracking-widest font-medium"
+                  className="block w-full pl-11 pr-12 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium tracking-widest placeholder-slate-400"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-blue-600 transition-colors"
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-blue-600 transition-colors focus:outline-none"
                 >
                   <FontAwesomeIcon icon={showPassword ? faEyeSlash : faEye} />
                 </button>
@@ -136,19 +145,19 @@ const InstructorLoginPage = () => {
             </div>
 
             {/* Ghi nhớ đăng nhập */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 pt-1">
               <input
                 type="checkbox"
                 id="remember"
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-600"
+                className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-600 cursor-pointer transition-all"
               />
               <label
                 htmlFor="remember"
-                className="text-sm font-medium text-gray-700 cursor-pointer"
+                className="text-sm font-semibold text-slate-600 cursor-pointer select-none"
               >
-                Ghi nhớ đăng nhập
+                Ghi nhớ thiết bị này
               </label>
             </div>
 
@@ -156,51 +165,60 @@ const InstructorLoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-4 rounded-xl text-white font-bold shadow-lg transition-all flex justify-center items-center gap-2
-                ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-blue-500/30"}`}
+              className={`w-full py-4 rounded-xl text-white font-bold transition-all duration-300 flex justify-center items-center gap-2
+                ${
+                  isLoading
+                    ? "bg-blue-400 cursor-not-allowed shadow-none"
+                    : "bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 active:scale-[0.98]"
+                }`}
             >
-              {isLoading ? "Đang xử lý..." : "Đăng nhập"}{" "}
-              <FontAwesomeIcon icon={faArrowRight} />
+              {isLoading ? (
+                <>
+                  <FontAwesomeIcon
+                    icon={faCircleNotch}
+                    className="animate-spin text-lg"
+                  />
+                  Đang xác thực...
+                </>
+              ) : (
+                <>Đăng nhập</>
+              )}
             </button>
           </form>
 
           {/* Đăng ký Link */}
-          <div className="mt-8 text-center text-sm font-medium text-gray-600">
-            Chưa có tài khoản?{" "}
+          <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm font-medium text-slate-500">
+            Chưa có tài khoản giảng viên?{" "}
             <Link
               to="/instructor/register"
-              className="text-blue-600 font-bold hover:underline"
+              className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
             >
               Đăng ký ngay
             </Link>
           </div>
         </div>
 
-        {/* THỐNG KÊ BÊN DƯỚI (STATS) */}
-        <div className="w-full grid grid-cols-3 gap-4 mt-10 text-center">
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900">
-              500+
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-              Giảng viên
-            </p>
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900">
-              10K+
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-              Học viên
-            </p>
-          </div>
-          <div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900">
-              1000+
-            </h3>
-            <p className="text-xs sm:text-sm text-gray-500 font-medium mt-1">
-              Khóa học
-            </p>
+        {/* THỐNG KÊ (STATS) - Được bọc trong một khối nền mờ sang trọng */}
+        <div className="w-full mt-10 p-6 bg-white/50 backdrop-blur-sm border border-white/60 rounded-3xl shadow-sm">
+          <div className="grid grid-cols-3 gap-4 text-center divide-x divide-slate-200/60">
+            <div>
+              <h3 className="text-2xl font-black text-slate-900">500+</h3>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                Giảng viên
+              </p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900">10K+</h3>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                Học viên
+              </p>
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-slate-900">1K+</h3>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
+                Khóa học
+              </p>
+            </div>
           </div>
         </div>
       </div>
