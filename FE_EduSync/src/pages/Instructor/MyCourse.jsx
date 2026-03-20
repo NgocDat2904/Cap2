@@ -192,12 +192,12 @@ const InstructorMyCourses = () => {
                 <button className="text-slate-500 hover:text-blue-600 p-2.5 rounded-lg hover:bg-blue-50 transition active:scale-90">
                   <FontAwesomeIcon icon={faEdit} className="text-lg" />
                 </button>
-                <a
-                  href="#"
+                <Link
+                  to={`/instructor/courses/${course.id}`}
                   className="font-bold text-sm text-slate-800 hover:text-blue-700 transition hover:underline"
                 >
                   View Details
-                </a>
+                </Link>
                 <button className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90">
                   <FontAwesomeIcon icon={faTrash} className="text-lg" />
                 </button>
