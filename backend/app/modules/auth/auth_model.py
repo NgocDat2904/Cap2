@@ -7,7 +7,7 @@ class RegisterRequest(BaseModel):
     email: EmailStr
     password: str
     confirm_password: str
-    role: Optional[str] = "learner"
+
 
 
 class LoginRequest(BaseModel):
