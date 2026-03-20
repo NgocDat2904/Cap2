@@ -9,19 +9,31 @@ import {
   faLock,
   faClockRotateLeft,
   faPlay,
+  faPaperPlane,
+  faRobot,
+  faUserCircle,
+  faCrown,
+  faUnlock,
+  faCommentDots,
+  faReply,
+  faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 
 const CourseLearningWorkspace = () => {
   const { courseId, lessonId } = useParams();
 
   // =========================================================================
-  // 1. STATE QUẢN LÝ TABS
+  // 1. STATE QUẢN LÝ TABS, QUYỀN PREMIUM & YÊU THÍCH
   // =========================================================================
   const [activeLeftTab, setActiveLeftTab] = useState("summary");
-  const [activeRightTab, setActiveRightTab] = useState("videos"); // Mặc định mở tab Videos
+  const [activeRightTab, setActiveRightTab] = useState("videos");
+  const [isPremiumUser, setIsPremiumUser] = useState(false);
+
+  // State lưu danh sách ID của các video đã được thả tim
+  const [likedVideos, setLikedVideos] = useState(["v2"]); // Cho video 2 được thả tim sẵn làm mẫu
 
   // =========================================================================
-  // 2. DỮ LIỆU GIẢ LẬP (CÓ THÊM ẢNH THUMBNAIL CHO TỪNG BÀI)
+  // 2. DỮ LIỆU GIẢ LẬP
   // =========================================================================
   const instructorInfo = {
     name: "Nguyễn Văn A",
@@ -29,7 +41,6 @@ const CourseLearningWorkspace = () => {
     avatar: "https://i.pravatar.cc/150?img=11",
   };
 
-  // Danh sách Playlist (Giao diện phẳng, có ảnh thumbnail)
   const playlist = [
     {
       id: "v1",
@@ -62,7 +73,7 @@ const CourseLearningWorkspace = () => {
       image:
         "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&q=80",
       completed: false,
-      locked: false, // Bài đang học
+      locked: false,
       timeline: [
         { time: "00:00", label: "Mở đầu khái niệm", seconds: 0 },
         { time: "03:45", label: "Tạo Functional Component", seconds: 225 },
@@ -93,33 +104,142 @@ const CourseLearningWorkspace = () => {
     },
   ];
 
-  const [activeLesson, setActiveLesson] = useState(playlist[2]); // Đang chọn bài 3
+  const [activeLesson, setActiveLesson] = useState(playlist[2]);
 
-  const handleSeekVideo = (seconds, label) => {
-    alert(`Đã tua video đến: ${label} (${seconds}s)`);
-  };
+  const [comments, setComments] = useState([
+    {
+      id: 1,
+      name: "Hoàng Nguyễn",
+      time: "2 giờ trước",
+      text: "Thầy cho em hỏi Functional Component khác Class Component chỗ nào ạ?",
+      avatar: "HN",
+    },
+    {
+      id: 2,
+      name: "Trần Minh",
+      time: "1 ngày trước",
+      text: "Bài này giải thích dễ hiểu quá, em xem 1 lần là làm được luôn.",
+      avatar: "TM",
+    },
+  ]);
 
+  const [chatMessages, setChatMessages] = useState([
+    {
+      isAi: true,
+      text: "Chào bạn! Mình là AI Trợ giảng của khóa học. Bạn có câu hỏi nào về bài 'Component là gì' không?",
+    },
+  ]);
+
+  const mockQuiz = [
+    {
+      id: 1,
+      question: "Component trong React được dùng để làm gì?",
+      options: [
+        "Quản lý Database",
+        "Chia nhỏ UI thành các phần độc lập",
+        "Tạo API",
+        "Style CSS",
+      ],
+    },
+    {
+      id: 2,
+      question: "Đâu là cú pháp đúng để tạo Functional Component?",
+      options: [
+        "function MyComponent() {}",
+        "class MyComponent {}",
+        "create component MyComponent",
+        "new Component()",
+      ],
+    },
+  ];
+
+  // =========================================================================
+  // 3. CÁC HÀM XỬ LÝ
+  // =========================================================================
   const handleSelectLesson = (lesson) => {
-    if (!lesson.locked) {
-      setActiveLesson(lesson);
-      setActiveRightTab("timeline"); // Click bài mới tự động nhảy sang tab timeline
+    if (lesson.locked && !isPremiumUser) {
+      alert("Bạn cần thanh toán khóa học để xem video này nhé!");
+      return;
     }
+    setActiveLesson(lesson);
+    setActiveRightTab("timeline");
   };
 
-  const mindmapMarkdown = `
-# ${activeLesson.title}
-- Định nghĩa
-  - Là khối xây dựng UI
-- Phân loại
-  - Functional Component
-  - Class Component
-`;
+  // Hàm xử lý Thả tim video
+  const handleToggleLike = (e, lessonId) => {
+    e.stopPropagation(); // Ngăn click kiện truyền lên thẻ button cha (làm chuyển video)
+    setLikedVideos(
+      (prev) =>
+        prev.includes(lessonId)
+          ? prev.filter((id) => id !== lessonId) // Bỏ tim
+          : [...prev, lessonId], // Thêm tim
+    );
+  };
+
+  const handleSendChat = (e) => {
+    e.preventDefault();
+    const input = e.target.elements.chatInput.value;
+    if (!input.trim()) return;
+
+    setChatMessages([...chatMessages, { isAi: false, text: input }]);
+    e.target.reset();
+
+    setTimeout(() => {
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          isAi: true,
+          text: "Đây là câu trả lời tự động từ AI. Hệ thống đang phân tích câu hỏi của bạn...",
+        },
+      ]);
+    }, 1000);
+  };
+
+  // =========================================================================
+  // RENDER: MÀN HÌNH PAYWALL
+  // =========================================================================
+  const renderPaywall = (featureName) => (
+    <div className="flex flex-col items-center justify-center h-[350px] bg-slate-50 border border-slate-200 rounded-xl text-center p-6 relative overflow-hidden animate-fade-slide-up">
+      <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
+        <FontAwesomeIcon icon={faLock} className="text-2xl" />
+      </div>
+      <h3 className="text-xl font-bold text-slate-800 mb-2">
+        Tính năng Premium
+      </h3>
+      <p className="text-sm text-slate-600 mb-6 max-w-md">
+        Nâng cấp khóa học để mở khóa <strong>{featureName}</strong> và toàn bộ
+        video bị khóa nhé!
+      </p>
+      <button
+        onClick={() => setIsPremiumUser(true)}
+        className="px-6 py-3 bg-[#2da44e] text-white font-bold rounded-xl shadow-md hover:bg-[#268c41] transition-colors hover:scale-105 active:scale-95 duration-200"
+      >
+        <FontAwesomeIcon icon={faCrown} className="mr-2 text-yellow-300" />
+        Thanh toán $10 để mở khóa
+      </button>
+    </div>
+  );
 
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 animate-fade-slide-up pb-20">
+      {/* KHU VỰC TEST */}
+      <div className="mb-4 flex justify-end">
+        <button
+          onClick={() => setIsPremiumUser(!isPremiumUser)}
+          className="text-xs font-bold text-slate-500 border px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 shadow-sm flex items-center gap-2"
+        >
+          <FontAwesomeIcon
+            icon={isPremiumUser ? faUnlock : faLock}
+            className={isPremiumUser ? "text-green-500" : "text-amber-500"}
+          />
+          [Nút Test] Đổi quyền học viên:{" "}
+          {isPremiumUser ? "Đã thanh toán (Mở full)" : "Dùng thử (Bị khóa)"}
+        </button>
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         {/* ===================================================================== */}
-        {/* CỘT TRÁI (WIDER): VIDEO + THÔNG TIN BÀI HỌC CỤ THỂ + TABS */}
+        {/* CỘT TRÁI (WIDER): VIDEO + TABS CHI TIẾT BÀI HỌC */}
         {/* ===================================================================== */}
         <div className="w-full lg:flex-1 flex flex-col min-w-0">
           <div className="w-full bg-slate-900 aspect-video rounded-2xl overflow-hidden shadow-lg relative group border border-slate-800">
@@ -129,7 +249,6 @@ const CourseLearningWorkspace = () => {
                 className="text-white text-7xl opacity-90 group-hover:scale-110 transition-transform shadow-sm rounded-full"
               />
             </div>
-            {/* Ảnh video lớn theo bài học đang chọn */}
             <img
               src={activeLesson.image}
               alt="Video cover"
@@ -141,7 +260,7 @@ const CourseLearningWorkspace = () => {
           </div>
 
           <div className="mt-6 mb-8 px-1">
-            <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-snug mb-3">
+            <h1 className="text-2xl sm:text-2xl font-extrabold text-slate-900 tracking-tight leading-snug mb-3">
               {activeLesson.title}
             </h1>
             <p className="text-slate-600 text-base leading-relaxed mb-6">
@@ -172,7 +291,7 @@ const CourseLearningWorkspace = () => {
 
           <div className="w-full mt-2">
             <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
-              {["Summary", "Mindmap", "Quiz", "Chatbot", "Review"].map(
+              {["Summary", "Mindmap", "Quiz", "Chatbot", "Discussion"].map(
                 (tab) => (
                   <button
                     key={tab}
@@ -181,7 +300,19 @@ const CourseLearningWorkspace = () => {
                     ${activeLeftTab === tab.toLowerCase() ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}
                   `}
                   >
-                    {tab}
+                    {tab === "Mindmap" || tab === "Quiz" ? (
+                      <span className="flex items-center gap-1.5">
+                        {tab}{" "}
+                        {!isPremiumUser && (
+                          <FontAwesomeIcon
+                            icon={faLock}
+                            className="text-[10px] text-amber-500 mb-1"
+                          />
+                        )}
+                      </span>
+                    ) : (
+                      tab
+                    )}
                   </button>
                 ),
               )}
@@ -199,24 +330,190 @@ const CourseLearningWorkspace = () => {
                   </p>
                 </div>
               )}
-              {activeLeftTab === "mindmap" && (
-                <div className="animate-fade-slide-up space-y-6">
-                  <div className="w-full h-[350px] bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center">
-                    <FontAwesomeIcon
-                      icon={faBrain}
-                      className="text-slate-300 text-5xl mb-4"
-                    />
-                    <p className="text-sm font-bold text-slate-600">
-                      Sơ đồ tư duy Markmap sẽ hiển thị tại đây
-                    </p>
+
+              {activeLeftTab === "mindmap" &&
+                (!isPremiumUser ? (
+                  renderPaywall("Sơ đồ tư duy AI")
+                ) : (
+                  <div className="animate-fade-slide-up space-y-6">
+                    <div className="w-full h-[350px] bg-slate-50 rounded-xl border border-dashed border-slate-300 flex flex-col items-center justify-center">
+                      <FontAwesomeIcon
+                        icon={faBrain}
+                        className="text-blue-500 text-5xl mb-4"
+                      />
+                      <p className="text-sm font-bold text-slate-600">
+                        Sơ đồ tư duy Markmap sẽ hiển thị tại đây
+                      </p>
+                    </div>
                   </div>
+                ))}
+
+              {activeLeftTab === "quiz" &&
+                (!isPremiumUser ? (
+                  renderPaywall("Bài tập trắc nghiệm AI")
+                ) : (
+                  <div className="animate-fade-slide-up">
+                    <div className="mb-6 flex justify-between items-center">
+                      <h3 className="text-lg font-bold text-slate-800">
+                        Kiểm tra kiến thức
+                      </h3>
+                      <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
+                        {mockQuiz.length} Câu hỏi
+                      </span>
+                    </div>
+                    <div className="space-y-6">
+                      {mockQuiz.map((q, i) => (
+                        <div
+                          key={q.id}
+                          className="p-5 bg-slate-50 border border-slate-200 rounded-xl relative group"
+                        >
+                          <p className="font-bold text-slate-800 mb-3 text-sm">
+                            {i + 1}. {q.question}
+                          </p>
+                          <div className="space-y-2">
+                            {q.options.map((opt, j) => (
+                              <label
+                                key={j}
+                                className="flex items-center gap-3 p-3 bg-white border border-slate-200 rounded-lg cursor-pointer hover:border-blue-400 transition-colors"
+                              >
+                                <input
+                                  type="radio"
+                                  name={`quiz_${q.id}`}
+                                  className="w-4 h-4 text-blue-600"
+                                />
+                                <span className="text-sm text-slate-700">
+                                  {opt}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          <div className="mt-4 flex justify-end">
+                            <button
+                              onClick={() => setActiveLeftTab("discussion")}
+                              className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5"
+                            >
+                              <FontAwesomeIcon icon={faCommentDots} /> Thắc mắc
+                              về câu này?
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                      <button className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors shadow-md">
+                        Nộp bài
+                      </button>
+                    </div>
+                  </div>
+                ))}
+
+              {activeLeftTab === "chatbot" && (
+                <div className="animate-fade-slide-up flex flex-col h-[400px] border border-slate-200 rounded-xl overflow-hidden bg-slate-50">
+                  <div className="bg-white px-4 py-3 border-b border-slate-200 flex items-center gap-3 shadow-sm z-10">
+                    <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-inner">
+                      <FontAwesomeIcon icon={faRobot} />
+                    </div>
+                    <div>
+                      <p className="text-sm font-bold text-slate-800">
+                        EduSync AI Assistant
+                      </p>
+                      <p className="text-[10px] text-green-600 font-bold flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse"></span>{" "}
+                        Đang hoạt động
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+                    {chatMessages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`flex gap-3 ${msg.isAi ? "" : "flex-row-reverse"}`}
+                      >
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 shadow-sm ${msg.isAi ? "bg-blue-100 text-blue-600" : "bg-slate-200 text-slate-600"}`}
+                        >
+                          <FontAwesomeIcon
+                            icon={msg.isAi ? faRobot : faUserCircle}
+                          />
+                        </div>
+                        <div
+                          className={`p-3 rounded-2xl max-w-[80%] text-sm shadow-sm ${msg.isAi ? "bg-white border border-slate-200 text-slate-700 rounded-tl-none" : "bg-blue-600 text-white rounded-tr-none"}`}
+                        >
+                          {msg.text}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <form
+                    onSubmit={handleSendChat}
+                    className="p-3 bg-white border-t border-slate-200 flex gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"
+                  >
+                    <input
+                      name="chatInput"
+                      type="text"
+                      placeholder="Hỏi AI về nội dung bài giảng..."
+                      className="flex-1 bg-slate-100 border-transparent focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-400 rounded-lg px-4 py-2 text-sm outline-none transition-all"
+                      autoComplete="off"
+                    />
+                    <button
+                      type="submit"
+                      className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-sm"
+                    >
+                      <FontAwesomeIcon icon={faPaperPlane} />
+                    </button>
+                  </form>
                 </div>
               )}
-              {(activeLeftTab === "quiz" ||
-                activeLeftTab === "chatbot" ||
+
+              {(activeLeftTab === "discussion" ||
                 activeLeftTab === "review") && (
-                <div className="animate-fade-slide-up text-center py-10 text-slate-500 font-medium">
-                  Nội dung tab {activeLeftTab} đang được cập nhật...
+                <div className="animate-fade-slide-up flex flex-col h-full">
+                  <div className="flex gap-4 mb-8 bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                    <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold shrink-0 border border-blue-200">
+                      Bạn
+                    </div>
+                    <div className="flex-1 relative">
+                      <textarea
+                        placeholder="Bạn có thắc mắc gì về video hoặc bài quiz này?"
+                        className="w-full bg-white border border-slate-200 focus:border-blue-400 focus:ring-2 focus:ring-blue-100 rounded-xl p-3 text-sm outline-none resize-none min-h-[80px] transition-all shadow-sm"
+                      />
+                      <div className="flex justify-end mt-3">
+                        <button className="px-5 py-2 bg-slate-900 text-white font-bold text-xs rounded-lg hover:bg-slate-800 transition-colors shadow-sm">
+                          Đăng câu hỏi
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <h4 className="text-sm font-bold text-slate-800 border-b border-slate-200 pb-3">
+                      {comments.length} bình luận
+                    </h4>
+                    {comments.map((c) => (
+                      <div key={c.id} className="flex gap-4 group">
+                        <div className="w-10 h-10 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center font-bold text-sm shrink-0 border border-slate-300">
+                          {c.avatar}
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-bold text-slate-800 text-sm">
+                              {c.name}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-medium">
+                              {c.time}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-600 mb-2 leading-relaxed">
+                            {c.text}
+                          </p>
+                          <button className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors">
+                            <FontAwesomeIcon icon={faReply} className="mr-1" />{" "}
+                            Phản hồi
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -227,9 +524,7 @@ const CourseLearningWorkspace = () => {
         {/* CỘT PHẢI (NARROWER): TIMELINE / VIDEOS & CTA BOX */}
         {/* ===================================================================== */}
         <aside className="w-full lg:w-[400px] xl:w-[420px] shrink-0 flex flex-col gap-6 lg:sticky lg:top-8">
-          {/* Box 1: Navigator (Timeline / Videos) */}
           <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm flex flex-col h-[550px]">
-            {/* Header Tabs của Box Phải */}
             <div className="flex items-center border-b border-slate-200 bg-white pt-2">
               <button
                 onClick={() => setActiveRightTab("timeline")}
@@ -245,9 +540,6 @@ const CourseLearningWorkspace = () => {
               </button>
             </div>
 
-            {/* ======================================== */}
-            {/* NỘI DUNG RIGHT TAB: TIMELINE */}
-            {/* ======================================== */}
             {activeRightTab === "timeline" && (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-5 bg-white animate-fade-slide-up">
                 <h4 className="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
@@ -257,16 +549,13 @@ const CourseLearningWorkspace = () => {
                   />{" "}
                   Key Moments
                 </h4>
-
                 {activeLesson.timeline && activeLesson.timeline.length > 0 ? (
                   <div className="relative border-l-2 border-slate-100 ml-3 space-y-6 mt-6">
                     {activeLesson.timeline.map((point, index) => (
                       <div
                         key={index}
                         className="relative pl-6 cursor-pointer group"
-                        onClick={() =>
-                          handleSeekVideo(point.seconds, point.label)
-                        }
+                        onClick={() => alert(`Tua video đến: ${point.time}`)}
                       >
                         <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-slate-300 rounded-full border-2 border-white group-hover:bg-blue-600 group-hover:scale-125 transition-all"></div>
                         <div className="group-hover:translate-x-1 transition-transform">
@@ -282,116 +571,128 @@ const CourseLearningWorkspace = () => {
                   </div>
                 ) : (
                   <p className="text-sm text-slate-500 text-center mt-10 italic">
-                    Video này chưa có dữ liệu timeline.
+                    Chưa có dữ liệu timeline.
                   </p>
                 )}
               </div>
             )}
 
-            {/* ======================================== */}
-            {/* NỘI DUNG RIGHT TAB: VIDEOS (CÓ THUMBNAIL) */}
-            {/* ======================================== */}
             {activeRightTab === "videos" && (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 bg-white animate-fade-slide-up">
                 {playlist.map((lesson) => {
                   const isCurrent = activeLesson.id === lesson.id;
+                  const isActuallyLocked = lesson.locked && !isPremiumUser;
+
+                  // Kiểm tra xem video này có nằm trong mảng được thả tim không
+                  const isLiked = likedVideos.includes(lesson.id);
 
                   return (
-                    <button
+                    <div
                       key={lesson.id}
-                      onClick={() => handleSelectLesson(lesson)}
-                      disabled={lesson.locked}
-                      className={`w-full flex items-center gap-3.5 p-3 rounded-xl transition-all text-left group border
-                        ${
-                          isCurrent
-                            ? "bg-blue-50/50 border-blue-200 shadow-sm"
-                            : lesson.locked
-                              ? "opacity-60 cursor-not-allowed border-transparent"
-                              : "hover:bg-slate-50 border-transparent cursor-pointer"
-                        }
-                      `}
+                      className="relative flex items-center group"
                     >
-                      {/* 1. Icon Trạng thái (Giữ nguyên như ảnh của bạn) */}
-                      <div className="flex-shrink-0 w-5 flex justify-center">
-                        {lesson.locked ? (
-                          <FontAwesomeIcon
-                            icon={faLock}
-                            className="text-slate-300 text-sm"
-                          />
-                        ) : lesson.completed ? (
-                          <FontAwesomeIcon
-                            icon={faCheckCircle}
-                            className="text-green-500 text-[16px]"
-                          />
-                        ) : isCurrent ? (
-                          <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shadow-sm">
-                            <FontAwesomeIcon
-                              icon={faPlay}
-                              className="text-blue-600 text-[9px] ml-[1px]"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-4 h-4 rounded-full border-2 border-slate-300 group-hover:border-blue-400 transition-colors"></div>
-                        )}
-                      </div>
-
-                      {/* 2. Ảnh Thumbnail (MỚI) */}
-                      <div className="relative w-24 shrink-0 aspect-video rounded-lg overflow-hidden bg-slate-200 shadow-sm border border-slate-200/60">
-                        <img
-                          src={lesson.image}
-                          alt={lesson.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        {/* Lớp phủ đen làm nổi bật khi hover */}
-                        <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
-                      </div>
-
-                      {/* 3. Nội dung Text */}
-                      <div className="flex-1 min-w-0 flex flex-col justify-center">
-                        <h5
-                          className={`text-[13px] leading-snug line-clamp-2
-                          ${isCurrent ? "font-bold text-blue-800" : "font-semibold text-slate-700 group-hover:text-blue-600"}
+                      <button
+                        onClick={() => handleSelectLesson(lesson)}
+                        className={`w-full flex items-center gap-3.5 p-3 rounded-xl transition-all text-left group-hover:bg-slate-50 border
+                            ${isCurrent ? "bg-blue-50/50 border-blue-200 shadow-sm" : isActuallyLocked ? "opacity-60 cursor-not-allowed border-transparent" : "border-transparent cursor-pointer"}
                         `}
-                        >
-                          {lesson.title}
-                        </h5>
-                        <span className="text-[11px] font-medium text-slate-500 mt-1">
-                          ({lesson.duration})
-                        </span>
+                      >
+                        <div className="flex-shrink-0 w-5 flex justify-center">
+                          {isActuallyLocked ? (
+                            <FontAwesomeIcon
+                              icon={faLock}
+                              className="text-slate-400 text-sm"
+                            />
+                          ) : lesson.completed ? (
+                            <FontAwesomeIcon
+                              icon={faCheckCircle}
+                              className="text-green-500 text-[16px]"
+                            />
+                          ) : isCurrent ? (
+                            <div className="w-5 h-5 bg-blue-100 rounded-full flex items-center justify-center shadow-sm">
+                              <FontAwesomeIcon
+                                icon={faPlay}
+                                className="text-blue-600 text-[9px] ml-[1px]"
+                              />
+                            </div>
+                          ) : (
+                            <div className="w-4 h-4 rounded-full border-2 border-slate-300 group-hover:border-blue-400 transition-colors"></div>
+                          )}
+                        </div>
+
+                        <div className="relative w-24 shrink-0 aspect-video rounded-lg overflow-hidden bg-slate-200 shadow-sm border border-slate-200/60">
+                          <img
+                            src={lesson.image}
+                            alt={lesson.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors"></div>
+                        </div>
+
+                        <div className="flex-1 min-w-0 flex flex-col justify-center pr-8">
+                          <h5
+                            className={`text-[13px] leading-snug line-clamp-2 ${isCurrent ? "font-bold text-blue-800" : "font-semibold text-slate-700 group-hover:text-blue-600"}`}
+                          >
+                            {lesson.title}
+                          </h5>
+                          <span className="text-[11px] font-medium text-slate-500 mt-1">
+                            ({lesson.duration})
+                          </span>
+                        </div>
+                      </button>
+
+                      {/* NÚT YÊU THÍCH (THẢ TIM) NẰM ĐÈ LÊN GÓC PHẢI */}
+                      <div
+                        onClick={(e) => handleToggleLike(e, lesson.id)}
+                        className="absolute right-3 p-2 rounded-full hover:bg-slate-200 transition-colors cursor-pointer z-10"
+                        title={isLiked ? "Bỏ yêu thích" : "Yêu thích"}
+                      >
+                        <FontAwesomeIcon
+                          icon={faHeart}
+                          className={`text-[15px] transition-all duration-300 ${isLiked ? "text-red-500 scale-110 drop-shadow-sm" : "text-slate-300 hover:text-red-400"}`}
+                        />
                       </div>
-                    </button>
+                    </div>
                   );
                 })}
               </div>
             )}
           </div>
 
-          {/* Box 2: CTA (Thanh toán & AI) */}
-          <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-5 shadow-sm">
-            <p className="text-sm text-slate-700 font-medium leading-relaxed mb-5">
-              Thanh toán khóa học ngay để có thể xem nhiều video và sử dụng được
-              các tính năng như gen ra mindmap và các câu hỏi trắc nghiệm từ bài
-              giảng nhé!
-            </p>
+          {!isPremiumUser && (
+            <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-5 shadow-sm animate-fade-slide-up">
+              <p className="text-sm text-slate-700 font-medium leading-relaxed mb-5">
+                Thanh toán khóa học ngay để có thể xem nhiều video và sử dụng
+                được các tính năng như gen ra mindmap và các câu hỏi trắc nghiệm
+                từ bài giảng nhé!
+              </p>
 
-            <div className="space-y-3 mb-6">
-              <button className="w-full sm:w-[200px] bg-white border border-blue-600 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-blue-50 transition-colors shadow-sm">
-                <FontAwesomeIcon icon={faBrain} className="text-blue-600" /> AI
-                gen Mindmap
-              </button>
-              <button className="w-full sm:w-[200px] bg-white border border-blue-600 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 hover:bg-blue-50 transition-colors shadow-sm">
+              <div className="space-y-3 mb-6">
+                <div className="w-full bg-white border border-blue-200 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm">
+                  <FontAwesomeIcon icon={faBrain} className="text-blue-500" />{" "}
+                  Sơ đồ tư duy AI
+                </div>
+                <div className="w-full bg-white border border-blue-200 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm">
+                  <FontAwesomeIcon
+                    icon={faCircleQuestion}
+                    className="text-blue-500"
+                  />{" "}
+                  Bài tập Trắc nghiệm (Quiz)
+                </div>
+              </div>
+
+              <button
+                onClick={() => setIsPremiumUser(true)}
+                className="w-full bg-[#2da44e] hover:bg-[#268c41] text-white font-bold py-3.5 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center text-[15px]"
+              >
                 <FontAwesomeIcon
-                  icon={faCircleQuestion}
-                  className="text-blue-600"
+                  icon={faCrown}
+                  className="mr-2 text-yellow-300"
                 />{" "}
-                Quiz
+                Thanh toán ngay $10
               </button>
             </div>
-
-            <button className="w-full bg-[#2da44e] hover:bg-[#268c41] text-white font-bold py-3.5 rounded-xl shadow-md shadow-green-600/20 transition-all active:scale-95 flex justify-center items-center text-[15px]">
-              Thanh toán $10
-            </button>
-          </div>
+          )}
         </aside>
       </div>
     </div>
