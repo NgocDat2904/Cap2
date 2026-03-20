@@ -1,9 +1,10 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Router } from "react-router-dom";
 import InstructorLayout from "../layouts/InstructorLayout";
 import InstructorRegisterPage from "../pages/Instructor/RegisterPage";
 import InstructorLoginPage from "../pages/Instructor/LoginPage";
 import InstructorMyCourses from "../pages/Instructor/MyCourse";
 import InstructorCreateCourse from "../pages/Instructor/CreateCourse";
+import InstructorCourseViewPage from "../pages/Instructor/MyCourseView";
 
 const InstructorRoutes = () => {
   return (
@@ -29,6 +30,10 @@ const InstructorRoutes = () => {
           element={
             <div className="p-4 text-xl">Đây là trang Báo cáo doanh thu</div>
           }
+        />
+        <Route
+          path="courses/:courseId"
+          element={<InstructorCourseViewPage />}
         />
       </Route>
       <Route path="login" element={<InstructorLoginPage />} />

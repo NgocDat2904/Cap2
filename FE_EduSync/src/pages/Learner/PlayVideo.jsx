@@ -77,7 +77,7 @@ const CourseLearningWorkspace = () => {
       image:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&q=80",
       completed: false,
-      locked: true, // Bài bị khóa
+      locked: true,
       timeline: [],
     },
     {
