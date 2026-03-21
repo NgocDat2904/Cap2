@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../../assets/logo.png";
+import { loginAdminAPI } from "../../services/authService";
 import {
   faEnvelope,
   faLock,
   faEye,
   faEyeSlash,
   faShieldHalved,
-  faArrowRightToBracket,
 } from "@fortawesome/free-solid-svg-icons";
 
 const AdminLoginPage = () => {
@@ -21,21 +21,31 @@ const AdminLoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
 
     // Giả lập call API đăng nhập
-    setTimeout(() => {
-      if (email === "admin@edusync.com" && password === "admin123") {
-        setIsLoading(false);
-        navigate("/admin/dashboard"); // Chuyển hướng vào Dashboard
-      } else {
-        setIsLoading(false);
-        setError("Tài khoản hoặc mật khẩu quản trị không chính xác.");
+    try {
+      const response = await loginAdminAPI(email, password);
+      if (response && response.token) {
+        localStorage.setItem("adminToken", response.token);
       }
-    }, 1500);
+      navigate("/admin/dashboard");
+    } catch (err) {
+      console.error("Lỗi đăng nhập :", err);
+      // Xử lý thông báo lỗi rõ ràng nếu thất bại
+      if (err.response && err.response.status === 401) {
+        setError("Email hoặc mật khẩu không chính xác!");
+      } else if (err.response && err.response.status === 404) {
+        setError("Tài khoản quản trị này không tồn tại trên hệ thống!");
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -132,14 +142,7 @@ const AdminLoginPage = () => {
                   : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-[0.98]"
               }`}
           >
-            {isLoading ? (
-              "Đang xác thực..."
-            ) : (
-              <>
-                Đăng nhập hệ thống{" "}
-                <FontAwesomeIcon icon={faArrowRightToBracket} />
-              </>
-            )}
+            {isLoading ? "Đang xác thực..." : <>Đăng nhập hệ thống</>}
           </button>
         </form>
 

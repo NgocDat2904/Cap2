@@ -7,9 +7,11 @@ import {
   faLock,
   faEye,
   faEyeSlash,
-  faCircleNotch, // Thêm icon loading
+  faCircleNotch,
 } from "@fortawesome/free-solid-svg-icons";
 import myLogo from "../../assets/logo.png";
+// Import hàm gọi API đăng ký giảng viên
+import { registerInstructorAPI } from "../../services/authService";
 
 const InstructorRegisterPage = () => {
   const navigate = useNavigate();
@@ -25,7 +27,7 @@ const InstructorRegisterPage = () => {
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false); // State loading
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -35,15 +37,25 @@ const InstructorRegisterPage = () => {
     });
   };
 
-  const handleNextStep = (e) => {
+  const handleNextStep = async (e) => {
     e.preventDefault();
     setError("");
 
-    // Validate cơ bản
+    // 1. Validate kiểm tra đuôi Email nội bộ
+    if (!formData.email.trim().toLowerCase().endsWith("@edusync.edu.vn")) {
+      setError(
+        "Vui lòng sử dụng email nội bộ có đuôi @edusync.edu.vn để đăng ký!",
+      );
+      return;
+    }
+
+    // 2. Validate mật khẩu khớp nhau
     if (formData.password !== formData.confirmPassword) {
       setError("Mật khẩu xác nhận không khớp!");
       return;
     }
+
+    // 3. Validate đồng ý điều khoản
     if (!formData.agreeTerms) {
       setError("Bạn cần đồng ý với Điều khoản dịch vụ để tiếp tục.");
       return;
@@ -51,15 +63,37 @@ const InstructorRegisterPage = () => {
 
     setIsLoading(true);
 
-    // Giả lập call API đăng ký 1.5 giây
-    setTimeout(() => {
+    try {
+      // Gọi API đăng ký
+      const response = await registerInstructorAPI(
+        formData.fullName,
+        formData.email,
+        formData.password,
+        formData.confirmPassword,
+      );
+
+      // Nếu API trả về thành công
+      if (response && response.message) {
+        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        navigate("/instructor/login");
+      }
+    } catch (err) {
+      console.error("Lỗi đăng ký:", err);
+      // Bắt lỗi từ Backend trả về
+      if (err.response && err.response.status === 400) {
+        setError("Email này đã được đăng ký. Vui lòng sử dụng email khác!");
+      } else if (
+        err.response &&
+        err.response.data &&
+        err.response.data.detail
+      ) {
+        setError(err.response.data.detail);
+      } else {
+        setError("Đăng ký thất bại. Vui lòng kiểm tra lại kết nối mạng!");
+      }
+    } finally {
       setIsLoading(false);
-      console.log("Dữ liệu đăng ký hợp lệ:", formData);
-      // Gợi ý: Sau khi đăng ký thành công, chuyển sang trang điền thông tin chuyên môn (Step 2)
-      // hoặc chuyển về trang Login tùy logic của bạn.
-      // navigate("/instructor/register-step-2");
-      alert("Đăng ký thành công! (Giả lập)");
-    }, 1500);
+    }
   };
 
   return (
@@ -131,7 +165,7 @@ const InstructorRegisterPage = () => {
             {/* Email */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2.5">
-                Email
+                Email nội bộ
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -144,7 +178,7 @@ const InstructorRegisterPage = () => {
                   type="email"
                   name="email"
                   required
-                  placeholder="instructor@edusync.com"
+                  placeholder="name@edusync.edu.vn"
                   value={formData.email}
                   onChange={handleChange}
                   className="block w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium placeholder-slate-400"
