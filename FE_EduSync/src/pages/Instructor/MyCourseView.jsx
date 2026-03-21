@@ -1,22 +1,17 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
   faUsers,
   faClock,
-  faBookOpen,
   faCheckCircle,
   faVideo,
-  faFileAlt,
-  faQuestionCircle,
   faEdit,
   faEye,
   faTrashAlt,
   faChevronDown,
   faChevronUp,
-  faPlayCircle,
-  faCommentDots,
   faTrophy,
   faPlus,
   faSearch,
@@ -578,9 +573,12 @@ const InstructorCourseDetailPage = () => {
               <p className="text-2xl font-black text-emerald-600 mb-5">
                 {courseDetail.price}
               </p>
-              <button className="w-full py-3.5 bg-[#1e3a8a] hover:bg-[#172e6e] text-white font-bold rounded-xl transition-all shadow-md shadow-blue-900/30 active:scale-95 text-sm flex items-center justify-center gap-2">
+              <Link
+                to={`/instructor/courses/${courseDetail.id}/edit`}
+                className="w-full py-3.5 bg-[#1e3a8a] hover:bg-[#172e6e] text-white font-bold rounded-xl transition-all shadow-md shadow-blue-900/30 active:scale-95 text-sm flex items-center justify-center gap-2"
+              >
                 <FontAwesomeIcon icon={faEdit} /> Chỉnh sửa Khóa học
-              </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -616,9 +614,6 @@ const InstructorCourseDetailPage = () => {
                     {lessonsList.length} Bài giảng • Tổng thời lượng 8h 30m
                   </p>
                 </div>
-                <button className="hidden sm:flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-colors shadow-md shadow-blue-600/20">
-                  <FontAwesomeIcon icon={faPlus} /> Thêm Bài học
-                </button>
               </div>
               <div className="space-y-4">
                 {lessonsList.map((lesson) => (
