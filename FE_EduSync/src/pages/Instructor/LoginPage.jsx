@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { loginInstructorAPI } from "../../services/authService";
 import {
   faEnvelope,
   faLock,
@@ -26,26 +27,33 @@ const InstructorLoginPage = () => {
     setIsLoading(true);
 
     try {
-      // Giả lập delay 1.5 giây để thấy hiệu ứng loading cực mượt
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate("/instructor/dashboard");
-      }, 1500);
+      // gọi API đăng nhập giảng viên
+      const response = await loginInstructorAPI(email, password);
+      // lưu token
+      if (response && response.token) {
+        localStorage.setItem("instructorToken", response.token);
+      }
+      navigate("/instructor/dashboard");
     } catch (err) {
-      console.error(err);
-      setError("Email hoặc mật khẩu không chính xác!");
+      console.error("Lỗi đăng nhập Instructor:", err);
+      // Xử lý thông báo lỗi rõ ràng nếu thất bại
+      if (err.response && err.response.status === 401) {
+        setError("Email hoặc mật khẩu không chính xác!");
+      } else if (err.response && err.response.status === 404) {
+        setError("Tài khoản giảng viên này không tồn tại trên hệ thống!");
+      } else {
+        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+      }
+    } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    // Nền xám nhạt kết hợp với các hình tròn mờ (blobs) tạo cảm giác nghệ thuật
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-10 px-4 font-sans relative overflow-hidden">
-      {/* HIỆU ỨNG TRANG TRÍ NỀN (DECORATIVE BACKGROUND BLOBS) */}
       <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-400/20 rounded-full blur-[100px] pointer-events-none mix-blend-multiply"></div>
 
-      {/* CONTAINER CHÍNH */}
       <div className="animate-fade-slide-up w-full max-w-[520px] z-10 flex flex-col items-center">
         {/* HEADER LOGO */}
         <div className="w-full flex items-center justify-center gap-3 mb-8">

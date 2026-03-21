@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { loginAPI, registerAPI } from "../../services/Learner/authService";
+import { loginAPI, registerAPI } from "../../services/authService";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faEye,
