@@ -4,26 +4,24 @@ from app.utils.password import hash_password, verify_password
 from app.utils.jwt import create_access_token
 from app.modules.user.user_repository import update_role as update_user_role_repo
 from bson import ObjectId
+from fastapi import HTTPException
 
 
 
-def register(user):
+def register(user, role=None):
 
     if user.password != user.confirm_password:
         raise HTTPException(status_code=400, detail="Passwords do not match")
 
     existing = get_user_by_email(user.email)
-
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
 
     hashed = hash_password(user.password)
 
-    # Login phân role
-    if user.email.endswith("@edusync.edu.vn"):
-        role = "instructor"
-    else:
-        role = "learner"
+    # nếu không truyền role thì fallback
+    if not role:
+        role = "instructor" if user.email.endswith("@edusync.edu.vn") else "learner"
 
     new_user = {
         "name": user.name,
@@ -32,12 +30,16 @@ def register(user):
         "role": role
     }
 
-    create_user(new_user)
+    user_id = create_user(new_user)
 
-    return {"message": "User registered successfully"}
+    return {
+        "message": "User registered successfully",
+        "user_id": user_id
+    }
 
 
-def login(user, required_role=None):
+
+def login(user, role=None):
 
     db_user = get_user_by_email(user.email)
 
@@ -47,7 +49,8 @@ def login(user, required_role=None):
     if not verify_password(user.password, db_user["password"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    if required_role and db_user.get("role") != required_role:
+    # check role
+    if role and db_user["role"] != role:
         raise HTTPException(status_code=403, detail="Unauthorized role")
 
     token = create_access_token({
@@ -62,16 +65,15 @@ def login(user, required_role=None):
     }
 
 
+
+
 def update_user_role(user_id, role):
 
-    #  validate role
     if role not in ["admin", "instructor", "learner"]:
         raise HTTPException(status_code=400, detail="Invalid role")
 
-    #  update DB
-    result = update_user_role_repo(user_id, role)
+    result = update_user_role_repo(ObjectId(user_id), role)
 
-    #  check có update thành công không
     if result.modified_count == 0:
         raise HTTPException(status_code=404, detail="User not found or role unchanged")
 
