@@ -9,6 +9,7 @@ import CourseLearningWorkspace from "../pages/Learner/PlayVideo";
 import LearnerFavoritesPage from "../pages/Learner/FavoriteVideo";
 import LearnerMyCoursesPage from "../pages/Learner/MyCourse";
 import LearnerCheckoutPage from "../pages/Learner/Check";
+import LearnerProfilePage from "../pages/Learner/ProfilePage";
 
 const LearnerRoutes = () => {
   return (
@@ -20,6 +21,7 @@ const LearnerRoutes = () => {
         <Route path="courses" element={<LearnerCoursesPage />} />
         <Route path="my-courses" element={<LearnerMyCoursesPage />} />
         <Route path="checkout" element={<LearnerCheckoutPage />} />
+        <Route path="profile" element={<LearnerProfilePage />} />
         <Route path="courses/:courseId" element={<CourseDetailPage />} />
         <Route
           path="courses/:courseId/lessons/:lessonId"
