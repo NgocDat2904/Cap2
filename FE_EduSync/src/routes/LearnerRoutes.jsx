@@ -6,6 +6,9 @@ import EduSyncHome from "../pages/Learner/Home";
 import LearnerCoursesPage from "../pages/Learner/Courses";
 import CourseDetailPage from "../pages/Learner/CourseDetail";
 import CourseLearningWorkspace from "../pages/Learner/PlayVideo";
+import LearnerFavoritesPage from "../pages/Learner/FavoriteVideo";
+import LearnerMyCoursesPage from "../pages/Learner/MyCourse";
+import LearnerCheckoutPage from "../pages/Learner/Check";
 
 const LearnerRoutes = () => {
   return (
@@ -15,11 +18,14 @@ const LearnerRoutes = () => {
         {/* Đường dẫn thực tế sẽ là /learner/home */}
         <Route path="home" element={<EduSyncHome />} />
         <Route path="courses" element={<LearnerCoursesPage />} />
+        <Route path="my-courses" element={<LearnerMyCoursesPage />} />
+        <Route path="checkout" element={<LearnerCheckoutPage />} />
         <Route path="courses/:courseId" element={<CourseDetailPage />} />
         <Route
           path="courses/:courseId/lessons/:lessonId"
           element={<CourseLearningWorkspace />}
         />
+        <Route path="favorites" element={<LearnerFavoritesPage />} />
       </Route>{" "}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />
