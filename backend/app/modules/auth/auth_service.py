@@ -1,4 +1,3 @@
-from fastapi import HTTPException
 from app.modules.auth.auth_repository import create_user, get_user_by_email
 from app.utils.password import hash_password, verify_password
 from app.utils.jwt import create_access_token
@@ -37,8 +36,6 @@ def register(user, role=None):
         "user_id": user_id
     }
 
-
-
 def login(user, role=None):
 
     db_user = get_user_by_email(user.email)
@@ -63,7 +60,6 @@ def login(user, role=None):
         "access_token": token,
         "token_type": "bearer"
     }
-
 
 
 
