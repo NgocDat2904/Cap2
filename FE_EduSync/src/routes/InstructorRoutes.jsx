@@ -8,6 +8,7 @@ import InstructorCourseViewPage from "../pages/Instructor/MyCourseView";
 import InstructorCourseEditPage from "../pages/Instructor/EditCourse";
 import InstructorStudentsPage from "../pages/Instructor/StudentsPage";
 import InstructorDashboardPage from "../pages/Instructor/DashboardPage";
+import InstructorProfilePage from "../pages/Instructor/ProfilePage";
 
 const InstructorRoutes = () => {
   return (
@@ -32,6 +33,7 @@ const InstructorRoutes = () => {
           path="courses/:courseId/edit"
           element={<InstructorCourseEditPage />}
         />
+        <Route path="account" element={<InstructorProfilePage />} />
       </Route>
       <Route path="login" element={<InstructorLoginPage />} />
       <Route path="register" element={<InstructorRegisterPage />} />
