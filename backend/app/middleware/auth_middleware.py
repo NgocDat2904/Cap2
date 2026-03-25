@@ -19,6 +19,11 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
+    # 🔥 FIX ObjectId + bảo mật
+    user["id"] = str(user["_id"])
+    user.pop("_id", None)
+    user.pop("password", None)
+
     return user
 
 
