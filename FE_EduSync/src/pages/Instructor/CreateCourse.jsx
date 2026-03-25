@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSave,
@@ -12,38 +12,66 @@ import {
   faGraduationCap,
   faEarthAmericas,
   faLock,
+  faChevronDown, // Bổ sung icon
+  faSearch, // Bổ sung icon
 } from "@fortawesome/free-solid-svg-icons";
 
-const InstructorCreateCourse = () => {
-  // =========================================================================
-  // 1. STATE QUẢN LÝ TAB (Chuyển đổi giữa Thông tin cơ bản và Setting)
-  // =========================================================================
-  const [activeTab, setActiveTab] = useState("basic"); // 'basic' hoặc 'settings'
+// =========================================================================
+// MOCK DATA: DANH MỤC PHÂN CẤP (Lấy từ Backend)
+// =========================================================================
+const CATEGORY_GROUPS = [
+  {
+    groupName: "💻 NHÓM NGÀNH LẬP TRÌNH",
+    categories: [
+      { id: "fe", name: "Lập trình Web Frontend" },
+      { id: "be", name: "Lập trình Web Backend" },
+      { id: "mobile", name: "Lập trình Di động (React Native/Flutter)" },
+    ],
+  },
+  {
+    groupName: "🤖 NHÓM NGÀNH DỮ LIỆU & AI",
+    categories: [
+      { id: "ai", name: "Trí tuệ nhân tạo (AI & Machine Learning)" },
+      { id: "data_analysis", name: "Phân tích Dữ liệu (Data Analysis)" },
+      { id: "data_engineer", name: "Kỹ thuật Dữ liệu (Data Engineering)" },
+    ],
+  },
+  {
+    groupName: "🎨 NHÓM NGÀNH THIẾT KẾ & SẢN PHẨM",
+    categories: [
+      { id: "uiux", name: "Thiết kế UI/UX" },
+      { id: "ba", name: "Phân tích Nghiệp vụ (BA)" },
+    ],
+  },
+];
 
-  // =========================================================================
-  // 2. STATE QUẢN LÝ DỮ LIỆU KHÓA HỌC CHUNG (Cập nhật thêm Setting)
-  // =========================================================================
+const InstructorCreateCourse = () => {
+  const [activeTab, setActiveTab] = useState("basic");
+
   const [courseInfo, setCourseInfo] = useState({
     title: "",
     description: "",
-    category: "",
+    category: "", // Sẽ lưu ID của category (vd: 'fe', 'ai')
     price: "",
-    // --- Các trường dành cho Setting ---
-    prerequisites: "", // Yêu cầu đầu vào
-    enableQA: true, // Bật/tắt Hỏi đáp
-    visibility: "public", // 'public' (Công khai) hoặc 'private' (Riêng tư)
+    prerequisites: "",
+    enableQA: true,
+    visibility: "public",
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
+  // --- STATE DÀNH RIÊNG CHO DROPDOWN CHUYÊN NGÀNH ---
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categorySearch, setCategorySearch] = useState("");
+  const dropdownRef = useRef(null); // Dùng để bắt sự kiện click ra ngoài
+
   const fileInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
 
   // =========================================================================
-  // 3. CÁC HÀM XỬ LÝ SỰ KIỆN
+  // XỬ LÝ SỰ KIỆN CHUNG
   // =========================================================================
-
   const handleCourseInfoChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCourseInfo((prev) => ({
@@ -60,9 +88,7 @@ const InstructorCreateCourse = () => {
     }
   };
 
-  const handleVideoUploadClick = () => {
-    fileInputRef.current.click();
-  };
+  const handleVideoUploadClick = () => fileInputRef.current.click();
 
   const handleVideoFileChange = (e) => {
     const files = Array.from(e.target.files);
@@ -93,11 +119,10 @@ const InstructorCreateCourse = () => {
     setUploadedVideos((prev) => prev.filter((video) => video.id !== id));
   };
 
-  // Hàm Submit Form có kèm tham số trạng thái (Draft hoặc Published)
   const handleSaveCourse = (status) => {
     const finalCourseData = {
       ...courseInfo,
-      status: status, // "draft" hoặc "published"
+      status: status,
       thumbnail: thumbnailPreview ? "Có ảnh bìa" : "Chưa có ảnh bìa",
       videos: uploadedVideos,
     };
@@ -111,11 +136,45 @@ const InstructorCreateCourse = () => {
   };
 
   // =========================================================================
-  // 4. RENDER GIAO DIỆN
+  // LOGIC CHO CUSTOM SEARCHABLE DROPDOWN
+  // =========================================================================
+
+  // Tự động đóng Dropdown khi click ra ngoài vùng của nó
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsCategoryOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Hàm lọc danh mục dựa trên từ khóa tìm kiếm
+  const filteredCategoryGroups = CATEGORY_GROUPS.map((group) => {
+    return {
+      ...group,
+      categories: group.categories.filter((cat) =>
+        cat.name.toLowerCase().includes(categorySearch.toLowerCase()),
+      ),
+    };
+  }).filter((group) => group.categories.length > 0); // Ẩn group nếu không có item nào khớp
+
+  // Lấy tên danh mục đang được chọn để hiển thị ra UI
+  const getSelectedCategoryName = () => {
+    if (!courseInfo.category) return "Tìm và chọn chuyên ngành...";
+    for (const group of CATEGORY_GROUPS) {
+      const found = group.categories.find((c) => c.id === courseInfo.category);
+      if (found) return found.name;
+    }
+    return "";
+  };
+
+  // =========================================================================
+  // RENDER GIAO DIỆN
   // =========================================================================
   return (
     <div className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-slate-50 font-sans min-h-screen">
-      {/* HEADER PAGE */}
       <div className="max-w-4xl mx-auto mb-8">
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
           Tạo Khóa Học Mới
@@ -128,7 +187,6 @@ const InstructorCreateCourse = () => {
       <div className="max-w-4xl mx-auto">
         {/* NÚT ĐIỀU HƯỚNG TAB & NÚT LƯU */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-          {/* Tabs */}
           <div className="flex bg-slate-200/70 p-1 rounded-xl w-full sm:w-auto">
             <button
               onClick={() => setActiveTab("basic")}
@@ -152,7 +210,6 @@ const InstructorCreateCourse = () => {
             </button>
           </div>
 
-          {/* Action Buttons (Chỉ hiện trên PC, Mobile sẽ hiện dưới đáy) */}
           <div className="hidden sm:flex items-center gap-3">
             <button
               onClick={() => handleSaveCourse("draft")}
@@ -171,12 +228,8 @@ const InstructorCreateCourse = () => {
           </div>
         </div>
 
-        {/* ================================================================= */}
-        {/* NỘI DUNG TAB: THÔNG TIN CƠ BẢN */}
-        {/* ================================================================= */}
         {activeTab === "basic" && (
           <div className="space-y-6 animate-fade-slide-up">
-            {/* KHỐI 1: THÔNG TIN CHUNG */}
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
                 <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">
@@ -185,7 +238,6 @@ const InstructorCreateCourse = () => {
                 Thông tin Khóa học
               </h2>
               <div className="space-y-5">
-                {/* Tiêu đề */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">
                     Tiêu đề khóa học <span className="text-red-500">*</span>
@@ -199,41 +251,98 @@ const InstructorCreateCourse = () => {
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium"
                   />
                 </div>
-                {/* Mô tả */}
-                <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Mô tả chi tiết <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    name="description"
-                    rows="4"
-                    placeholder="Khóa học này sẽ giúp bạn..."
-                    value={courseInfo.description}
-                    onChange={handleCourseInfoChange}
-                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium resize-y"
-                  ></textarea>
-                </div>
-                {/* Danh mục & Giá */}
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  <div>
+                  {/* ======================================================= */}
+                  {/* CUSTOM SEARCHABLE DROPDOWN CHUYÊN NGÀNH */}
+                  {/* ======================================================= */}
+                  <div ref={dropdownRef} className="relative">
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                      Danh mục <span className="text-red-500">*</span>
+                      Chuyên ngành <span className="text-red-500">*</span>
                     </label>
-                    <select
-                      name="category"
-                      value={courseInfo.category}
-                      onChange={handleCourseInfoChange}
-                      className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium appearance-none cursor-pointer"
+                    <div
+                      onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                      className={`w-full px-4 py-3 bg-slate-50 border rounded-xl flex items-center justify-between cursor-pointer transition-colors ${
+                        isCategoryOpen
+                          ? "border-blue-500 ring-2 ring-blue-500/20"
+                          : "border-slate-200 hover:border-blue-300"
+                      }`}
                     >
-                      <option value="" disabled>
-                        -- Chọn danh mục --
-                      </option>
-                      <option value="frontend">Lập trình Frontend</option>
-                      <option value="backend">Lập trình Backend</option>
-                      <option value="design">Thiết kế UI/UX</option>
-                      <option value="data">Khoa học dữ liệu</option>
-                    </select>
+                      <span
+                        className={`font-medium ${courseInfo.category ? "text-slate-800" : "text-slate-400"}`}
+                      >
+                        {getSelectedCategoryName()}
+                      </span>
+                      <FontAwesomeIcon
+                        icon={faChevronDown}
+                        className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? "rotate-180" : ""}`}
+                      />
+                    </div>
+
+                    {/* Menu xổ xuống */}
+                    {isCategoryOpen && (
+                      <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-fade-slide-up">
+                        {/* Thanh tìm kiếm */}
+                        <div className="p-3 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
+                          <div className="relative">
+                            <FontAwesomeIcon
+                              icon={faSearch}
+                              className="absolute left-3 top-3 text-slate-400 text-sm"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Tìm chuyên ngành..."
+                              value={categorySearch}
+                              onChange={(e) =>
+                                setCategorySearch(e.target.value)
+                              }
+                              onClick={(e) => e.stopPropagation()} // Ngăn click làm đóng dropdown
+                              className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Danh sách phân cấp */}
+                        <div className="max-h-64 overflow-y-auto p-2 scrollbar-hide">
+                          {filteredCategoryGroups.length > 0 ? (
+                            filteredCategoryGroups.map((group, idx) => (
+                              <div key={idx} className="mb-2 last:mb-0">
+                                <div className="px-3 py-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
+                                  {group.groupName}
+                                </div>
+                                {group.categories.map((cat) => (
+                                  <div
+                                    key={cat.id}
+                                    onClick={() => {
+                                      setCourseInfo({
+                                        ...courseInfo,
+                                        category: cat.id,
+                                      });
+                                      setIsCategoryOpen(false); // Chọn xong thì tự đóng
+                                      setCategorySearch(""); // Xóa thanh tìm kiếm
+                                    }}
+                                    className={`px-3 py-2 mx-1 rounded-lg cursor-pointer text-sm font-medium transition-colors ${
+                                      courseInfo.category === cat.id
+                                        ? "bg-blue-50 text-blue-700"
+                                        : "text-slate-700 hover:bg-slate-100"
+                                    }`}
+                                  >
+                                    {cat.name}
+                                  </div>
+                                ))}
+                              </div>
+                            ))
+                          ) : (
+                            <div className="p-4 text-center text-sm text-slate-500">
+                              Không tìm thấy chuyên ngành nào.
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
+                  {/* ======================================================= */}
+
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">
                       Giá bán khóa học (USD){" "}
@@ -432,9 +541,7 @@ const InstructorCreateCourse = () => {
           </div>
         )}
 
-        {/* ================================================================= */}
         {/* NỘI DUNG TAB: CÀI ĐẶT (SETTINGS) */}
-        {/* ================================================================= */}
         {activeTab === "settings" && (
           <div className="space-y-6 animate-fade-slide-up">
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
@@ -469,9 +576,7 @@ const InstructorCreateCourse = () => {
                 />
                 Hiển thị & Tương tác
               </h2>
-
               <div className="space-y-6">
-                {/* Chọn quyền riêng tư */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-3">
                     Mức độ hiển thị
@@ -537,7 +642,6 @@ const InstructorCreateCourse = () => {
                   </div>
                 </div>
 
-                {/* Bật/tắt Q&A */}
                 <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
                   <div className="flex items-start gap-3">
                     <div className="mt-1 w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
@@ -553,7 +657,6 @@ const InstructorCreateCourse = () => {
                       </p>
                     </div>
                   </div>
-                  {/* Tailwind Toggle Switch */}
                   <label className="relative inline-flex items-center cursor-pointer shrink-0">
                     <input
                       type="checkbox"
@@ -570,23 +673,18 @@ const InstructorCreateCourse = () => {
           </div>
         )}
 
-        {/* ================================================================= */}
-        {/* NÚT LƯU CHO MOBILE (Hiển thị dưới cùng khi ở màn hình nhỏ) */}
-        {/* ================================================================= */}
         <div className="mt-8 sm:hidden flex flex-col gap-3">
           <button
             onClick={() => handleSaveCourse("published")}
             className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95"
           >
-            <FontAwesomeIcon icon={faPaperPlane} />
-            Xuất bản ngay
+            <FontAwesomeIcon icon={faPaperPlane} /> Xuất bản ngay
           </button>
           <button
             onClick={() => handleSaveCourse("draft")}
             className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition duration-300"
           >
-            <FontAwesomeIcon icon={faSave} />
-            Lưu nháp
+            <FontAwesomeIcon icon={faSave} /> Lưu nháp
           </button>
         </div>
       </div>
