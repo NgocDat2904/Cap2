@@ -149,9 +149,6 @@ const InstructorMyCourses = () => {
               <h3 className="font-bold text-xl text-slate-950 mt-2.5 line-clamp-2 leading-tight group-hover:text-blue-700 transition cursor-pointer">
                 {course.title}
               </h3>
-              <p className="text-slate-500 mt-2 text-sm line-clamp-2 font-medium">
-                Master React from zero with our complete, practical guide.
-              </p>
 
               <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 rounded-2xl p-4 mt-6 border border-gray-100 shadow-inner">
                 <div>

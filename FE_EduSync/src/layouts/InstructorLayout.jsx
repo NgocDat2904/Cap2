@@ -11,7 +11,6 @@ import {
   faTableColumns,
   faBookOpen,
   faUsers,
-  faChartBar,
   faGear,
   faUser,
   faArrowRightFromBracket,
@@ -38,7 +37,7 @@ const InstructorLayout = () => {
     { name: "Dashboard", icon: faTableColumns, path: "/instructor/dashboard" },
     { name: "My courses", icon: faBookOpen, path: "/instructor/courses" },
     { name: "Students", icon: faUsers, path: "/instructor/students" },
-    { name: "Performance", icon: faChartBar, path: "/instructor/performance" },
+    // { name: "Performance", icon: faChartBar, path: "/instructor/performance" },
   ];
 
   const bottomLinks = [
@@ -81,7 +80,10 @@ const InstructorLayout = () => {
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hidden md:flex"
           >
-            <FontAwesomeIcon icon={faBars} className="text-lg" />
+            <FontAwesomeIcon
+              icon={faBars}
+              className="text-lg hover:text-blue-600"
+            />
           </button>
 
           {/* Khối Logo: Nhấn mạnh vào chữ EduSync bằng font chữ riêng */}
@@ -116,7 +118,7 @@ const InstructorLayout = () => {
                   <Link
                     to={link.path}
                     onClick={handleLinkClick}
-                    className={`flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
+                    className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
                       ${
                         isActive
                           ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
@@ -127,11 +129,11 @@ const InstructorLayout = () => {
                     title={!isSidebarOpen ? link.name : ""}
                   >
                     <div
-                      className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+                      className={`group-hover:text-blue-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
                     >
                       <FontAwesomeIcon
                         icon={link.icon}
-                        className={`text-lg ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                        className={`group-hover:text-blue-600 transition-all duration-200 text-lg ${isActive ? "text-blue-600 " : "text-slate-400 "}`}
                       />
                     </div>
                     <span
@@ -149,33 +151,44 @@ const InstructorLayout = () => {
           <div className="my-6 border-t border-slate-100 mx-2"></div>
 
           <ul className="space-y-1.5">
-            {bottomLinks.map((link) => (
-              <li key={link.name}>
-                <Link
-                  to={link.path}
-                  onClick={handleLinkClick}
-                  className={`flex items-center py-3 text-sm font-semibold text-slate-500 hover:bg-slate-50 hover:text-blue-600 rounded-xl transition-all duration-200
-                    ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
-                  `}
-                  title={!isSidebarOpen ? link.name : ""}
-                >
-                  <div
-                    className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+            {bottomLinks.map((link) => {
+              // 1. THÊM BIẾN KIỂM TRA ACTIVE GIỐNG HỆT Ở MENU TRÊN
+              const isActive = location.pathname.includes(link.path);
+
+              return (
+                <li key={link.name}>
+                  <Link
+                    to={link.path}
+                    onClick={handleLinkClick}
+                    className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
+                      ${
+                        isActive
+                          ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
+                          : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
+                      }
+                      ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
+                    `}
+                    title={!isSidebarOpen ? link.name : ""}
                   >
-                    <FontAwesomeIcon
-                      icon={link.icon}
-                      className="text-lg text-slate-400"
-                    />
-                  </div>
-                  <span
-                    className={`whitespace-nowrap transition-all duration-300 
-                    ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
-                  >
-                    {link.name}
-                  </span>
-                </Link>
-              </li>
-            ))}
+                    <div
+                      className={`group-hover:text-blue-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+                    >
+                      <FontAwesomeIcon
+                        icon={link.icon}
+                        // 3. ĐỔI MÀU CẢ CÁI ICON KHI ACTIVE LUÔN
+                        className={`group-hover:text-blue-600 transition-all duration-200 text-lg ${isActive ? "text-blue-600" : "text-slate-400"}`}
+                      />
+                    </div>
+                    <span
+                      className={`whitespace-nowrap transition-all duration-300 
+                      ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                    >
+                      {link.name}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
           {/* Đăng xuất */}
@@ -183,17 +196,17 @@ const InstructorLayout = () => {
             <Link
               to="/logout"
               onClick={handleLinkClick}
-              className={`flex items-center py-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200
+              className={`group flex items-center py-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200
               ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
             `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
             >
               <div
-                className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+                className={`group-hover:text-red-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
               >
                 <FontAwesomeIcon
                   icon={faArrowRightFromBracket}
-                  className="text-lg text-slate-400"
+                  className="text-lg text-slate-400 group-hover:text-red-600 transition-all duration-200"
                 />
               </div>
               <span
