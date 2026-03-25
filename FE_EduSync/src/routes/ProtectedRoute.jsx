@@ -1,6 +1,7 @@
 // file này đóng vai trò bảo vệ , check xem người dùng đã đăng nhập chưa, nếu chưa thì đá văng về trang login
 
 import { Navigate, Outlet } from "react-router-dom";
+import LearnerRoutes from "./LearnerRoutes";
 
 const ProtectedRoute = () => {
   // 1. Kiểm tra xem trong bộ nhớ trình duyệt đã có vé (access_token) chưa

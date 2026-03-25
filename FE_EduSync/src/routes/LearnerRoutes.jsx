@@ -15,36 +15,28 @@ const LearnerRoutes = () => {
   return (
     <Routes>
       {/* 1. CỤM CÓ LAYOUT (Bị bọc bởi khung LearnerLayout) */}
-      <Route element={<LearnerLayout />}>
-        {/* Đường dẫn thực tế sẽ là /learner/home */}
-        <Route path="home" element={<EduSyncHome />} />
-        <Route path="courses" element={<LearnerCoursesPage />} />
-        <Route path="my-courses" element={<LearnerMyCoursesPage />} />
-        <Route path="checkout" element={<LearnerCheckoutPage />} />
-        <Route path="profile" element={<LearnerProfilePage />} />
-        <Route path="courses/:courseId" element={<CourseDetailPage />} />
-        <Route
-          path="courses/:courseId/lessons/:lessonId"
-          element={<CourseLearningWorkspace />}
-        />
-        <Route path="favorites" element={<LearnerFavoritesPage />} />
-      </Route>{" "}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />
       {/* ========================================== */}
       {/* VÙNG CẤM: Bắt buộc phải đăng nhập mới được vào */}
       {/* ========================================== */}
       {/* 2. Dùng ProtectedRoute để khóa nguyên cái khu vực này lại */}
-      {/* <Route element={<ProtectedRoute />}>
-        
+      <Route element={<ProtectedRoute />}>
         <Route element={<LearnerLayout />}>
-          
-          <Route path="/home" element={<div className="p-4 text-xl">Đây là trang chủ Learner</div>} />
-          <Route path="/courses" element={<div className="p-4 text-xl">Khóa học của tôi</div>} />
-          <Route path="/favorites" element={<div className="p-4 text-xl">Video yêu thích</div>} />
-          
+          {/* Đường dẫn thực tế sẽ là /learner/home */}
+          <Route path="home" element={<EduSyncHome />} />
+          <Route path="courses" element={<LearnerCoursesPage />} />
+          <Route path="my-courses" element={<LearnerMyCoursesPage />} />
+          <Route path="checkout" element={<LearnerCheckoutPage />} />
+          <Route path="profile" element={<LearnerProfilePage />} />
+          <Route path="courses/:courseId" element={<CourseDetailPage />} />
+          <Route
+            path="courses/:courseId/lessons/:lessonId"
+            element={<CourseLearningWorkspace />}
+          />
+          <Route path="favorites" element={<LearnerFavoritesPage />} />
         </Route>
-      </Route> */}
+      </Route>
     </Routes>
   );
 };
