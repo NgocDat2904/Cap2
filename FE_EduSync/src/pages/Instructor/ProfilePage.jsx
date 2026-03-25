@@ -12,7 +12,6 @@ import {
   faUserEdit,
   faLink,
   faCheckCircle,
-  faStar,
   faUsers,
   faBook,
   faGear,
@@ -197,12 +196,7 @@ const InstructorProfilePage = () => {
                 value={profileData.totalStudents.toLocaleString()}
                 color="text-blue-600"
               />
-              <MetricCard
-                icon={faStar}
-                label="Đánh giá"
-                value={`${profileData.avgRating} / 5.0`}
-                color="text-amber-500"
-              />
+
               <MetricCard
                 icon={faBook}
                 label="Khóa học"

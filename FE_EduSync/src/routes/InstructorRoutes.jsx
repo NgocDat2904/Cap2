@@ -9,6 +9,7 @@ import InstructorCourseEditPage from "../pages/Instructor/EditCourse";
 import InstructorStudentsPage from "../pages/Instructor/StudentsPage";
 import InstructorDashboardPage from "../pages/Instructor/DashboardPage";
 import InstructorProfilePage from "../pages/Instructor/ProfilePage";
+// import ForceChangePassword from "../pages/Instructor/ForceChangePassword";
 
 const InstructorRoutes = () => {
   return (
@@ -34,6 +35,7 @@ const InstructorRoutes = () => {
           element={<InstructorCourseEditPage />}
         />
         <Route path="account" element={<InstructorProfilePage />} />
+        {/* <Route path="force-change-password" element={<ForceChangePassword />} /> */}
       </Route>
       <Route path="login" element={<InstructorLoginPage />} />
       <Route path="register" element={<InstructorRegisterPage />} />
