@@ -17,7 +17,7 @@ def create_user(user: dict):
     return db.users.insert_one(user)
 
 
-# 🔄 Update role (dùng cho admin)
+# 🔄 Update role
 def update_role(user_id: str, role: str):
     return db.users.update_one(
         {"_id": ObjectId(user_id)},
@@ -25,7 +25,7 @@ def update_role(user_id: str, role: str):
     )
 
 
-# 📝 Update thông tin user (optional - dùng sau)
+# 📝 Update user
 def update_user(user_id: str, data: dict):
     return db.users.update_one(
         {"_id": ObjectId(user_id)},
@@ -33,6 +33,6 @@ def update_user(user_id: str, data: dict):
     )
 
 
-# ❌ Xóa user (optional)
+# ❌ Delete
 def delete_user(user_id: str):
     return db.users.delete_one({"_id": ObjectId(user_id)})
