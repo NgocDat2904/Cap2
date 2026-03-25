@@ -14,7 +14,7 @@ def seed_admin():
     existing = get_user_by_email(admin_email)
 
     if existing:
-        print("⚠️ Admin already exists")
+        print(" Admin already exists")
         return
 
     hashed_password = hash_password(admin_password)
