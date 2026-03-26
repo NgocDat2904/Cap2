@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faUserCircle,
@@ -7,34 +7,68 @@ import {
   faVenusMars,
   faPhone,
   faMapMarkerAlt,
-  faGraduationCap,
-  faBriefcase,
   faLock,
   faSave,
   faEnvelope,
-  faPencilAlt,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
-import { faLinkedin, faGithub } from "@fortawesome/free-brands-svg-icons";
+import { getProfileAPI, updateProfileAPI } from "../../services/userAPI";
 
 const LearnerProfilePage = () => {
-  // Mock dữ liệu ban đầu (lấy từ Backend)
+  // 1. STATE QUẢN LÝ DỮ LIỆU & TRẠNG THÁI
   const [profileData, setProfileData] = useState({
-    fullName: "Mến Nguyễn",
-    email: "mennguyen.student@gmail.com", // Read-only
+    fullname: "",
+    email: "",
     avatarUrl: "https://i.pravatar.cc/150?img=11",
     phone: "",
-    dob: "2002-10-15",
-    gender: "female",
-    address: "Đà Nẵng, Việt Nam",
-    // specializedField: "Frontend Development",
-    learningGoal: "Tìm việc làm Senior Frontend trong 1 năm tới",
-    linkedin: "https://linkedin.com/in/mennguyen",
-    github: "https://github.com/mennguyen-dev",
-    profileCompletion: 65, // % hoàn thiện (Backend tính toán)
+    dob: "",
+    gender: "",
+    address: "",
   });
 
-  const [activeTab, setActiveTab] = useState("personal"); // 'personal', 'education', 'security'
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false); // Trạng thái đang lưu API
+  const [activeTab, setActiveTab] = useState("personal");
   const fileInputRef = useRef(null);
+
+  // 1. GỌI API LÚC VỪA VÀO TRANG (GET)
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        // Code cũ dùng fetch dài dòng, code mới siêu gọn:
+        const data = await getProfileAPI(token);
+        setProfileData((prev) => ({ ...prev, ...data }));
+      } catch (error) {
+        console.error("Lỗi lấy hồ sơ:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfileData();
+  }, []);
+
+  // 2. GỌI API KHI BẤM NÚT LƯU (PUT)
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+
+    try {
+      const token = localStorage.getItem("access_token");
+
+      // Chuyền data và token vào hàm API
+      await updateProfileAPI(profileData, token);
+
+      alert("Hồ sơ của bạn đã được cập nhật thành công!");
+    } catch (error) {
+      console.error("Lỗi lưu hồ sơ:", error);
+      alert("Lưu thất bại.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // Xử lý thay đổi input
   const handleInputChange = (e) => {
@@ -42,11 +76,8 @@ const LearnerProfilePage = () => {
     setProfileData({ ...profileData, [name]: value });
   };
 
-  // Giả lập upload Avatar
-  const handleAvatarClick = () => {
-    fileInputRef.current.click();
-  };
-
+  // Giả lập upload Avatar (Thực tế mẹ sẽ cần gọi API upload ảnh lên Cloudinary/S3)
+  const handleAvatarClick = () => fileInputRef.current.click();
   const handleFileChange = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -58,15 +89,22 @@ const LearnerProfilePage = () => {
     }
   };
 
-  // Giả lập lưu hồ sơ
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    alert(
-      "Hồ sơ của bạn đã được cập nhật thành công! AI của EduSync đang tối ưu lộ trình cho bạn nhé! ✨",
+  // HIỂN THỊ MÀN HÌNH CHỜ NẾU API GET CHƯA TRẢ VỀ XONG
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen w-full bg-slate-50 text-slate-400">
+        <FontAwesomeIcon
+          icon={faSpinner}
+          className="text-4xl animate-spin text-blue-500 mb-4"
+        />
+        <p className="font-bold">Đang tải hồ sơ của bạn...</p>
+      </div>
     );
-    // Gọi API lưu dữ liệu tại đây
-  };
+  }
 
+  // =========================================================================
+  // 4. RENDER GIAO DIỆN CHÍNH (Giữ nguyên UI xịn xò của mẹ)
+  // =========================================================================
   return (
     <main className="animate-fade-slide-up w-full pb-16">
       <div className="p-4 sm:p-6 lg:p-8 relative">
@@ -82,10 +120,15 @@ const LearnerProfilePage = () => {
           </div>
           <button
             onClick={handleSaveProfile}
-            className="px-6 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:scale-95"
+            disabled={isSaving}
+            className={`px-6 py-3 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 hover:-translate-y-0.5 active:scale-95 ${isSaving ? "opacity-75 cursor-not-allowed" : ""}`}
           >
-            <FontAwesomeIcon icon={faSave} />
-            Lưu thay đổi
+            {isSaving ? (
+              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+            ) : (
+              <FontAwesomeIcon icon={faSave} />
+            )}
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
 
@@ -93,9 +136,7 @@ const LearnerProfilePage = () => {
         <div className="flex flex-col lg:flex-row gap-8 items-start relative z-10">
           {/* CỘT TRÁI: TỔNG QUAN HỒ SƠ & GAMIFICATION */}
           <div className="w-full lg:w-1/3 space-y-8 sticky top-24 relative z-10">
-            {/* Card thông tin chính */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center relative overflow-visible">
-              {/* Vùng Avatar & Nút Camera */}
               <div className="relative inline-block mb-6">
                 <img
                   src={profileData.avatarUrl}
@@ -118,13 +159,11 @@ const LearnerProfilePage = () => {
                 />
               </div>
               <h2 className="text-2xl font-black text-slate-900">
-                {profileData.fullName}
+                {profileData.name || "Học viên EduSync"}
               </h2>
-              {/* <p className="text-sm font-semibold text-blue-700 mt-2 px-4 py-1.5 bg-blue-50 rounded-full inline-block leading-normal">
-                {profileData.specializedField}
-              </p> */}
+
               <div className="border-t border-slate-100 my-8"></div>
-              {/* Email (Read-only) */}
+
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left">
                 <FontAwesomeIcon
                   icon={faEnvelope}
@@ -144,37 +183,6 @@ const LearnerProfilePage = () => {
 
           {/* CỘT PHẢI: CHI TIẾT CÀI ĐẶT (TABS) */}
           <div className="w-full lg:w-2/3 space-y-8 relative z-0">
-            {/* Vùng Gamification: Hoàn thiện hồ sơ */}
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row items-center gap-6 group hover:shadow-lg hover:border-blue-100 transition-all">
-              <div className="w-24 h-24 rounded-full bg-slate-50 border-4 border-slate-100 flex items-center justify-center text-4xl text-slate-300 group-hover:bg-blue-50 group-hover:border-blue-100 group-hover:text-blue-500 transition-colors shrink-0">
-                <FontAwesomeIcon icon={faPencilAlt} />
-              </div>
-              <div className="flex-1 w-full text-center md:text-left">
-                <div className="flex justify-between items-end mb-2">
-                  <h4 className="text-slate-900 font-bold text-lg">
-                    Hoàn thiện hồ sơ để nhận lộ trình AI chuẩn nhất
-                  </h4>
-                  <span className="text-blue-600 font-black text-2xl">
-                    {profileData.profileCompletion}%
-                  </span>
-                </div>
-                {/* Thanh tiến độ */}
-                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden mb-3">
-                  <div
-                    className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-                    style={{ width: `${profileData.profileCompletion}%` }}
-                  ></div>
-                </div>
-                <p className="text-sm text-slate-500 font-medium">
-                  Bạn còn thiếu{" "}
-                  <span className="font-bold text-slate-700">
-                    Số điện thoại
-                  </span>
-                  . Cập nhật ngay nhé!
-                </p>
-              </div>
-            </div>
-
             {/* Khối Tabs Form Chi tiết */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-visible relative z-0">
               <div className="border-b border-slate-100 flex overflow-x-auto scrollbar-hide">
@@ -184,17 +192,12 @@ const LearnerProfilePage = () => {
                     label: "Thông tin cá nhân",
                     icon: faUserCircle,
                   },
-
                   { id: "security", label: "Cài đặt tài khoản", icon: faLock },
                 ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-3 px-6 py-5 text-sm font-bold border-b-2 whitespace-nowrap transition-colors shrink-0 ${
-                      activeTab === tab.id
-                        ? "border-blue-600 text-blue-700"
-                        : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200"
-                    }`}
+                    className={`flex items-center gap-3 px-6 py-5 text-sm font-bold border-b-2 whitespace-nowrap transition-colors shrink-0 ${activeTab === tab.id ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-200"}`}
                   >
                     <FontAwesomeIcon icon={tab.icon} className="text-lg" />
                     {tab.label}
@@ -202,9 +205,8 @@ const LearnerProfilePage = () => {
                 ))}
               </div>
 
-              {/* NỘI DUNG CÁC TAB (Form Input) */}
+              {/* NỘI DUNG CÁC TAB */}
               <div className="p-6 sm:p-8 space-y-8 animate-fade-slide-up">
-                {/* TAB 1: THÔNG TIN CÁ NHÂN (Có Ngày sinh, Giới tính) */}
                 {activeTab === "personal" && (
                   <form className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6">
                     <div>
@@ -220,10 +222,9 @@ const LearnerProfilePage = () => {
                         name="fullName"
                         value={profileData.fullName}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500Transition-colors"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       />
                     </div>
-                    {/* INPUT NGÀY SINH (NEW) */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
                         <FontAwesomeIcon
@@ -237,10 +238,9 @@ const LearnerProfilePage = () => {
                         name="dob"
                         value={profileData.dob}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500Transition-colors"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       />
                     </div>
-                    {/* INPUT GIỚI TÍNH (NEW) */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
                         <FontAwesomeIcon
@@ -253,7 +253,7 @@ const LearnerProfilePage = () => {
                         name="gender"
                         value={profileData.gender}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 Transition-colors appearance-none cursor-pointer"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors appearance-none cursor-pointer"
                       >
                         <option value="">Chọn giới tính</option>
                         <option value="male">Nam</option>
@@ -261,14 +261,13 @@ const LearnerProfilePage = () => {
                         <option value="other">Khác</option>
                       </select>
                     </div>
-                    {/* INPUT SỐ ĐIỆN THOẠI (CRITICAL FIELD - GÂY FRICTION) */}
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
                         <FontAwesomeIcon
                           icon={faPhone}
-                          className="text-red-400"
+                          className="text-slate-400"
                         />{" "}
-                        Số điện thoại (!)
+                        Số điện thoại
                       </label>
                       <input
                         type="tel"
@@ -276,11 +275,8 @@ const LearnerProfilePage = () => {
                         value={profileData.phone}
                         onChange={handleInputChange}
                         placeholder="+84 905 123 456"
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 Transition-colors border-red-100"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       />
-                      <p className="text-[10px] text-red-500 mt-1 font-medium">
-                        Bổ sung ngay để bảo mật tài khoản và đạt 100% hồ sơ.
-                      </p>
                     </div>
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
@@ -295,92 +291,12 @@ const LearnerProfilePage = () => {
                         name="address"
                         value={profileData.address}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500Transition-colors"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
                       />
                     </div>
                   </form>
                 )}
 
-                {/* TAB 2: LỘ TRÌNH & MỤC TIÊU */}
-                {activeTab === "education" && (
-                  <form className="space-y-6">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
-                        <FontAwesomeIcon
-                          icon={faGraduationCap}
-                          className="text-slate-400"
-                        />{" "}
-                        Chuyên ngành quan tâm / Lộ trình AI
-                      </label>
-                      <input
-                        type="text"
-                        name="specializedField"
-                        value={profileData.specializedField}
-                        onChange={handleInputChange}
-                        placeholder="Ví dụ: Frontend, Data Science..."
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500Transition-colors"
-                      />
-                      <p className="text-xs text-slate-400 mt-2">
-                        EduSync sẽ dùng thông tin này để gợi ý các khóa học phù
-                        hợp nhất.
-                      </p>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
-                        <FontAwesomeIcon
-                          icon={faBriefcase}
-                          className="text-slate-400"
-                        />{" "}
-                        Mục tiêu học tập của bạn
-                      </label>
-                      <textarea
-                        name="learningGoal"
-                        value={profileData.learningGoal}
-                        onChange={handleInputChange}
-                        rows="4"
-                        className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:ring-2 focus:ring-blue-500 Transition-colors"
-                      ></textarea>
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2.5 text-[#0077B5]">
-                          <FontAwesomeIcon
-                            icon={faLinkedin}
-                            className="text-base w-5 shrink-0"
-                          />{" "}
-                          Hồ sơ LinkedIn
-                        </label>
-                        <input
-                          type="url"
-                          name="linkedin"
-                          value={profileData.linkedin}
-                          onChange={handleInputChange}
-                          placeholder="https://linkedin.com/in/..."
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500Transition-colors"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2.5 text-[#181717]">
-                          <FontAwesomeIcon
-                            icon={faGithub}
-                            className="text-base w-5 shrink-0"
-                          />{" "}
-                          Tài khoản GitHub
-                        </label>
-                        <input
-                          type="url"
-                          name="github"
-                          value={profileData.github}
-                          onChange={handleInputChange}
-                          placeholder="https://github.com/..."
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500Transition-colors"
-                        />
-                      </div>
-                    </div>
-                  </form>
-                )}
-
-                {/* TAB 3: CÀI ĐẶT TÀI KHOẢN (ĐỔI MẬT KHẨU) */}
                 {activeTab === "security" && (
                   <div className="space-y-8">
                     <div>
@@ -389,7 +305,7 @@ const LearnerProfilePage = () => {
                           icon={faLock}
                           className="text-amber-500"
                         />{" "}
-                        Thay đổi mật khẩu tài khoản
+                        Thay đổi mật khẩu
                       </h3>
                       <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                         <div className="sm:col-span-2 relative">
@@ -399,7 +315,7 @@ const LearnerProfilePage = () => {
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 Transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
                           />
                         </div>
                         <div className="relative">
@@ -409,21 +325,24 @@ const LearnerProfilePage = () => {
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 Transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
                           />
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Xác nhận mật khẩu mới
+                            Xác nhận mật khẩu
                           </label>
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 Transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
                           />
                         </div>
                         <div className="sm:col-span-2 flex justify-end">
-                          <button className="px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 Transition-all active:scale-95 flex items-center gap-2.5">
+                          <button
+                            type="button"
+                            className="px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 transition-all active:scale-95 flex items-center gap-2.5"
+                          >
                             Cập nhật mật khẩu an toàn
                           </button>
                         </div>
