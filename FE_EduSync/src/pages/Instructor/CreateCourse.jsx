@@ -12,37 +12,22 @@ import {
   faGraduationCap,
   faEarthAmericas,
   faLock,
-  faChevronDown, // Bổ sung icon
-  faSearch, // Bổ sung icon
+  faChevronDown,
+  faSearch,
 } from "@fortawesome/free-solid-svg-icons";
 
 // =========================================================================
-// MOCK DATA: DANH MỤC PHÂN CẤP (Lấy từ Backend)
+// MOCK DATA: DANH MỤC PHẲNG (Lấy từ Backend)
 // =========================================================================
-const CATEGORY_GROUPS = [
-  {
-    groupName: "💻 NHÓM NGÀNH LẬP TRÌNH",
-    categories: [
-      { id: "fe", name: "Lập trình Web Frontend" },
-      { id: "be", name: "Lập trình Web Backend" },
-      { id: "mobile", name: "Lập trình Di động (React Native/Flutter)" },
-    ],
-  },
-  {
-    groupName: "🤖 NHÓM NGÀNH DỮ LIỆU & AI",
-    categories: [
-      { id: "ai", name: "Trí tuệ nhân tạo (AI & Machine Learning)" },
-      { id: "data_analysis", name: "Phân tích Dữ liệu (Data Analysis)" },
-      { id: "data_engineer", name: "Kỹ thuật Dữ liệu (Data Engineering)" },
-    ],
-  },
-  {
-    groupName: "🎨 NHÓM NGÀNH THIẾT KẾ & SẢN PHẨM",
-    categories: [
-      { id: "uiux", name: "Thiết kế UI/UX" },
-      { id: "ba", name: "Phân tích Nghiệp vụ (BA)" },
-    ],
-  },
+const categories = [
+  { id: "frontend", name: "Frontend Web Development" },
+  { id: "backend", name: "Backend Web Development" },
+  { id: "mobile", name: "Mobile Programming" },
+  { id: "ai", name: "AI & Machine Learning" },
+  { id: "data_analysis", name: "Data Analysis" },
+  { id: "data_engineer", name: "Data Engineering" },
+  { id: "uiux", name: "UI/UX Design" },
+  { id: "ba", name: "Business Analysis" },
 ];
 
 const InstructorCreateCourse = () => {
@@ -51,7 +36,7 @@ const InstructorCreateCourse = () => {
   const [courseInfo, setCourseInfo] = useState({
     title: "",
     description: "",
-    category: "", // Sẽ lưu ID của category (vd: 'fe', 'ai')
+    category: "", // Sẽ lưu ID của category (vd: 'frontend', 'ai')
     price: "",
     prerequisites: "",
     enableQA: true,
@@ -64,7 +49,7 @@ const InstructorCreateCourse = () => {
   // --- STATE DÀNH RIÊNG CHO DROPDOWN CHUYÊN NGÀNH ---
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [categorySearch, setCategorySearch] = useState("");
-  const dropdownRef = useRef(null); // Dùng để bắt sự kiện click ra ngoài
+  const dropdownRef = useRef(null);
 
   const fileInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
@@ -136,10 +121,9 @@ const InstructorCreateCourse = () => {
   };
 
   // =========================================================================
-  // LOGIC CHO CUSTOM SEARCHABLE DROPDOWN
+  // LOGIC CHO CUSTOM SEARCHABLE DROPDOWN (MẢNG 1 CHIỀU)
   // =========================================================================
 
-  // Tự động đóng Dropdown khi click ra ngoài vùng của nó
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -150,24 +134,16 @@ const InstructorCreateCourse = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Hàm lọc danh mục dựa trên từ khóa tìm kiếm
-  const filteredCategoryGroups = CATEGORY_GROUPS.map((group) => {
-    return {
-      ...group,
-      categories: group.categories.filter((cat) =>
-        cat.name.toLowerCase().includes(categorySearch.toLowerCase()),
-      ),
-    };
-  }).filter((group) => group.categories.length > 0); // Ẩn group nếu không có item nào khớp
+  // Lọc trực tiếp trên mảng 1 chiều
+  const filteredCategories = categories.filter((cat) =>
+    cat.name.toLowerCase().includes(categorySearch.toLowerCase()),
+  );
 
-  // Lấy tên danh mục đang được chọn để hiển thị ra UI
+  // Lấy tên hiển thị
   const getSelectedCategoryName = () => {
     if (!courseInfo.category) return "Tìm và chọn chuyên ngành...";
-    for (const group of CATEGORY_GROUPS) {
-      const found = group.categories.find((c) => c.id === courseInfo.category);
-      if (found) return found.name;
-    }
-    return "";
+    const found = categories.find((c) => c.id === courseInfo.category);
+    return found ? found.name : "Tìm và chọn chuyên ngành...";
   };
 
   // =========================================================================
@@ -269,13 +245,13 @@ const InstructorCreateCourse = () => {
                       }`}
                     >
                       <span
-                        className={`font-medium ${courseInfo.category ? "text-slate-800" : "text-slate-400"}`}
+                        className={`font-medium truncate ${courseInfo.category ? "text-slate-800" : "text-slate-400"}`}
                       >
                         {getSelectedCategoryName()}
                       </span>
                       <FontAwesomeIcon
                         icon={faChevronDown}
-                        className={`text-slate-400 transition-transform duration-300 ${isCategoryOpen ? "rotate-180" : ""}`}
+                        className={`text-slate-400 transition-transform duration-300 ml-2 ${isCategoryOpen ? "rotate-180" : ""}`}
                       />
                     </div>
 
@@ -296,44 +272,37 @@ const InstructorCreateCourse = () => {
                               onChange={(e) =>
                                 setCategorySearch(e.target.value)
                               }
-                              onClick={(e) => e.stopPropagation()} // Ngăn click làm đóng dropdown
+                              onClick={(e) => e.stopPropagation()}
                               className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
                             />
                           </div>
                         </div>
 
-                        {/* Danh sách phân cấp */}
+                        {/* Danh sách phân cấp - Đã đổi thành duyệt mảng 1 chiều */}
                         <div className="max-h-64 overflow-y-auto p-2 scrollbar-hide">
-                          {filteredCategoryGroups.length > 0 ? (
-                            filteredCategoryGroups.map((group, idx) => (
-                              <div key={idx} className="mb-2 last:mb-0">
-                                <div className="px-3 py-1.5 text-[11px] font-extrabold text-slate-400 uppercase tracking-wider">
-                                  {group.groupName}
-                                </div>
-                                {group.categories.map((cat) => (
-                                  <div
-                                    key={cat.id}
-                                    onClick={() => {
-                                      setCourseInfo({
-                                        ...courseInfo,
-                                        category: cat.id,
-                                      });
-                                      setIsCategoryOpen(false); // Chọn xong thì tự đóng
-                                      setCategorySearch(""); // Xóa thanh tìm kiếm
-                                    }}
-                                    className={`px-3 py-2 mx-1 rounded-lg cursor-pointer text-sm font-medium transition-colors ${
-                                      courseInfo.category === cat.id
-                                        ? "bg-blue-50 text-blue-700"
-                                        : "text-slate-700 hover:bg-slate-100"
-                                    }`}
-                                  >
-                                    {cat.name}
-                                  </div>
-                                ))}
+                          {filteredCategories.length > 0 ? (
+                            filteredCategories.map((cat) => (
+                              <div
+                                key={cat.id}
+                                onClick={() => {
+                                  setCourseInfo({
+                                    ...courseInfo,
+                                    category: cat.id,
+                                  });
+                                  setIsCategoryOpen(false);
+                                  setCategorySearch("");
+                                }}
+                                className={`px-3 py-2.5 mb-1 rounded-lg cursor-pointer text-sm font-medium transition-colors ${
+                                  courseInfo.category === cat.id
+                                    ? "bg-blue-50 text-blue-700 font-bold"
+                                    : "text-slate-700 hover:bg-slate-100"
+                                }`}
+                              >
+                                {cat.name}
                               </div>
                             ))
                           ) : (
-                            <div className="p-4 text-center text-sm text-slate-500">
+                            <div className="p-4 text-center text-sm text-slate-500 font-medium">
                               Không tìm thấy chuyên ngành nào.
                             </div>
                           )}

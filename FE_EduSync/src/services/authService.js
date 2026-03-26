@@ -55,3 +55,17 @@ export const loginAdminAPI = async (email, password) => {
   });
   return response.data;
 };
+
+// logout
+export const logoutAPI = async (token) => {
+  const response = await axios.post(
+    `${API_URL}/logout`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  );
+  return response.data;
+};

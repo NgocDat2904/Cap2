@@ -5,7 +5,6 @@ import {
   faFilter,
   faUsers,
   faPlayCircle,
-  faChevronDown,
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -21,11 +20,15 @@ const LearnerCoursesPage = () => {
   // MOCK DATA: Dữ liệu giả lập
   // =========================================================================
   const categories = [
-    { id: "all", name: "Tất cả danh mục" },
-    { id: "programming", name: "Lập trình" },
-    { id: "design", name: "Thiết kế UI/UX" },
-    { id: "marketing", name: "Marketing" },
-    { id: "business", name: "Kinh doanh" },
+    { id: "all", name: "All" },
+    { id: "frontend", name: "Frontend Web Development" },
+    { id: "backend", name: "Backend Web Development" },
+    { id: "mobile", name: "Mobile Programming" },
+    { id: "ai", name: "AI & Machine Learning" },
+    { id: "data_analysis", name: "Data Analysis" },
+    { id: "data_engineer", name: "Data Engineering" },
+    { id: "uiux", name: "UI/UX Design" },
+    { id: "ba", name: "Business Analysis " },
   ];
 
   const priceRanges = [
@@ -44,11 +47,9 @@ const LearnerCoursesPage = () => {
       avatar: "https://i.pravatar.cc/150?img=11",
       thumbnail:
         "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.8,
       students: 1250,
       videoCount: 45,
       price: 1222000,
-      originalPrice: 1500000,
       isBestseller: true,
     },
     {
@@ -58,11 +59,9 @@ const LearnerCoursesPage = () => {
       avatar: "https://i.pravatar.cc/150?img=5",
       thumbnail:
         "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.9,
       students: 3420,
       videoCount: 62,
       price: 1550000,
-      originalPrice: null,
       isBestseller: false,
     },
     {
@@ -86,11 +85,9 @@ const LearnerCoursesPage = () => {
       avatar: "https://i.pravatar.cc/150?img=12",
       thumbnail:
         "https://images.unsplash.com/photo-1626785774573-4b799315345d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.7,
       students: 560,
       videoCount: 25,
-      price: 0, // Khóa học miễn phí
-      originalPrice: null,
+      price: 0,
       isBestseller: false,
     },
     {
@@ -100,11 +97,9 @@ const LearnerCoursesPage = () => {
       avatar: "https://i.pravatar.cc/150?img=14",
       thumbnail:
         "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.9,
       students: 410,
       videoCount: 38,
       price: 2500000,
-      originalPrice: 3000000,
       isBestseller: true,
     },
     {
@@ -114,11 +109,9 @@ const LearnerCoursesPage = () => {
       avatar: "https://i.pravatar.cc/150?img=11",
       thumbnail:
         "https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.5,
       students: 2100,
       videoCount: 50,
       price: 500000,
-      originalPrice: null,
       isBestseller: false,
     },
   ];
@@ -251,7 +244,7 @@ const LearnerCoursesPage = () => {
               </p>
             </div>
             {/* Bộ sắp xếp */}
-            <div className="flex items-center gap-3">
+            {/* <div className="flex items-center gap-3">
               <span className="text-sm font-bold text-slate-600">
                 Sắp xếp theo:
               </span>
@@ -267,7 +260,7 @@ const LearnerCoursesPage = () => {
                   className="absolute right-3.5 top-3.5 text-slate-400 text-sm pointer-events-none"
                 />
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Lưới khóa học (Grid) */}
@@ -346,11 +339,11 @@ const LearnerCoursesPage = () => {
                   {/* Giá tiền */}
                   <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
                     <div className="flex flex-col">
-                      {course.originalPrice && (
+                      {/* {course.originalPrice && (
                         <span className="text-xs text-slate-400 font-medium line-through mb-0.5">
                           {formatCurrency(course.originalPrice)}
                         </span>
-                      )}
+                      )} */}
                       <span
                         className={`font-black text-xl ${course.price === 0 ? "text-green-600" : "text-slate-900"}`}
                       >
