@@ -14,7 +14,7 @@ import {
   faUser,
   faGear,
   faArrowRightFromBracket,
-  faRobot, // Đổi sang icon Robot AI
+  faRobot,
   faChevronRight,
 } from "@fortawesome/free-solid-svg-icons";
 
