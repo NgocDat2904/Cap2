@@ -5,7 +5,7 @@ from app.middleware.auth_middleware import get_current_user
 router = APIRouter(prefix="/user", tags=["User"])
 
 
-@router.get("/updateprofile")
+@router.get("/profile")
 def get_profile(current_user=Depends(get_current_user)):
     return user_service.get_profile(current_user["id"])
 
