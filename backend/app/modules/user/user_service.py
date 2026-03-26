@@ -4,26 +4,47 @@ from fastapi import HTTPException
 
 class UserService:
 
+    # 🔍 GET PROFILE
     def get_profile(self, user_id: str):
         user = get_user_by_id(user_id)
 
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # 🔥 FIX ObjectId + bảo mật
-        user["id"] = str(user["_id"])
-        user.pop("_id", None)
-        user.pop("password", None)
+        return {
+            "fullName": user.get("fullName"),
+            "email": user.get("email"),
+            "avatarUrl": user.get("avatarUrl"),
+            "phone": user.get("phone"),
+            "dob": user.get("dob"),
+            "gender": user.get("gender"),
+            "address": user.get("address"),
+        }
 
-        return user
-
+    # 🔄 UPDATE PROFILE (EDIT)
     def update_profile(self, user_id: str, data: dict):
-        result = update_user(user_id, data)
+        user = get_user_by_id(user_id)
 
-        if result.modified_count == 0:
-            raise HTTPException(status_code=400, detail="Update failed")
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
 
-        return True
+        # chỉ update field hợp lệ
+        allowed_fields = [
+            "fullName",
+            "avatarUrl",
+            "phone",
+            "dob",
+            "gender",
+            "address"
+        ]
+
+        update_data = {k: v for k, v in data.items() if k in allowed_fields}
+
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No valid fields to update")
+
+        update_user(user_id, update_data)
 
 
+# singleton giống project bạn
 user_service = UserService()
