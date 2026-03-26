@@ -17,7 +17,7 @@ def register(user, role=None):
     if existing:
         raise HTTPException(status_code=400, detail="Email already exists")
 
-    # 🔥 FIX: ép kiểu + trim
+    #  FIX: ép kiểu + trim
     password = str(user.password).strip()
 
     hashed = hash_password(password)
@@ -48,7 +48,7 @@ def login(user, role=None):
     if not db_user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
-    # 🔥 FIX: ép kiểu
+    #  FIX: ép kiểu
     password = str(user.password).strip()
 
     if not verify_password(password, db_user["password"]):
@@ -75,7 +75,7 @@ def update_user_role(user_id, role):
     if role not in ["admin", "instructor", "learner"]:
         raise HTTPException(status_code=400, detail="Invalid role")
 
-    # 🔥 KHÔNG convert ObjectId ở đây
+    #  KHÔNG convert ObjectId ở đây
     result = update_user_role_repo(user_id, role)
 
     if result.modified_count == 0:

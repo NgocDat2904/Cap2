@@ -12,8 +12,8 @@ client = MongoClient(
 # test connection
 try:
     client.admin.command("ping")
-    print("✅ Connected to MongoDB")
+    print("Connected to MongoDB")
 except Exception as e:
-    print("❌ MongoDB connection error:", e)
+    print("MongoDB connection error:", e)
 
 db = client["edusyncDB"]
