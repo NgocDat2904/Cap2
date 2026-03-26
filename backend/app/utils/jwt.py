@@ -31,7 +31,11 @@ def decode_access_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
 
-        # kiểm tra dữ liệu bắt buộc
+        # ❗ kiểm tra token đã logout chưa (THÊM MỚI)
+        if payload.get("jti") in blacklist:
+            return None
+
+        # kiểm tra dữ liệu bắt buộc (GIỮ NGUYÊN)
         if "email" not in payload:
             return None
 
