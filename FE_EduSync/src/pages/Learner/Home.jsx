@@ -294,11 +294,11 @@ const EduSyncHome = () => {
 
                 <div className="mt-4 flex items-end justify-between border-t border-slate-100 pt-4">
                   <div className="flex flex-col">
-                    {course.originalPrice && (
+                    {/* {course.originalPrice && (
                       <span className="text-xs text-slate-400 font-medium line-through mb-0.5">
                         {formatCurrency(course.originalPrice)}
                       </span>
-                    )}
+                    )} */}
                     <span
                       className={`font-black text-xl ${course.price === 0 ? "text-green-600" : "text-slate-900"}`}
                     >
