@@ -5,7 +5,6 @@ import {
   faCloudArrowUp,
   faTimes,
   faVideo,
-  faDollarSign,
   faImage,
   faPaperPlane,
   faComments,
@@ -33,11 +32,11 @@ const categories = [
 const InstructorCreateCourse = () => {
   const [activeTab, setActiveTab] = useState("basic");
 
+  // 🚨 ĐÃ XÓA FIELD "price" ĐỂ ADMIN TỰ QUYẾT ĐỊNH 🚨
   const [courseInfo, setCourseInfo] = useState({
     title: "",
     description: "",
-    category: "", // Sẽ lưu ID của category (vd: 'frontend', 'ai')
-    price: "",
+    category: "",
     prerequisites: "",
     enableQA: true,
     visibility: "public",
@@ -104,26 +103,28 @@ const InstructorCreateCourse = () => {
     setUploadedVideos((prev) => prev.filter((video) => video.id !== id));
   };
 
+  // 🚨 ĐÃ SỬA LOGIC LƯU: Trạng thái bây giờ là "pending" (Chờ duyệt) 🚨
   const handleSaveCourse = (status) => {
     const finalCourseData = {
       ...courseInfo,
-      status: status,
+      status: status, // Sẽ là "draft" hoặc "pending"
       thumbnail: thumbnailPreview ? "Có ảnh bìa" : "Chưa có ảnh bìa",
       videos: uploadedVideos,
     };
     console.log(`Dữ liệu Khóa học (${status}):`, finalCourseData);
 
-    if (status === "published") {
-      alert("🎉 Chúc mừng! Khóa học đã được xuất bản công khai.");
+    if (status === "pending") {
+      alert(
+        "🎉 Đã gửi khóa học lên Trung tâm! Vui lòng chờ Admin định giá và xuất bản.",
+      );
     } else {
       alert("Đã lưu bản nháp thành công!");
     }
   };
 
   // =========================================================================
-  // LOGIC CHO CUSTOM SEARCHABLE DROPDOWN (MẢNG 1 CHIỀU)
+  // LOGIC DROPDOWN CHUYÊN NGÀNH
   // =========================================================================
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -134,21 +135,16 @@ const InstructorCreateCourse = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Lọc trực tiếp trên mảng 1 chiều
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(categorySearch.toLowerCase()),
   );
 
-  // Lấy tên hiển thị
   const getSelectedCategoryName = () => {
     if (!courseInfo.category) return "Tìm và chọn chuyên ngành...";
     const found = categories.find((c) => c.id === courseInfo.category);
     return found ? found.name : "Tìm và chọn chuyên ngành...";
   };
 
-  // =========================================================================
-  // RENDER GIAO DIỆN
-  // =========================================================================
   return (
     <div className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-slate-50 font-sans min-h-screen">
       <div className="max-w-4xl mx-auto mb-8">
@@ -194,12 +190,14 @@ const InstructorCreateCourse = () => {
               <FontAwesomeIcon icon={faSave} />
               Lưu nháp
             </button>
+
+            {/* 🚨 ĐỔI NÚT THÀNH "GỬI DUYỆT" 🚨 */}
             <button
-              onClick={() => handleSaveCourse("published")}
+              onClick={() => handleSaveCourse("pending")}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95 flex items-center gap-2"
             >
               <FontAwesomeIcon icon={faPaperPlane} />
-              Xuất bản ngay
+              Gửi duyệt
             </button>
           </div>
         </div>
@@ -229,10 +227,10 @@ const InstructorCreateCourse = () => {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                  {/* ======================================================= */}
-                  {/* CUSTOM SEARCHABLE DROPDOWN CHUYÊN NGÀNH */}
-                  {/* ======================================================= */}
-                  <div ref={dropdownRef} className="relative">
+                  <div
+                    ref={dropdownRef}
+                    className="relative sm:col-span-2 md:col-span-1"
+                  >
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">
                       Chuyên ngành <span className="text-red-500">*</span>
                     </label>
@@ -255,10 +253,8 @@ const InstructorCreateCourse = () => {
                       />
                     </div>
 
-                    {/* Menu xổ xuống */}
                     {isCategoryOpen && (
                       <div className="absolute z-50 top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-fade-slide-up">
-                        {/* Thanh tìm kiếm */}
                         <div className="p-3 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
                           <div className="relative">
                             <FontAwesomeIcon
@@ -278,7 +274,6 @@ const InstructorCreateCourse = () => {
                           </div>
                         </div>
 
-                        {/* Danh sách phân cấp - Đã đổi thành duyệt mảng 1 chiều */}
                         <div className="max-h-64 overflow-y-auto p-2 scrollbar-hide">
                           {filteredCategories.length > 0 ? (
                             filteredCategories.map((cat) => (
@@ -310,35 +305,8 @@ const InstructorCreateCourse = () => {
                       </div>
                     )}
                   </div>
-                  {/* ======================================================= */}
-
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                      Giá bán khóa học (USD){" "}
-                      <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <FontAwesomeIcon
-                          icon={faDollarSign}
-                          className="text-slate-400"
-                        />
-                      </div>
-                      <input
-                        type="number"
-                        name="price"
-                        min="0"
-                        step="0.01"
-                        placeholder="0.00 (Miễn phí nếu để trống)"
-                        value={courseInfo.price}
-                        onChange={handleCourseInfoChange}
-                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500 outline-none transition-colors text-slate-700 font-bold text-lg"
-                      />
-                    </div>
-                  </div>
                 </div>
 
-                {/* Upload Thumbnail */}
                 <div className="mt-4">
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     Ảnh bìa khóa học (Thumbnail)
@@ -510,7 +478,6 @@ const InstructorCreateCourse = () => {
           </div>
         )}
 
-        {/* NỘI DUNG TAB: CÀI ĐẶT (SETTINGS) */}
         {activeTab === "settings" && (
           <div className="space-y-6 animate-fade-slide-up">
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
@@ -644,10 +611,10 @@ const InstructorCreateCourse = () => {
 
         <div className="mt-8 sm:hidden flex flex-col gap-3">
           <button
-            onClick={() => handleSaveCourse("published")}
+            onClick={() => handleSaveCourse("pending")}
             className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95"
           >
-            <FontAwesomeIcon icon={faPaperPlane} /> Xuất bản ngay
+            <FontAwesomeIcon icon={faPaperPlane} /> Gửi duyệt
           </button>
           <button
             onClick={() => handleSaveCourse("draft")}

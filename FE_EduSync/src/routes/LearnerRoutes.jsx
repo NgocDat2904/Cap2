@@ -10,6 +10,8 @@ import LearnerFavoritesPage from "../pages/Learner/FavoriteVideo";
 import LearnerMyCoursesPage from "../pages/Learner/MyCourse";
 import LearnerCheckoutPage from "../pages/Learner/Check";
 import LearnerProfilePage from "../pages/Learner/ProfilePage";
+import LearnerNotifications from "../pages/Learner/Notifications";
+import InstructorPublicProfile from "../pages/Learner/InstructorProfile";
 
 const LearnerRoutes = () => {
   return (
@@ -35,6 +37,11 @@ const LearnerRoutes = () => {
             element={<CourseLearningWorkspace />}
           />
           <Route path="favorites" element={<LearnerFavoritesPage />} />
+          <Route path="notifications" element={<LearnerNotifications />} />
+          <Route
+            path="instructors/:instructorId"
+            element={<InstructorPublicProfile />}
+          />
         </Route>
       </Route>
     </Routes>

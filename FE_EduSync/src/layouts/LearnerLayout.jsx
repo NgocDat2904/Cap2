@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom"; // Bổ sung useNavigate
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import Footer from "../components/LearnerFooter";
 import { logoutAPI } from "../services/authService";
+import NotificationDropdown from "../components/NotificationDropdown";
 import {
   faSearch,
-  faBell,
   faUserCircle,
   faHouse,
   faBook,
@@ -21,7 +21,7 @@ import {
 
 const LearnerLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate(); // Khởi tạo cỗ máy bẻ lái
+  const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const profileMenuRef = useRef(null);
 
@@ -107,11 +107,7 @@ const LearnerLayout = () => {
 
           {/* User Actions */}
           <div className="flex items-center gap-4 sm:gap-6 text-gray-600 shrink-0">
-            {/* Chuông thông báo */}
-            <button className="hover:text-blue-900 relative transition-colors">
-              <FontAwesomeIcon icon={faBell} className="text-xl" />
-              <span className="absolute -top-1 -right-1 h-2 w-2 bg-red-500 rounded-full border border-white"></span>
-            </button>
+            <NotificationDropdown />
 
             {/* BỘ PHẬN AVATAR VÀ DROPDOWN CHUYÊN NGHIỆP */}
             <div className="relative" ref={profileMenuRef}>

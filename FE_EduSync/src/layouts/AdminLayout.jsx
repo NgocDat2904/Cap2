@@ -189,7 +189,7 @@ const AdminLayout = () => {
             <Link
               to="/logout"
               onClick={handleLinkClick}
-              className={`flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-300 text-slate-400 hover:text-red-400 hover:bg-red-500/10
+              className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-300 text-red-400 hover:bg-red-500/10
               ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
             `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
@@ -199,7 +199,7 @@ const AdminLayout = () => {
               >
                 <FontAwesomeIcon
                   icon={faArrowRightFromBracket}
-                  className="text-lg text-slate-500 group-hover:text-red-400"
+                  className="text-lg text-red-500"
                 />
               </div>
               <span
