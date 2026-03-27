@@ -26,6 +26,7 @@ const CourseDetailPage = () => {
       "Làm chủ Python 3, xây dựng ứng dụng thực tế và tự động hóa công việc chỉ trong 30 ngày.",
     category: "Lập trình",
     instructor: "Nguyễn Văn A",
+    instructorId: "INST-001", // Giả lập thêm ID Giảng viên để chuyển trang
     instructorTitle: "Senior Software Engineer",
     avatar: "https://i.pravatar.cc/150?img=11",
     students: 1520,
@@ -126,19 +127,22 @@ const CourseDetailPage = () => {
               {courseDetail.subtitle}
             </p>
 
-            {/* Thông tin Giảng viên */}
-            <div className="flex items-center gap-4 mb-10">
+            {/* 🚨 MỚI THÊM: Biến Avatar + Tên thành Link bấm được 🚨 */}
+            <Link
+              to={`/instructors/${courseDetail.instructorId}`} // Bẻ lái sang trang Profile Giảng viên
+              className="flex items-center gap-4 mb-10 group w-max cursor-pointer"
+            >
               <img
                 src={courseDetail.avatar}
                 alt="Instructor"
-                className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover"
+                className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover group-hover:border-blue-400 transition-colors shadow-sm"
               />
               <div>
                 <p className="text-slate-300 text-xs font-semibold mb-0.5">
                   Giảng viên
                 </p>
                 <div className="flex items-center gap-1.5">
-                  <p className="text-white font-bold">
+                  <p className="text-white font-bold group-hover:text-blue-400 transition-colors">
                     {courseDetail.instructor}
                   </p>
                   <FontAwesomeIcon
@@ -150,7 +154,7 @@ const CourseDetailPage = () => {
                   {courseDetail.instructorTitle}
                 </p>
               </div>
-            </div>
+            </Link>
 
             {/* Stats (Học viên, Thời gian, Số bài giảng) */}
             <div className="flex flex-wrap items-center gap-6 sm:gap-12">
