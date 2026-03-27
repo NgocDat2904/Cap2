@@ -15,7 +15,7 @@ export const getProfileAPI = async (token) => {
 
 // 2. Hàm cập nhật Profile
 export const updateProfileAPI = async (profileData, token) => {
-  const response = await axios.put(`${API_URL}/profile`, profileData, {
+  const response = await axios.put(`${API_URL}/updateprofile`, profileData, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
