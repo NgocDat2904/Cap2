@@ -17,7 +17,7 @@ import { getProfileAPI, updateProfileAPI } from "../../services/userAPI";
 const LearnerProfilePage = () => {
   // 1. STATE QUẢN LÝ DỮ LIỆU & TRẠNG THÁI
   const [profileData, setProfileData] = useState({
-    fullname: "",
+    fullName: "",
     email: "",
     avatarUrl: "https://i.pravatar.cc/150?img=11",
     phone: "",
@@ -159,7 +159,7 @@ const LearnerProfilePage = () => {
                 />
               </div>
               <h2 className="text-2xl font-black text-slate-900">
-                {profileData.name || "Học viên EduSync"}
+                {profileData.fullName || "Học viên EduSync"}
               </h2>
 
               <div className="border-t border-slate-100 my-8"></div>
