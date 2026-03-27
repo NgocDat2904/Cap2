@@ -33,6 +33,14 @@ def update_user(user_id: str, data: dict):
     )
 
 
+# 🖼️ ✅ Update avatar (THÊM MỚI)
+def update_user_avatar(user_id: str, avatar_url: str):
+    return db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"avatar_url": avatar_url}}
+    )
+
+
 # ❌ Delete
 def delete_user(user_id: str):
     return db.users.delete_one({"_id": ObjectId(user_id)})
