@@ -196,7 +196,7 @@ const InstructorLayout = () => {
             <Link
               to="/logout"
               onClick={handleLinkClick}
-              className={`group flex items-center py-3 text-sm font-semibold text-slate-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200
+              className={`group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200
               ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
             `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
@@ -206,7 +206,7 @@ const InstructorLayout = () => {
               >
                 <FontAwesomeIcon
                   icon={faArrowRightFromBracket}
-                  className="text-lg text-slate-400 group-hover:text-red-600 transition-all duration-200"
+                  className="text-lg text-red-500 transition-all duration-200"
                 />
               </div>
               <span

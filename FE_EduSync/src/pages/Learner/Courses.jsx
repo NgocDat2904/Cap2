@@ -50,7 +50,7 @@ const LearnerCoursesPage = () => {
       students: 1250,
       videoCount: 45,
       price: 1222000,
-      isBestseller: true,
+      // isBestseller: true,
     },
     {
       id: 2,
@@ -62,7 +62,7 @@ const LearnerCoursesPage = () => {
       students: 3420,
       videoCount: 62,
       price: 1550000,
-      isBestseller: false,
+      // isBestseller: false,
     },
     {
       id: 3,
@@ -76,7 +76,7 @@ const LearnerCoursesPage = () => {
       videoCount: 30,
       price: 890000,
       originalPrice: 1200000,
-      isBestseller: false,
+      // isBestseller: false,
     },
     {
       id: 4,
@@ -88,7 +88,7 @@ const LearnerCoursesPage = () => {
       students: 560,
       videoCount: 25,
       price: 0,
-      isBestseller: false,
+      // isBestseller: false,
     },
     {
       id: 5,
@@ -100,7 +100,7 @@ const LearnerCoursesPage = () => {
       students: 410,
       videoCount: 38,
       price: 2500000,
-      isBestseller: true,
+      // isBestseller: true,
     },
     {
       id: 6,
@@ -112,7 +112,7 @@ const LearnerCoursesPage = () => {
       students: 2100,
       videoCount: 50,
       price: 500000,
-      isBestseller: false,
+      // isBestseller: false,
     },
   ];
 
