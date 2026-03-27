@@ -15,6 +15,10 @@ import {
   faUsers,
   faBook,
   faGear,
+  faPhone,
+  faVenusMars,
+  faBirthdayCake,
+  faMapMarkerAlt,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faLinkedin,
@@ -40,10 +44,14 @@ const MetricCard = ({ icon, label, value, color }) => (
 );
 
 const InstructorProfilePage = () => {
-  // Mock dữ liệu ban đầu từ Backend
+  // Mock dữ liệu ban đầu từ Backend (Đã bổ sung các trường thông tin cơ bản)
   const [profileData, setProfileData] = useState({
     fullName: "Nguyễn Văn A",
     email: "nguyenvana@edusync.edu.vn", // Read-only
+    phone: "0987654321",
+    gender: "Nam",
+    dob: "1990-05-15",
+    address: "Hà Nội, Việt Nam",
     avatarUrl: "https://i.pravatar.cc/150?img=11",
     headline: "Senior AI Engineer | Chuyên gia Lập trình Python & Data Science",
     bio: "Hơn 10 năm kinh nghiệm trong lĩnh vực Trí tuệ Nhân tạo và Khoa học Dữ liệu. Đam mê chia sẻ kiến thức và xây dựng cộng đồng lập trình viên Việt Nam chất lượng cao.",
@@ -94,8 +102,12 @@ const InstructorProfilePage = () => {
 
   // Cấu trúc các Tab
   const tabs = [
-    { id: "personal", label: "Thông tin cá nhân", icon: faUserEdit },
-    { id: "social", label: "Liên kết chuyên môn", icon: faLink },
+    {
+      id: "personal",
+      label: "Thông tin cá nhân & Chuyên môn",
+      icon: faUserEdit,
+    },
+    { id: "social", label: "Liên kết bên ngoài", icon: faLink },
     { id: "account", label: "Cài đặt tài khoản", icon: faGear },
   ];
 
@@ -228,68 +240,161 @@ const InstructorProfilePage = () => {
 
             {/* NỘI DUNG CÁC TAB */}
             <div className="p-6 sm:p-8 space-y-8 animate-fade-slide-up">
-              {/* TAB 1: THÔNG TIN CÁ NHÂN */}
+              {/* 🚨 TAB 1: THÔNG TIN CÁ NHÂN & CHUYÊN MÔN (Đã gộp) 🚨 */}
               {activeTab === "personal" && (
-                <form className="space-y-6">
+                <form className="space-y-8">
+                  {/* --- KHỐI THÔNG TIN CƠ BẢN --- */}
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                    <h3 className="text-base font-extrabold text-slate-800 mb-5 pb-2 border-b border-slate-100 flex items-center gap-2">
+                      <FontAwesomeIcon
+                        icon={faUserCircle}
+                        className="text-blue-500"
+                      />{" "}
+                      Thông tin cơ bản
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                          Họ và tên <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="text"
+                          name="fullName"
+                          value={profileData.fullName}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={faPhone}
+                            className="text-slate-400"
+                          />{" "}
+                          Số điện thoại
+                        </label>
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={profileData.phone}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={faVenusMars}
+                            className="text-slate-400"
+                          />{" "}
+                          Giới tính
+                        </label>
+                        <select
+                          name="gender"
+                          value={profileData.gender}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none cursor-pointer"
+                        >
+                          <option>Nam</option>
+                          <option>Nữ</option>
+                          <option>Khác</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={faBirthdayCake}
+                            className="text-slate-400"
+                          />{" "}
+                          Ngày sinh
+                        </label>
+                        <input
+                          type="date"
+                          name="dob"
+                          value={profileData.dob}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={faMapMarkerAlt}
+                            className="text-slate-400"
+                          />{" "}
+                          Địa chỉ
+                        </label>
+                        <input
+                          type="text"
+                          name="address"
+                          value={profileData.address}
+                          onChange={handleInputChange}
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* --- KHỐI THÔNG TIN CHUYÊN MÔN --- */}
+                  <div>
+                    <h3 className="text-base font-extrabold text-slate-800 mb-5 pb-2 border-b border-slate-100 flex items-center gap-2 mt-8">
                       <FontAwesomeIcon
                         icon={faBriefcase}
-                        className="text-slate-400"
+                        className="text-blue-500"
                       />{" "}
-                      Tiêu đề nghề nghiệp / Chức danh
-                    </label>
-                    <input
-                      type="text"
-                      name="headline"
-                      value={profileData.headline}
-                      onChange={handleInputChange}
-                      placeholder="Ví dụ: Senior AI Engineer | Giảng viên Python"
-                      className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    />
-                    <p className="text-xs text-slate-400 mt-2">
-                      Dòng này sẽ hiển thị ngay dưới tên của bạn trên mọi khóa
-                      học. Viết ngắn gọn, súc tích và ấn tượng.
-                    </p>
-                  </div>
+                      Hồ sơ Chuyên môn
+                    </h3>
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                          Tiêu đề nghề nghiệp / Chức danh
+                        </label>
+                        <input
+                          type="text"
+                          name="headline"
+                          value={profileData.headline}
+                          onChange={handleInputChange}
+                          placeholder="Ví dụ: Senior AI Engineer | Giảng viên Python"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                        <p className="text-xs text-slate-400 mt-2">
+                          Dòng này sẽ hiển thị ngay dưới tên của bạn trên mọi
+                          khóa học. Viết ngắn gọn, súc tích và ấn tượng.
+                        </p>
+                      </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
-                      Giới thiệu bản thân (Bio)
-                    </label>
-                    <textarea
-                      name="bio"
-                      value={profileData.bio}
-                      onChange={handleInputChange}
-                      rows="6"
-                      placeholder="Kể cho học viên nghe về kinh nghiệm, kỹ năng và triết lý giảng dạy của bạn..."
-                      className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    ></textarea>
-                    <p className="text-xs text-slate-400 mt-2">
-                      Đoạn văn này giúp học viên hiểu rõ hơn về bạn trước khi
-                      đăng ký khóa học.
-                    </p>
-                  </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                          Giới thiệu bản thân (Bio)
+                        </label>
+                        <textarea
+                          name="bio"
+                          value={profileData.bio}
+                          onChange={handleInputChange}
+                          rows="5"
+                          placeholder="Kể cho học viên nghe về kinh nghiệm..."
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+                        ></textarea>
+                      </div>
 
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
-                      <FontAwesomeIcon
-                        icon={faGraduationCap}
-                        className="text-slate-400"
-                      />{" "}
-                      Chuyên ngành / Lĩnh vực giảng dạy chính
-                    </label>
-                    <input
-                      type="text"
-                      name="specializations"
-                      value={profileData.specializations}
-                      onChange={handleInputChange}
-                      placeholder="Ví dụ: Python, Machine Learning, UI/UX..."
-                      className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                    />
-                    <p className="text-xs text-slate-400 mt-2">
-                      Ngăn cách các lĩnh vực bằng dấu phẩy (,)
-                    </p>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
+                          <FontAwesomeIcon
+                            icon={faGraduationCap}
+                            className="text-slate-400"
+                          />{" "}
+                          Lĩnh vực giảng dạy chính
+                        </label>
+                        <input
+                          type="text"
+                          name="specializations"
+                          value={profileData.specializations}
+                          onChange={handleInputChange}
+                          placeholder="Ví dụ: Python, Machine Learning, UI/UX..."
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
                   </div>
                 </form>
               )}
@@ -401,7 +506,7 @@ const InstructorProfilePage = () => {
                         />
                       </div>
                       <div className="sm:col-span-2 flex justify-end">
-                        <button className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 Transition-all active:scale-95 flex items-center gap-2.5">
+                        <button className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5">
                           Cập nhật mật khẩu
                         </button>
                       </div>
