@@ -12,10 +12,13 @@ import {
   faEnvelope,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
-import { getProfileAPI, updateProfileAPI } from "../../services/userAPI";
+import {
+  getProfileAPI,
+  updateProfileAPI,
+  uploadAvatarAPI,
+} from "../../services/userAPI";
 
 const LearnerProfilePage = () => {
-  // 1. STATE QUẢN LÝ DỮ LIỆU & TRẠNG THÁI
   const [profileData, setProfileData] = useState({
     fullName: "",
     email: "",
@@ -27,18 +30,16 @@ const LearnerProfilePage = () => {
   });
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false); // Trạng thái đang lưu API
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const fileInputRef = useRef(null);
 
-  // 1. GỌI API LÚC VỪA VÀO TRANG (GET)
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) return;
-
-        // Code cũ dùng fetch dài dòng, code mới siêu gọn:
         const data = await getProfileAPI(token);
         setProfileData((prev) => ({ ...prev, ...data }));
       } catch (error) {
@@ -50,17 +51,12 @@ const LearnerProfilePage = () => {
     fetchProfileData();
   }, []);
 
-  // 2. GỌI API KHI BẤM NÚT LƯU (PUT)
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
-
     try {
       const token = localStorage.getItem("access_token");
-
-      // Chuyền data và token vào hàm API
       await updateProfileAPI(profileData, token);
-
       alert("Hồ sơ của bạn đã được cập nhật thành công!");
     } catch (error) {
       console.error("Lỗi lưu hồ sơ:", error);
@@ -70,41 +66,44 @@ const LearnerProfilePage = () => {
     }
   };
 
-  // Xử lý thay đổi input
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData({ ...profileData, [name]: value });
   };
 
-  // Giả lập upload Avatar (Thực tế mẹ sẽ cần gọi API upload ảnh lên Cloudinary/S3)
   const handleAvatarClick = () => fileInputRef.current.click();
-  const handleFileChange = (event) => {
+
+  // =========================================================================
+  //  HÀM UPLOAD AVATAR ĐÃ ĐƯỢC DÙNG SERVICE
+  // =========================================================================
+  const handleFileChange = async (event) => {
     const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileData({ ...profileData, avatarUrl: reader.result });
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+
+    // 1. Hiển thị ảnh preview ngay lập tức
+    const previewUrl = URL.createObjectURL(file);
+    setProfileData((prev) => ({ ...prev, avatarUrl: previewUrl }));
+
+    try {
+      setIsUploadingAvatar(true);
+      const token = localStorage.getItem("access_token");
+
+      // 2. Giao việc gọi API cho  Service xử lý
+      const data = await uploadAvatarAPI(file, token);
+
+      // 3. Nhận kết quả và cập nhật lại Avatar thật
+      if (data && data.url) {
+        setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
+        alert("Tải ảnh đại diện lên Cloudinary thành công!");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert("Tải ảnh thất bại! Vui lòng thử lại.");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   };
 
-  // HIỂN THỊ MÀN HÌNH CHỜ NẾU API GET CHƯA TRẢ VỀ XONG
-  if (isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen w-full bg-slate-50 text-slate-400">
-        <FontAwesomeIcon
-          icon={faSpinner}
-          className="text-4xl animate-spin text-blue-500 mb-4"
-        />
-        <p className="font-bold">Đang tải hồ sơ của bạn...</p>
-      </div>
-    );
-  }
-
-  // =========================================================================
-  // 4. RENDER GIAO DIỆN CHÍNH (Giữ nguyên UI xịn xò của mẹ)
-  // =========================================================================
   return (
     <main className="animate-fade-slide-up w-full pb-16">
       <div className="p-4 sm:p-6 lg:p-8 relative">
@@ -141,11 +140,23 @@ const LearnerProfilePage = () => {
                 <img
                   src={profileData.avatarUrl}
                   alt="Learner Avatar"
-                  className="w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-blue-100"
+                  className={`w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-blue-100 transition-opacity ${isUploadingAvatar ? "opacity-50" : "opacity-100"}`}
                 />
+
+                {/* Vòng xoay (Spinner) hiện lên khi đang upload */}
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <FontAwesomeIcon
+                      icon={faSpinner}
+                      className="text-4xl text-blue-600 animate-spin drop-shadow-md"
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={handleAvatarClick}
-                  className="absolute -bottom-2 -right-2 w-10 h-10 bg-blue-600 text-white rounded-xl flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors border-2 border-white active:scale-95"
+                  disabled={isUploadingAvatar}
+                  className={`absolute -bottom-2 -right-2 w-10 h-10 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors border-2 border-white ${isUploadingAvatar ? "bg-slate-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"}`}
                   title="Thay đổi ảnh đại diện"
                 >
                   <FontAwesomeIcon icon={faCamera} />
@@ -158,6 +169,7 @@ const LearnerProfilePage = () => {
                   className="hidden"
                 />
               </div>
+
               <h2 className="text-2xl font-black text-slate-900">
                 {profileData.fullName || "Học viên EduSync"}
               </h2>

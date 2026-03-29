@@ -17,7 +17,7 @@ def get_profile(current_user=Depends(get_current_user)):
 
 
 # 🔄 UPDATE PROFILE
-@router.put("/profile")
+@router.put("/update-profile")
 def update_profile(
     data: InstructorProfileUpdate,
     current_user=Depends(get_current_user)
