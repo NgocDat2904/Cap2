@@ -5,6 +5,8 @@ import myLogo from "../assets/logo.png";
 import Footer from "../components/LearnerFooter";
 import { logoutAPI } from "../services/authService";
 import NotificationDropdown from "../components/NotificationDropdown";
+// 🚨 MỚI THÊM: Import hàm gọi API lấy thông tin User
+import { getProfileAPI } from "../services/userAPI";
 import {
   faSearch,
   faUserCircle,
@@ -24,6 +26,24 @@ const LearnerLayout = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const profileMenuRef = useRef(null);
+
+  const [userProfile, setUserProfile] = useState(null);
+
+  // Gọi API lấy thông tin User ngay khi Layout load lên
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+
+        const data = await getProfileAPI(token);
+        setUserProfile(data); // Lưu data vào state
+      } catch (error) {
+        console.error("Lỗi lấy thông tin User trên Layout:", error);
+      }
+    };
+    fetchUserData();
+  }, []);
 
   // Đóng menu khi click ra ngoài
   useEffect(() => {
@@ -46,23 +66,18 @@ const LearnerLayout = () => {
     { name: "Video yêu thích", icon: faHeart, path: "/favorites" },
   ];
 
-  // =========================================================================
-  // HÀM XỬ LÝ ĐĂNG XUẤT CHUẨN BẢO MẬT
-  // =========================================================================
   const handleLogout = async (e) => {
     e.preventDefault();
-    setIsDropdownOpen(false); // Đóng menu dropdown cho mượt
+    setIsDropdownOpen(false);
 
     try {
       const token = localStorage.getItem("access_token");
       if (token) {
-        // Báo Backend cho token này vào "danh sách đen"
         await logoutAPI(token);
       }
     } catch (error) {
       console.error("Lỗi khi đăng xuất API:", error);
     } finally {
-      // Dọn dẹp bộ nhớ và đá văng ra ngoài
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
       localStorage.removeItem("user_id");
@@ -74,7 +89,6 @@ const LearnerLayout = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col font-sans text-gray-800">
       {/* HEADER */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        {/* TẦNG 1: Logo + Search + Actions */}
         <div className="flex items-center justify-between px-4 sm:px-8 py-3 sm:py-4 max-w-7xl mx-auto w-full gap-2 sm:gap-4">
           {/* Logo */}
           <Link
@@ -113,19 +127,28 @@ const LearnerLayout = () => {
             <div className="relative" ref={profileMenuRef}>
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="hover:text-blue-900 transition-colors flex items-center focus:outline-none relative"
+                className="hover:opacity-80 transition-opacity flex items-center focus:outline-none relative"
               >
-                <FontAwesomeIcon
-                  icon={faUserCircle}
-                  className="text-3xl text-slate-700"
-                />
+                {/* Hiển thị Avatar thật nếu có, nếu không có thì dùng Icon mặc định */}
+                {userProfile && userProfile.avatarUrl ? (
+                  <img
+                    src={userProfile.avatarUrl}
+                    alt="User Avatar"
+                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-slate-200 shadow-sm"
+                  />
+                ) : (
+                  <FontAwesomeIcon
+                    icon={faUserCircle}
+                    className="text-3xl text-slate-700"
+                  />
+                )}
+
                 {/* Chấm đỏ ở Avatar */}
                 <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white">
                   <span className="absolute inline-flex w-full h-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
                 </span>
               </button>
 
-              {/* Overlay cho Mobile */}
               {isDropdownOpen && (
                 <div
                   className="fixed inset-0 z-40 md:hidden"
@@ -139,8 +162,9 @@ const LearnerLayout = () => {
                   {/* Widget Gamification */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 mx-2 mb-2 rounded-xl border border-blue-100/50 shadow-sm">
                     <div className="flex justify-between items-end mb-2">
-                      <h4 className="font-bold text-gray-800 text-sm">
-                        Hồ sơ của bạn
+                      <h4 className="font-bold text-gray-800 text-sm line-clamp-1">
+                        {/* 🚨 SỬA LẠI: Lấy Tên thật của User để chào hỏi */}
+                        Chào, {userProfile?.fullName || "Học viên"}! 👋
                       </h4>
                       <span className="text-blue-600 font-black text-sm">
                         60%
@@ -155,7 +179,7 @@ const LearnerLayout = () => {
                     <p className="text-xs text-gray-600 mb-3 leading-relaxed">
                       Hoàn thiện{" "}
                       <span className="font-bold text-gray-800">Hồ sơ</span> để
-                      EduSync cá nhân hóa lộ trình học tập cho riêng bạn nhé!{" "}
+                      EduSync cá nhân hóa lộ trình học tập cho riêng bạn nhé!
                       <FontAwesomeIcon
                         icon={faRobot}
                         className="text-blue-600 ml-0.5"
@@ -200,7 +224,6 @@ const LearnerLayout = () => {
 
                   <div className="border-t border-gray-100 my-1"></div>
 
-                  {/* NÚT ĐĂNG XUẤT ĐÃ ĐƯỢC GẮN HÀM XỬ LÝ */}
                   <button
                     onClick={handleLogout}
                     className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left focus:outline-none"

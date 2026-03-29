@@ -29,8 +29,9 @@ const AdminLoginPage = () => {
     // Giả lập call API đăng nhập
     try {
       const response = await loginAdminAPI(email, password);
-      if (response && response.token) {
-        localStorage.setItem("adminToken", response.token);
+      if (response?.access_token) {
+        localStorage.setItem("access_token", response.access_token);
+        localStorage.setItem("user_role", "admin");
       }
       navigate("/admin/dashboard");
     } catch (err) {
