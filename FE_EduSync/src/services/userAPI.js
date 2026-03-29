@@ -15,10 +15,34 @@ export const getProfileAPI = async (token) => {
 
 // 2. Hàm cập nhật Profile
 export const updateProfileAPI = async (profileData, token) => {
-  const response = await axios.put(`${API_URL}/updateprofile`, profileData, {
+  const response = await axios.put(`${API_URL}/update-profile`, profileData, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   return response.data;
+};
+
+// 3. API UPLOAD AVATAR
+export const uploadAvatarAPI = async (file, token) => {
+  // Đóng gói file vào FormData
+  const formData = new FormData();
+  formData.append("file", file); // Chữ "file" này phải khớp với biến backend
+
+  // Gọi API (Nhớ đổi URL cho đúng với port Backend của mẹ nhé)
+  const response = await fetch("http://localhost:8000/user/upload-avatar", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      // KHÔNG set Content-Type ở đây, trình duyệt sẽ tự động xử lý
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error("Lỗi khi tải ảnh lên server");
+  }
+
+  // Trả về dữ liệu JSON (chứa cái URL ảnh mới)
+  return await response.json();
 };

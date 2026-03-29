@@ -1,21 +1,68 @@
-// file này đóng vai trò bảo vệ , check xem người dùng đã đăng nhập chưa, nếu chưa thì đá văng về trang login
+import React from "react";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
 
-import { Navigate, Outlet } from "react-router-dom";
-import LearnerRoutes from "./LearnerRoutes";
+const normalize = (value) => {
+  if (!value) return "";
+  let str = value;
+  if (typeof str !== "string") str = String(str);
+  // nếu value là JSON string từ setItem(JSON.stringify(...))
+  try {
+    const parsed = JSON.parse(str);
+    if (typeof parsed === "string") str = parsed;
+  } catch (error) {
+    // ignore
+  }
+  return str.trim().replace(/"/g, "").toLowerCase();
+};
 
-const ProtectedRoute = () => {
-  // 1. Kiểm tra xem trong bộ nhớ trình duyệt đã có vé (access_token) chưa
-  const token = localStorage.getItem("access_token");
+const ProtectedRoute = ({ allowedRoles }) => {
+  const token = normalize(localStorage.getItem("access_token"));
+  const userRole = normalize(localStorage.getItem("user_role"));
+  const location = useLocation();
 
-  // 2. Nếu chưa có vé (chưa đăng nhập) -> Đá văng về trang Login
+  console.log("ProtectedRoute", {
+    path: location.pathname,
+    token,
+    userRole,
+    allowedRoles,
+  });
+
   if (!token) {
+    if (location.pathname.includes("/instructor")) {
+      return <Navigate to="/instructor/login" replace />;
+    }
+    if (location.pathname.includes("/admin")) {
+      return <Navigate to="/admin/login" replace />;
+    }
     return <Navigate to="/login" replace />;
   }
 
-  // 3. Nếu có vé rồi -> Mở cổng cho phép đi tiếp vào giao diện bên trong (<Outlet />)
+  const allowed =
+    !allowedRoles ||
+    (Array.isArray(allowedRoles)
+      ? allowedRoles.map(normalize).includes(userRole)
+      : normalize(allowedRoles) === userRole);
+
+  if (!allowed) {
+    alert("Bạn không có quyền truy cập vào khu vực này!");
+    if (userRole === "admin") return <Navigate to="/admin/dashboard" replace />;
+    if (userRole === "instructor")
+      return <Navigate to="/instructor/dashboard" replace />;
+    return <Navigate to="/home" replace />;
+  }
+
+  // Nếu đang ở /login /instructor/login /admin/login mà đã login đúng role
+  if (
+    location.pathname.includes("instructor/login") &&
+    userRole === "instructor"
+  ) {
+    return <Navigate to="/instructor/dashboard" replace />;
+  }
+  if (location.pathname.includes("admin/login") && userRole === "admin") {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
+
   return <Outlet />;
 };
 
 export default ProtectedRoute;
-
-// import vào LearnerRoutes.jsx

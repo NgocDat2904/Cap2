@@ -60,7 +60,6 @@ const AdminCourseDetail = () => {
   const navigate = useNavigate();
   const [course, setCourse] = useState(mockCourseDetail);
 
-  // 🚨 STATE MỚI: Lưu giá tiền do Admin tự gõ vào
   const [adminPrice, setAdminPrice] = useState("");
 
   // =========================================================================
@@ -70,7 +69,7 @@ const AdminCourseDetail = () => {
   // Hành động 1: Duyệt và Định giá (Dành cho khóa pending)
   const handleApproveCourse = () => {
     if (adminPrice === "") {
-      alert("⚠️ Vui lòng nhập giá bán cho khóa học trước khi xuất bản!");
+      alert("Vui lòng nhập giá bán cho khóa học trước khi xuất bản!");
       return;
     }
     if (

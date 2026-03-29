@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
+import { logoutAPI } from "../services/authService";
 import {
   faBars,
   faSearch,
@@ -18,6 +19,7 @@ import {
 
 const InstructorLayout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   useEffect(() => {
@@ -37,7 +39,6 @@ const InstructorLayout = () => {
     { name: "Dashboard", icon: faTableColumns, path: "/instructor/dashboard" },
     { name: "My courses", icon: faBookOpen, path: "/instructor/courses" },
     { name: "Students", icon: faUsers, path: "/instructor/students" },
-    // { name: "Performance", icon: faChartBar, path: "/instructor/performance" },
   ];
 
   const bottomLinks = [
@@ -51,8 +52,31 @@ const InstructorLayout = () => {
     }
   };
 
+  // =========================================================================
+  // HÀM XỬ LÝ ĐĂNG XUẤT
+  // =========================================================================
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    handleLinkClick(); // Đóng sidebar trên mobile nếu đang mở
+
+    try {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        // Gọi API báo Backend vô hiệu hóa token này
+        await logoutAPI(token);
+      }
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất API:", error);
+    } finally {
+      // Dù API có lỗi hay không, cứ dọn sạch túi và đá văng ra Login
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_role");
+      localStorage.removeItem("user_id");
+      navigate("/instructor/login");
+    }
+  };
+
   return (
-    // Đổi background nền tổng thành màu xanh xám cực nhạt (slate-50)
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
       {/* OVERLAY */}
       {isSidebarOpen && (
@@ -62,7 +86,7 @@ const InstructorLayout = () => {
         ></div>
       )}
 
-      {/* SIDEBAR: Nền trắng tinh (bg-white), viền phải mờ nhẹ */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed md:relative z-30 h-full bg-white border-r border-slate-200/60 flex flex-col transition-all duration-300 ease-in-out transform shadow-[4px_0_24px_rgba(0,0,0,0.02)]
         ${
@@ -71,7 +95,6 @@ const InstructorLayout = () => {
             : "-translate-x-full w-64 md:translate-x-0 md:w-20"
         }`}
       >
-        {/* LOGO & TOGGLE BUTTON AREA */}
         <div
           className={`h-20 flex items-center border-b border-slate-100 transition-all duration-300
           ${isSidebarOpen ? "px-6" : "px-0 justify-center"}`}
@@ -86,12 +109,10 @@ const InstructorLayout = () => {
             />
           </button>
 
-          {/* Khối Logo: Nhấn mạnh vào chữ EduSync bằng font chữ riêng */}
           <div
             className={`flex items-center gap-3 overflow-hidden whitespace-nowrap transition-all duration-300
             ${isSidebarOpen ? "ml-4 opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
           >
-            {/* Logo giữ nguyên màu gốc, dùng drop-shadow để nó bật ra khỏi nền trắng */}
             <img
               src={myLogo}
               alt="Logo"
@@ -108,7 +129,6 @@ const InstructorLayout = () => {
           </div>
         </div>
 
-        {/* NAVIGATION LINKS */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3">
           <ul className="space-y-1.5">
             {sidebarLinks.map((link) => {
@@ -119,11 +139,7 @@ const InstructorLayout = () => {
                     to={link.path}
                     onClick={handleLinkClick}
                     className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
-                      }
+                      ${isActive ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50" : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"}
                       ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
                     `}
                     title={!isSidebarOpen ? link.name : ""}
@@ -137,8 +153,7 @@ const InstructorLayout = () => {
                       />
                     </div>
                     <span
-                      className={`whitespace-nowrap transition-all duration-300 
-                      ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                      className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
                     >
                       {link.name}
                     </span>
@@ -152,20 +167,14 @@ const InstructorLayout = () => {
 
           <ul className="space-y-1.5">
             {bottomLinks.map((link) => {
-              // 1. THÊM BIẾN KIỂM TRA ACTIVE GIỐNG HỆT Ở MENU TRÊN
               const isActive = location.pathname.includes(link.path);
-
               return (
                 <li key={link.name}>
                   <Link
                     to={link.path}
                     onClick={handleLinkClick}
                     className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
-                      ${
-                        isActive
-                          ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50"
-                          : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"
-                      }
+                      ${isActive ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50" : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"}
                       ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
                     `}
                     title={!isSidebarOpen ? link.name : ""}
@@ -175,13 +184,11 @@ const InstructorLayout = () => {
                     >
                       <FontAwesomeIcon
                         icon={link.icon}
-                        // 3. ĐỔI MÀU CẢ CÁI ICON KHI ACTIVE LUÔN
                         className={`group-hover:text-blue-600 transition-all duration-200 text-lg ${isActive ? "text-blue-600" : "text-slate-400"}`}
                       />
                     </div>
                     <span
-                      className={`whitespace-nowrap transition-all duration-300 
-                      ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                      className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
                     >
                       {link.name}
                     </span>
@@ -191,12 +198,11 @@ const InstructorLayout = () => {
             })}
           </ul>
 
-          {/* Đăng xuất */}
+          {/* NÚT ĐĂNG XUẤT ĐÃ ĐƯỢC CHUYỂN THÀNH BUTTON VÀ GẮN HÀM XỬ LÝ */}
           <div className="mt-4">
-            <Link
-              to="/logout"
-              onClick={handleLinkClick}
-              className={`group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200
+            <button
+              onClick={handleLogout}
+              className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
               ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
             `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
@@ -210,22 +216,19 @@ const InstructorLayout = () => {
                 />
               </div>
               <span
-                className={`whitespace-nowrap transition-all duration-300 
-              ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
               >
                 Đăng xuất
               </span>
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
-        {/* HEADER: Nền trắng tinh, có shadow mờ nhẹ */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 transition-all relative z-10 sticky top-0 shadow-sm">
           <div className="flex items-center flex-1">
-            {/* Nút Hamburger (Mobile) */}
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="mr-4 text-slate-500 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl flex items-center justify-center transition-colors md:hidden"
@@ -233,7 +236,6 @@ const InstructorLayout = () => {
               <FontAwesomeIcon icon={faBars} className="text-xl" />
             </button>
 
-            {/* Khung tìm kiếm */}
             <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl">
               <input
                 type="text"
@@ -247,7 +249,6 @@ const InstructorLayout = () => {
             </div>
           </div>
 
-          {/* User Actions */}
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
             <button className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center">
               <FontAwesomeIcon icon={faBell} className="text-xl" />
@@ -256,7 +257,6 @@ const InstructorLayout = () => {
 
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
-            {/* Avatar Giảng viên */}
             <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
@@ -273,7 +273,6 @@ const InstructorLayout = () => {
           </div>
         </header>
 
-        {/* NỘI DUNG CHÍNH (OUTLET) */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <Outlet />
         </main>

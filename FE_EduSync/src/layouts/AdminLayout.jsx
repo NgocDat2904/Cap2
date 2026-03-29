@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
+import { logoutAPI } from "../services/authService";
 import {
   faBars,
   faSearch,
@@ -15,11 +16,13 @@ import {
   faTags,
   faGears,
   faArrowRightFromBracket,
+  faListCheck,
 } from "@fortawesome/free-solid-svg-icons";
 
 const AdminLayout = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -44,6 +47,7 @@ const AdminLayout = () => {
       path: "/admin/revenue",
     },
     { name: "Danh mục đào tạo", icon: faTags, path: "/admin/categories" },
+    { name: "Duyệt khóa học", icon: faListCheck, path: "/admin/approvals" },
   ];
 
   const bottomLinks = [
@@ -54,6 +58,26 @@ const AdminLayout = () => {
   const handleLinkClick = () => {
     if (window.innerWidth < 768) {
       setIsSidebarOpen(false);
+    }
+  };
+  const handleLogout = async (e) => {
+    e.preventDefault();
+    handleLinkClick(); // Đóng sidebar trên mobile nếu đang mở
+
+    try {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        // Gọi API báo Backend vô hiệu hóa token này
+        await logoutAPI(token);
+      }
+    } catch (error) {
+      console.error("Lỗi khi đăng xuất API:", error);
+    } finally {
+      // Dù API có lỗi hay không, cứ dọn sạch túi và đá văng ra Login
+      localStorage.removeItem("access_token");
+      localStorage.removeItem("user_role");
+      localStorage.removeItem("user_id");
+      navigate("/admin/login");
     }
   };
 
@@ -146,6 +170,11 @@ const AdminLayout = () => {
                     >
                       {link.name}
                     </span>
+                    {link.pendingCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">
+                        {link.pendingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
@@ -186,29 +215,27 @@ const AdminLayout = () => {
 
           {/* Đăng xuất */}
           <div className="mt-4">
-            <Link
-              to="/logout"
-              onClick={handleLinkClick}
-              className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-300 text-red-400 hover:bg-red-500/10
-              ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
-            `}
+            <button
+              onClick={handleLogout}
+              className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
+                        ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
+                      `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
             >
               <div
-                className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+                className={`group-hover:text-red-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
               >
                 <FontAwesomeIcon
                   icon={faArrowRightFromBracket}
-                  className="text-lg text-red-500"
+                  className="text-lg text-red-500 transition-all duration-200"
                 />
               </div>
               <span
-                className={`whitespace-nowrap transition-all duration-300 
-              ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
               >
                 Đăng xuất
               </span>
-            </Link>
+            </button>
           </div>
         </nav>
       </aside>

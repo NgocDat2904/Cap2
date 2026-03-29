@@ -21,6 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+
 #  include router sau khi có app
 app.include_router(auth_router)
 app.include_router(user_router)
