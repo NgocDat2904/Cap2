@@ -1,23 +1,37 @@
 from datetime import datetime
-from bson import ObjectId
-
 
 def instructor_profile_model(profile) -> dict:
     return {
         "id": str(profile["_id"]),
-        "userId": str(profile["user_id"]),  # ✅ đổi camelCase
+        "userId": str(profile["user_id"]),
 
-        "headline": profile.get("headline"),
-        "bio": profile.get("bio"),
+        # BASIC
+        "fullName": profile.get("fullName", ""),
+        "email": profile.get("email", ""),
+        "phone": profile.get("phone", ""),
+        "gender": profile.get("gender", ""),
+        "dob": profile.get("dob", ""),
+        "address": profile.get("address", ""),
+        "avatarUrl": profile.get("avatarUrl", ""),
 
-        "linkedin_url": profile.get("linkedin_url"),
-        "github_url": profile.get("github_url"),
-        "youtube_url": profile.get("youtube_url"),  # ✅ thêm
-        "website_url": profile.get("website_url"),
+        # PROFILE
+        "headline": profile.get("headline", ""),
+        "bio": profile.get("bio", ""),
 
-        "specializations": profile.get("specializations", []),
+        "specializations": profile.get("specializations", ""),
 
-        # ✅ convert datetime → string
+        # SOCIAL
+        "linkedin": profile.get("linkedin_url", ""),
+        "github": profile.get("github_url", ""),
+        "youtube": profile.get("youtube_url", ""),
+        "website": profile.get("website_url", ""),
+
+        # STATS
+        "totalStudents": profile.get("totalStudents", 0),
+        "totalCourses": profile.get("totalCourses", 0),
+        "isVerified": profile.get("isVerified", True),
+
+        # TIME
         "created_at": profile.get("created_at").isoformat() if profile.get("created_at") else None,
         "updated_at": profile.get("updated_at").isoformat() if profile.get("updated_at") else None,
     }
