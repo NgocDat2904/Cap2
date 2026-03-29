@@ -2,9 +2,9 @@ import cloudinary
 import cloudinary.uploader
 
 cloudinary.config(
-    cloud_name="your_cloud_name",
-    api_key="your_api_key",
-    api_secret="your_api_secret"
+    cloud_name="dgtorvkrx",
+    api_key="292189656377817",
+    api_secret="Gbt-bdaTq6zetshhvfUpVBTEcAo"
 )
 
 def upload_image(file):

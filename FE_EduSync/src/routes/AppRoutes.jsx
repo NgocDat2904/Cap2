@@ -15,11 +15,11 @@ const AppRoutes = () => {
       {/* 2. Dấu /* báo cho React biết bên trong InstructorRoutes còn nhiều đường dẫn con khác */}
       <Route path="/instructor/*" element={<InstructorRoutes />} />
 
-      {/* 3. Tương tự cho Learner */}
-      <Route path="/*" element={<LearnerRoutes />} />
-
-      {/* 3. Tương tự cho Admin */}
+      {/* Admin trước catch-all Learner để /admin/* luôn match đúng */}
       <Route path="/admin/*" element={<AdminRoutes />} />
+
+      {/* Learner + trang công khai khác */}
+      <Route path="/*" element={<LearnerRoutes />} />
     </Routes>
   );
 };

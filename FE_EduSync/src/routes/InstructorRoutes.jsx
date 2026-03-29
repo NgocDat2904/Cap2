@@ -10,32 +10,35 @@ import InstructorStudentsPage from "../pages/Instructor/StudentsPage";
 import InstructorDashboardPage from "../pages/Instructor/DashboardPage";
 import InstructorProfilePage from "../pages/Instructor/ProfilePage";
 // import ForceChangePassword from "../pages/Instructor/ForceChangePassword";
+import ProtectedRoute from "./ProtectedRoute";
 
 const InstructorRoutes = () => {
   return (
     <Routes>
-      <Route element={<InstructorLayout />}>
-        {/* Đường dẫn thực tế sẽ là /instructor/dashboard */}
-        <Route path="dashboard" element={<InstructorDashboardPage />} />
-        <Route path="courses" element={<InstructorMyCourses />} />
-        <Route path="courses/create" element={<InstructorCreateCourse />} />
-        <Route path="students" element={<InstructorStudentsPage />} />
-        <Route
-          path="performance"
-          element={
-            <div className="p-4 text-xl">Đây là trang Báo cáo doanh thu</div>
-          }
-        />
-        <Route
-          path="courses/:courseId"
-          element={<InstructorCourseViewPage />}
-        />
-        <Route
-          path="courses/:courseId/edit"
-          element={<InstructorCourseEditPage />}
-        />
-        <Route path="account" element={<InstructorProfilePage />} />
-        {/* <Route path="force-change-password" element={<ForceChangePassword />} /> */}
+      <Route element={<ProtectedRoute />}>
+        <Route element={<InstructorLayout />}>
+          {/* Đường dẫn thực tế sẽ là /instructor/dashboard */}
+          <Route path="dashboard" element={<InstructorDashboardPage />} />
+          <Route path="courses" element={<InstructorMyCourses />} />
+          <Route path="courses/create" element={<InstructorCreateCourse />} />
+          <Route path="students" element={<InstructorStudentsPage />} />
+          <Route
+            path="performance"
+            element={
+              <div className="p-4 text-xl">Đây là trang Báo cáo doanh thu</div>
+            }
+          />
+          <Route
+            path="courses/:courseId"
+            element={<InstructorCourseViewPage />}
+          />
+          <Route
+            path="courses/:courseId/edit"
+            element={<InstructorCourseEditPage />}
+          />
+          <Route path="account" element={<InstructorProfilePage />} />
+          {/* <Route path="force-change-password" element={<ForceChangePassword />} /> */}
+        </Route>
       </Route>
       <Route path="login" element={<InstructorLoginPage />} />
       <Route path="register" element={<InstructorRegisterPage />} />

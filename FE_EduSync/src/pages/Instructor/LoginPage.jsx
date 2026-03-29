@@ -29,9 +29,10 @@ const InstructorLoginPage = () => {
     try {
       // gọi API đăng nhập giảng viên
       const response = await loginInstructorAPI(email, password);
-      // lưu token
-      if (response && response.token) {
-        localStorage.setItem("instructorToken", response.token);
+      // Backend trả access_token; ProtectedRoute và layout đọc access_token + user_role
+      if (response?.access_token) {
+        localStorage.setItem("access_token", response.access_token);
+        localStorage.setItem("user_role", "instructor");
       }
       navigate("/instructor/dashboard");
     } catch (err) {
