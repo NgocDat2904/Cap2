@@ -53,7 +53,7 @@ def upload_avatar_api(
 # =========================
 # 🔥 API GỘP (TEXT + AVATAR)
 # =========================
-@router.post("/update-full-profile")
+@router.put("/update-full-profile")
 def update_full_profile_api(
     # 🔥 USER
     fullName: str = Form(None),
