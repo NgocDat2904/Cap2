@@ -71,7 +71,6 @@ const InstructorProfilePage = () => {
     youtube: "",
     website: "",
     totalStudents: 0,
-    avgRating: 0.0,
     totalCourses: 0,
     isVerified: true,
   });
