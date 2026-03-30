@@ -1,31 +1,25 @@
 // File: src/services/instructorAPI.js
+import axios from "axios";
 
-// Lấy thông tin riêng của Instructor
+const API_URL = "http://localhost:8000/instructor";
+
+// 1. LẤY HỒ SƠ
 export const getInstructorProfileAPI = async (token) => {
-  const response = await fetch("http://localhost:8000/instructor/profile", {
-    method: "GET",
+  const response = await axios.get(`${API_URL}/profile`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
     },
   });
-  if (!response.ok) throw new Error("Lỗi lấy hồ sơ giảng viên");
-  return await response.json();
+  return response.data;
 };
 
-// Cập nhật thông tin riêng của Instructor
+// 2. CẬP NHẬT HỒ SƠ
 export const updateInstructorProfileAPI = async (data, token) => {
-  const response = await fetch(
-    "http://localhost:8000/instructor/update-profile",
-    {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
+  const response = await axios.put(`${API_URL}/update-full-profile`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "multipart/form-data",
     },
-  );
-  if (!response.ok) throw new Error("Lỗi cập nhật hồ sơ giảng viên");
-  return await response.json();
+  });
+  return response.data;
 };

@@ -5,7 +5,6 @@ import {
   faCamera,
   faBriefcase,
   faGraduationCap,
-  faCertificate,
   faEnvelope,
   faSave,
   faKey,
@@ -26,13 +25,7 @@ import {
   faGithub,
   faYoutube,
 } from "@fortawesome/free-brands-svg-icons";
-
-// 🚨 IMPORT API
-import {
-  getProfileAPI,
-  updateProfileAPI,
-  uploadAvatarAPI,
-} from "../../services/userAPI";
+import { uploadAvatarAPI } from "../../services/userAPI";
 import {
   getInstructorProfileAPI,
   updateInstructorProfileAPI,
@@ -62,7 +55,7 @@ const InstructorProfilePage = () => {
     gender: "",
     dob: "",
     address: "",
-    avatarUrl: "https://i.pravatar.cc/150?img=11",
+    avatarUrl: "",
     headline: "",
     bio: "",
     specializations: "",
@@ -81,31 +74,25 @@ const InstructorProfilePage = () => {
   const [activeTab, setActiveTab] = useState("personal");
   const fileInputRef = useRef(null);
 
-  // 1. GỌI API LẤY DATA (Trộn data từ 2 bảng User và Instructor)
+  // =========================================================================
+  // 1. GỌI API LẤY DATA
+  // =========================================================================
   useEffect(() => {
-    const fetchAllProfileData = async () => {
+    const fetchProfileData = async () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) return;
 
-        // Gọi song song 2 API cho lẹ
-        const [userData, instData] = await Promise.all([
-          getProfileAPI(token),
-          getInstructorProfileAPI(token),
-        ]);
+        // Gọi API lấy cục data tổng hợp
+        const data = await getInstructorProfileAPI(token);
 
-        // Trộn 2 cục data lại và map đúng key để đưa lên giao diện
         setProfileData((prev) => ({
           ...prev,
-          ...userData, // fullName, email, phone, dob, gender, address, avatarUrl
-          headline: instData.headline || "",
-          bio: instData.bio || "",
-          specializations: instData.specializations || "",
-          // Đổi tên biến backend (có _url) sang tên biến frontend cho khớp form
-          linkedin: instData.linkedin_url || "",
-          github: instData.github_url || "",
-          youtube: instData.youtube_url || "",
-          website: instData.website_url || "",
+          ...data, // Trải toàn bộ dữ liệu Backend map sẵn vào form
+          // Xử lý specializations nếu Backend lỡ trả về Array thì nối thành chuỗi
+          specializations: Array.isArray(data.specializations)
+            ? data.specializations.join(", ")
+            : data.specializations || "",
         }));
       } catch (error) {
         console.error("Lỗi lấy dữ liệu:", error);
@@ -113,49 +100,46 @@ const InstructorProfilePage = () => {
         setIsLoading(false);
       }
     };
-    fetchAllProfileData();
+    fetchProfileData();
   }, []);
 
-  // 2. TÁCH DATA & GỌI API LƯU (Chia làm 2 luồng)
+  // =========================================================================
+  // 2. GỌI API LƯU HỒ SƠ (Tách 2 gói gửi về 2 bảng)
+  // =========================================================================
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       const token = localStorage.getItem("access_token");
 
-      // Gói 1: Thông tin chung (Gửi cho userAPI)
-      const userPayload = {
-        fullName: profileData.fullName,
-        phone: profileData.phone,
-        gender: profileData.gender,
-        dob: profileData.dob,
-        address: profileData.address,
-      };
+      // Đóng gói dữ liệu vào FormData theo ĐÚNG tên biến Backend yêu cầu
+      const formData = new FormData();
 
-      // Gói 2: Thông tin Giảng viên (Gửi cho instructorAPI)
-      const instructorPayload = {
-        headline: profileData.headline,
-        bio: profileData.bio,
-        specializations: profileData.specializations,
-        // Ép lại tên biến cho chuẩn với Backend
-        linkedin_url: profileData.linkedin,
-        github_url: profileData.github,
-        youtube_url: profileData.youtube,
-        website_url: profileData.website,
-      };
+      // Thông tin User
+      formData.append("fullName", profileData.fullName || "");
+      formData.append("phone", profileData.phone || "");
+      formData.append("gender", profileData.gender || "");
+      formData.append("dob", profileData.dob || "");
+      formData.append("address", profileData.address || "");
 
-      // Bắn 2 viên đạn cùng lúc
-      await Promise.all([
-        updateProfileAPI(userPayload, token),
-        updateInstructorProfileAPI(instructorPayload, token),
-      ]);
+      // Thông tin Instructor
+      formData.append("headline", profileData.headline || "");
+      formData.append("bio", profileData.bio || "");
+      formData.append("specializations", profileData.specializations || "");
 
-      alert(
-        "✨ Cập nhật hồ sơ thành công! Hào quang của bạn đang tỏa sáng rực rỡ!",
-      );
+      // Liên kết mạng xã hội
+      formData.append("linkedin", profileData.linkedin || "");
+      formData.append("github", profileData.github || "");
+      formData.append("youtube", profileData.youtube || "");
+      formData.append("website", profileData.website || "");
+
+      // Bắn 1 phát API duy nhất
+      await updateInstructorProfileAPI(formData, token);
+
+      alert("Cập nhật hồ sơ thành công!");
     } catch (error) {
       console.error("Lỗi lưu hồ sơ:", error);
-      alert("Lưu thất bại! Vui lòng thử lại.");
+      alert("Lưu thất bại! Vui lòng kiểm tra lại kết nối mạng.");
     } finally {
       setIsSaving(false);
     }
@@ -166,27 +150,32 @@ const InstructorProfilePage = () => {
     setProfileData({ ...profileData, [name]: value });
   };
 
-  // 3. XỬ LÝ UPLOAD AVATAR (Dùng chung API với Learner)
+  // =========================================================================
+  // 3. XỬ LÝ UPLOAD AVATAR
+  // =========================================================================
   const handleAvatarClick = () => fileInputRef.current.click();
 
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    // Show ảnh preview mờ mờ trước cho user yên tâm
     const previewUrl = URL.createObjectURL(file);
     setProfileData((prev) => ({ ...prev, avatarUrl: previewUrl }));
 
     try {
       setIsUploadingAvatar(true);
       const token = localStorage.getItem("access_token");
+
+      // Gọi API Upload (có thể đang tái sử dụng của userAPI)
       const data = await uploadAvatarAPI(file, token);
 
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("✨ Đổi ảnh đại diện thành công!");
+        alert("Đổi ảnh đại diện thành công!");
       }
     } catch (error) {
-      alert("Lỗi tải ảnh!");
+      alert("Lỗi tải ảnh lên hệ thống!");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -214,9 +203,7 @@ const InstructorProfilePage = () => {
     );
   }
 
-  // ====================================================================
-  // PHẦN RENDER HTML (GIỮ NGUYÊN HOÀN TOÀN GIAO DIỆN XỊN XÒ CỦA MẸ)
-  // ====================================================================
+  // GIỮ NGUYÊN GIAO DIỆN HTML NHƯ CŨ
   return (
     <main className="animate-fade-slide-up w-full pb-16">
       <div className="p-4 sm:p-6 lg:p-8 relative overflow-visible z-10">
@@ -247,7 +234,6 @@ const InstructorProfilePage = () => {
           {/* CỘT TRÁI */}
           <div className="w-full lg:w-1/3 space-y-8 sticky top-24 relative z-10">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center relative overflow-visible">
-              {/* Vùng Avatar */}
               <div className="relative inline-block mb-6">
                 <img
                   src={profileData.avatarUrl}
@@ -570,7 +556,6 @@ const InstructorProfilePage = () => {
                       Thay đổi mật khẩu
                     </h3>
                     <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
-                      {/* ... (Giữ nguyên form đổi mật khẩu của mẹ) ... */}
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
                           Mật khẩu hiện tại
@@ -581,7 +566,34 @@ const InstructorProfilePage = () => {
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
                         />
                       </div>
-                      {/* ... (Các input khác) ... */}
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                          Mật khẩu mới
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
+                          Xác nhận mật khẩu mới
+                        </label>
+                        <input
+                          type="password"
+                          placeholder="••••••••"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div className="sm:col-span-2 flex justify-end">
+                        <button
+                          type="button"
+                          className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5"
+                        >
+                          Cập nhật mật khẩu
+                        </button>
+                      </div>
                     </form>
                   </div>
                 </div>
