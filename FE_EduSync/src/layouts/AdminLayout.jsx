@@ -8,19 +8,21 @@ import {
   faBars,
   faSearch,
   faBell,
-  faUserCircle,
-  faTableColumns,
-  faBookOpen,
-  faUsers,
-  faGear,
-  faUser,
+  faUserShield,
+  faChartPie,
+  faUsersCog,
+  faBook,
+  faMoneyBillWave,
+  faTags,
+  faGears,
   faArrowRightFromBracket,
+  faListCheck,
 } from "@fortawesome/free-solid-svg-icons";
 
-const InstructorLayout = () => {
+const AdminLayout = () => {
   const location = useLocation();
-  const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleResize = () => {
@@ -36,14 +38,21 @@ const InstructorLayout = () => {
   }, []);
 
   const sidebarLinks = [
-    { name: "Dashboard", icon: faTableColumns, path: "/instructor/dashboard" },
-    { name: "My courses", icon: faBookOpen, path: "/instructor/courses" },
-    { name: "Students", icon: faUsers, path: "/instructor/students" },
+    { name: "Tổng quan", icon: faChartPie, path: "/admin/dashboard" },
+    { name: "Quản lý Người dùng", icon: faUsersCog, path: "/admin/users" },
+    { name: "Quản lý Khóa học", icon: faBook, path: "/admin/courses" },
+    {
+      name: "Báo cáo Doanh thu",
+      icon: faMoneyBillWave,
+      path: "/admin/revenue",
+    },
+    { name: "Danh mục đào tạo", icon: faTags, path: "/admin/categories" },
+    { name: "Duyệt khóa học", icon: faListCheck, path: "/admin/approvals" },
   ];
 
   const bottomLinks = [
-    { name: "Tài khoản", icon: faUser, path: "/instructor/account" },
-    { name: "Cài đặt", icon: faGear, path: "/instructor/settings" },
+    { name: "Hồ sơ Admin", icon: faUserShield, path: "/admin/profile" },
+    { name: "Cài đặt hệ thống", icon: faGears, path: "/admin/settings" },
   ];
 
   const handleLinkClick = () => {
@@ -51,10 +60,6 @@ const InstructorLayout = () => {
       setIsSidebarOpen(false);
     }
   };
-
-  // =========================================================================
-  // HÀM XỬ LÝ ĐĂNG XUẤT
-  // =========================================================================
   const handleLogout = async (e) => {
     e.preventDefault();
     handleLinkClick(); // Đóng sidebar trên mobile nếu đang mở
@@ -72,7 +77,7 @@ const InstructorLayout = () => {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
       localStorage.removeItem("user_id");
-      navigate("/instructor/login");
+      navigate("/admin/login");
     }
   };
 
@@ -81,55 +86,58 @@ const InstructorLayout = () => {
       {/* OVERLAY */}
       {isSidebarOpen && (
         <div
-          className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-20 md:hidden transition-all duration-300"
+          className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 md:hidden transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         ></div>
       )}
 
-      {/* SIDEBAR */}
+      {/* SIDEBAR: Đổi sang màu Slate 950 (Xanh đá cực đậm, gần như đen) */}
       <aside
-        className={`fixed md:relative z-30 h-full bg-white border-r border-slate-200/60 flex flex-col transition-all duration-300 ease-in-out transform shadow-[4px_0_24px_rgba(0,0,0,0.02)]
+        className={`fixed md:relative z-30 h-full bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 ease-in-out transform shadow-2xl md:shadow-none border-r border-slate-900
         ${
           isSidebarOpen
             ? "translate-x-0 w-64"
             : "-translate-x-full w-64 md:translate-x-0 md:w-20"
         }`}
       >
+        {/* Ánh sáng Gradient phía trên Sidebar */}
+        <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none"></div>
+
+        {/* LOGO & TOGGLE */}
         <div
-          className={`h-20 flex items-center border-b border-slate-100 transition-all duration-300
+          className={`h-20 flex items-center border-b border-slate-800/80 transition-all duration-300 relative z-10
           ${isSidebarOpen ? "px-6" : "px-0 justify-center"}`}
         >
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hidden md:flex"
+            className="text-slate-400 hover:text-white hover:bg-slate-800 w-8 h-8 rounded-lg flex items-center justify-center transition-colors hidden md:flex"
           >
-            <FontAwesomeIcon
-              icon={faBars}
-              className="text-lg hover:text-blue-600"
-            />
+            <FontAwesomeIcon icon={faBars} className="text-lg" />
           </button>
 
           <div
-            className={`flex items-center gap-3 overflow-hidden whitespace-nowrap transition-all duration-300
+            className={`font-bold text-xl text-white tracking-tight flex items-center gap-3 overflow-hidden whitespace-nowrap transition-all duration-300
             ${isSidebarOpen ? "ml-4 opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
           >
+            {/* Giữ nguyên invert để logo hiện màu trắng trên nền tối */}
             <img
               src={myLogo}
               alt="Logo"
-              className="w-9 h-9 object-contain drop-shadow-sm"
+              className="w-8 h-8 brightness-0 invert drop-shadow-[0_0_8px_rgba(255,255,255,0.3)]"
             />
             <div className="flex flex-col">
-              <span className="font-bold text-xl text-slate-900 tracking-tight leading-none">
+              <span className="font-bold text-xl tracking-tight leading-none">
                 EduSync
               </span>
-              <span className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
-                Instructor
+              <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
+                Admin Panel
               </span>
             </div>
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3">
+        {/* NAVIGATION LINKS */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3 relative z-10">
           <ul className="space-y-1.5">
             {sidebarLinks.map((link) => {
               const isActive = location.pathname.includes(link.path);
@@ -138,73 +146,80 @@ const InstructorLayout = () => {
                   <Link
                     to={link.path}
                     onClick={handleLinkClick}
-                    className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
-                      ${isActive ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50" : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"}
+                    className={`flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-300
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-500/25"
+                          : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                      }
                       ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
                     `}
                     title={!isSidebarOpen ? link.name : ""}
                   >
                     <div
-                      className={`group-hover:text-blue-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
+                      className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
                     >
                       <FontAwesomeIcon
                         icon={link.icon}
-                        className={`group-hover:text-blue-600 transition-all duration-200 text-lg ${isActive ? "text-blue-600 " : "text-slate-400 "}`}
+                        className={`text-lg ${isActive ? "text-white" : "text-slate-500"}`}
                       />
                     </div>
                     <span
-                      className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                      className={`whitespace-nowrap transition-all duration-300 
+                      ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
                     >
                       {link.name}
                     </span>
+                    {link.pendingCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">
+                        {link.pendingCount}
+                      </span>
+                    )}
                   </Link>
                 </li>
               );
             })}
           </ul>
 
-          <div className="my-6 border-t border-slate-100 mx-2"></div>
+          <div className="my-6 border-t border-slate-800/80 mx-2"></div>
 
           <ul className="space-y-1.5">
-            {bottomLinks.map((link) => {
-              const isActive = location.pathname.includes(link.path);
-              return (
-                <li key={link.name}>
-                  <Link
-                    to={link.path}
-                    onClick={handleLinkClick}
-                    className={`group flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-200
-                      ${isActive ? "bg-blue-50 text-blue-700 shadow-sm shadow-blue-100/50" : "text-slate-500 hover:bg-slate-50 hover:text-blue-600"}
-                      ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
-                    `}
-                    title={!isSidebarOpen ? link.name : ""}
+            {bottomLinks.map((link) => (
+              <li key={link.name}>
+                <Link
+                  to={link.path}
+                  onClick={handleLinkClick}
+                  className={`flex items-center py-3 text-sm font-semibold rounded-xl transition-all duration-300 text-slate-400 hover:text-slate-100 hover:bg-slate-800/50
+                    ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
+                  `}
+                  title={!isSidebarOpen ? link.name : ""}
+                >
+                  <div
+                    className={`flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
                   >
-                    <div
-                      className={`group-hover:text-blue-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
-                    >
-                      <FontAwesomeIcon
-                        icon={link.icon}
-                        className={`group-hover:text-blue-600 transition-all duration-200 text-lg ${isActive ? "text-blue-600" : "text-slate-400"}`}
-                      />
-                    </div>
-                    <span
-                      className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
-                    >
-                      {link.name}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+                    <FontAwesomeIcon
+                      icon={link.icon}
+                      className="text-lg text-slate-500"
+                    />
+                  </div>
+                  <span
+                    className={`whitespace-nowrap transition-all duration-300 
+                    ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
+                  >
+                    {link.name}
+                  </span>
+                </Link>
+              </li>
+            ))}
           </ul>
 
-          {/* NÚT ĐĂNG XUẤT ĐÃ ĐƯỢC CHUYỂN THÀNH BUTTON VÀ GẮN HÀM XỬ LÝ */}
+          {/* Đăng xuất */}
           <div className="mt-4">
             <button
               onClick={handleLogout}
               className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
-              ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
-            `}
+                        ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
+                      `}
               title={!isSidebarOpen ? "Đăng xuất" : ""}
             >
               <div
@@ -226,7 +241,8 @@ const InstructorLayout = () => {
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100/50">
+        {/* HEADER: Kính mờ sang trọng */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 transition-all relative z-10 sticky top-0 shadow-sm">
           <div className="flex items-center flex-1">
             <button
@@ -236,11 +252,12 @@ const InstructorLayout = () => {
               <FontAwesomeIcon icon={faBars} className="text-xl" />
             </button>
 
-            <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl">
+            {/* Khung tìm kiếm Toàn cầu (Global Search) */}
+            <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl hidden sm:block">
               <input
                 type="text"
-                placeholder="Tìm kiếm khóa học, học viên..."
-                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 border-transparent focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 text-sm font-medium transition-all text-slate-700"
+                placeholder="Tìm kiếm người dùng, ID thanh toán, khóa học..."
+                className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm font-medium transition-all shadow-sm"
               />
               <FontAwesomeIcon
                 icon={faSearch}
@@ -252,28 +269,29 @@ const InstructorLayout = () => {
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
             <button className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center">
               <FontAwesomeIcon icon={faBell} className="text-xl" />
-              <span className="absolute top-2 right-2 h-2 w-2 bg-red-500 rounded-full border-2 border-white"></span>
+              <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
             </button>
-
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
+            {/* Admin Profile Area */}
             <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
-                  Nguyễn Văn A
+                  Trần Văn Sếp
                 </p>
-                <p className="text-xs text-slate-500 font-medium mt-1">
-                  Giảng viên
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">
+                  Super Admin
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-md">
-                <FontAwesomeIcon icon={faUserCircle} className="text-xl" />
+              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md">
+                <FontAwesomeIcon icon={faUserShield} className="text-lg" />
               </div>
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-x-hidden overflow-y-auto">
+        {/* NỘI DUNG CHÍNH (OUTLET) */}
+        <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
         <DashboardFooter />
@@ -282,4 +300,4 @@ const InstructorLayout = () => {
   );
 };
 
-export default InstructorLayout;
+export default AdminLayout;
