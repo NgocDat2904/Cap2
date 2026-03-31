@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import InstructorRoutes from "./InstructorRoutes";
 import LearnerRoutes from "./LearnerRoutes";
 import PublicPage from "../pages/PublicPage";
+import AdminRoutes from "./AdminRoutes";
 
 const AppRoutes = () => {
   return (
@@ -14,8 +15,11 @@ const AppRoutes = () => {
       {/* 2. Dấu /* báo cho React biết bên trong InstructorRoutes còn nhiều đường dẫn con khác */}
       <Route path="/instructor/*" element={<InstructorRoutes />} />
 
-      {/* 3. Tương tự cho Learner */}
-      <Route path="/learner/*" element={<LearnerRoutes />} />
+      {/* Admin trước catch-all Learner để /admin/* luôn match đúng */}
+      <Route path="/admin/*" element={<AdminRoutes />} />
+
+      {/* Learner + trang công khai khác */}
+      <Route path="/*" element={<LearnerRoutes />} />
     </Routes>
   );
 };
