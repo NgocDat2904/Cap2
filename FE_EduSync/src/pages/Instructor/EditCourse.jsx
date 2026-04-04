@@ -7,7 +7,6 @@ import {
   faInfoCircle,
   faImage,
   faList,
-  faTag,
   faExclamationTriangle,
   faUpload,
   faPlus,
@@ -16,6 +15,10 @@ import {
   faEyeSlash,
   faGripLines,
   faCheckCircle,
+  faXmark,
+  faFilm,
+  faCloudUploadAlt,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 
 const InstructorCourseEditPage = () => {
@@ -23,7 +26,6 @@ const InstructorCourseEditPage = () => {
   const [activeTab, setActiveTab] = useState("basic");
   const [isSaving, setIsSaving] = useState(false);
 
-  // Tham chiếu (Ref) đến thẻ input file bị ẩn
   const fileInputRef = useRef(null);
 
   // =========================================================================
@@ -34,7 +36,6 @@ const InstructorCourseEditPage = () => {
     category: "Lập trình Python",
     description:
       "Khóa học toàn diện giúp bạn làm chủ Python từ con số 0. Cập nhật mới nhất 2026 với các module về AI và Data Science.",
-    price: 10,
     thumbnail:
       "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
     status: "published",
@@ -45,25 +46,92 @@ const InstructorCourseEditPage = () => {
     {
       id: 1,
       title: "01 - Welcome to Python!",
+      description: "Cài đặt và làm quen với Python",
       duration: "05:00",
       isPublished: true,
     },
     {
       id: 2,
       title: "02 - Cài đặt môi trường",
+      description: "Cài đặt VS Code và Extensions",
       duration: "10:25",
       isPublished: true,
     },
     {
       id: 3,
       title: "03 - Biến và Kiểu dữ liệu",
+      description: "Các kiểu dữ liệu cơ bản trong Python",
       duration: "15:30",
       isPublished: true,
     },
   ]);
 
   // =========================================================================
-  // 2. CÁC HÀM XỬ LÝ
+  // STATE & LOGIC CHO MODAL THÊM BÀI GIẢNG
+  // =========================================================================
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
+  const [lessonTitle, setLessonTitle] = useState("");
+  // 🚨 THÊM STATE CHO MÔ TẢ
+  const [lessonDescription, setLessonDescription] = useState("");
+  const [lessonVideoName, setLessonVideoName] = useState("");
+  const [isUploadingLesson, setIsUploadingLesson] = useState(false);
+  const lessonFileInputRef = useRef(null);
+
+  const openAddLessonModal = () => {
+    setLessonTitle("");
+    setLessonDescription(""); // Xóa trắng mô tả khi mở modal thêm mới
+    setLessonVideoName("");
+    setIsLessonModalOpen(true);
+  };
+
+  const closeLessonModal = () => {
+    if (!isUploadingLesson) {
+      setIsLessonModalOpen(false);
+    }
+  };
+
+  const handleLessonVideoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setLessonVideoName(file.name);
+    }
+  };
+
+  const handleSubmitLesson = (e) => {
+    e.preventDefault();
+    if (!lessonTitle.trim()) {
+      alert("Vui lòng nhập tiêu đề bài giảng!");
+      return;
+    }
+    if (!lessonVideoName) {
+      alert("Vui lòng chọn video bài giảng!");
+      return;
+    }
+
+    setIsUploadingLesson(true);
+
+    // Giả lập thời gian upload video (1.5 giây)
+    setTimeout(() => {
+      const newLesson = {
+        id: Date.now(),
+        title: lessonTitle,
+        description: lessonDescription, // 🚨 Lưu mô tả vào data
+        duration: "12:00",
+        isPublished: true,
+      };
+
+      setLessons([...lessons, newLesson]);
+
+      setIsUploadingLesson(false);
+      setIsLessonModalOpen(false);
+      setLessonTitle("");
+      setLessonDescription(""); // Reset mô tả
+      setLessonVideoName("");
+    }, 1500);
+  };
+
+  // =========================================================================
+  // 2. CÁC HÀM XỬ LÝ CHÍNH TRANG EDIT
   // =========================================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -74,7 +142,9 @@ const InstructorCourseEditPage = () => {
     setIsSaving(true);
     setTimeout(() => {
       setIsSaving(false);
-      alert("Đã lưu các thay đổi thành công!");
+      alert(
+        "Đã lưu thành công! Hệ thống đã ghi nhận bản cập nhật nội dung của bạn và báo cáo lên Admin.",
+      );
     }, 1000);
   };
 
@@ -99,11 +169,9 @@ const InstructorCourseEditPage = () => {
     }
   };
 
-  // LOGIC MỚI: Xử lý khi người dùng chọn file ảnh
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // Tạo một URL tạm thời từ file ảnh vừa chọn trên máy để hiển thị Preview ngay lập tức
       const imageUrl = URL.createObjectURL(file);
       setCourseData({ ...courseData, thumbnail: imageUrl });
     }
@@ -116,7 +184,6 @@ const InstructorCourseEditPage = () => {
     { id: "basic", label: "Thông tin cơ bản", icon: faInfoCircle },
     { id: "media", label: "Hình ảnh & Video", icon: faImage },
     { id: "curriculum", label: "Chương trình học", icon: faList },
-    { id: "pricing", label: "Giá bán", icon: faTag },
     {
       id: "danger",
       label: "Vùng nguy hiểm",
@@ -126,8 +193,8 @@ const InstructorCourseEditPage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-20 animate-fade-slide-up">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+    <div className="min-h-screen bg-slate-50 pb-20 animate-fade-slide-up relative">
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
         <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button
@@ -161,7 +228,7 @@ const InstructorCourseEditPage = () => {
         </div>
       </header>
 
-      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex flex-col md:flex-row gap-8">
+      <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex flex-col md:flex-row gap-8 relative z-10">
         <aside className="w-full md:w-64 shrink-0">
           <nav className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden sticky top-28">
             <ul className="flex flex-col">
@@ -169,15 +236,7 @@ const InstructorCourseEditPage = () => {
                 <li key={tab.id}>
                   <button
                     onClick={() => setActiveTab(tab.id)}
-                    className={`w-full flex items-center gap-3 px-5 py-4 text-sm font-bold transition-all border-l-4
-                      ${
-                        activeTab === tab.id
-                          ? tab.isDanger
-                            ? "bg-red-50 border-red-500 text-red-700"
-                            : "bg-blue-50 border-blue-600 text-blue-700"
-                          : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                      }
-                    `}
+                    className={`w-full flex items-center gap-3 px-5 py-4 text-sm font-bold transition-all border-l-4 ${activeTab === tab.id ? (tab.isDanger ? "bg-red-50 border-red-500 text-red-700" : "bg-blue-50 border-blue-600 text-blue-700") : "border-transparent text-slate-600 hover:bg-slate-50 hover:text-slate-900"}`}
                   >
                     <FontAwesomeIcon
                       icon={tab.icon}
@@ -252,14 +311,12 @@ const InstructorCourseEditPage = () => {
                 Hình ảnh hấp dẫn sẽ giúp khóa học của bạn nổi bật hơn trên
                 EduSync.
               </p>
-
               <div className="space-y-8">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-3">
                     Ảnh bìa khóa học (Thumbnail)
                   </label>
                   <div className="flex flex-col sm:flex-row gap-6 items-start">
-                    {/* Khung hiển thị ảnh */}
                     <div className="w-full sm:w-1/2 aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 relative group">
                       <img
                         src={courseData.thumbnail}
@@ -273,14 +330,11 @@ const InstructorCourseEditPage = () => {
                         />
                       </div>
                     </div>
-
                     <div className="flex-1 w-full flex flex-col justify-center">
                       <p className="text-sm text-slate-600 mb-4 leading-relaxed">
                         Định dạng hỗ trợ: JPG, PNG. Tỉ lệ khuyên dùng: 16:9.
                         Kích thước tối thiểu 1280x720px.
                       </p>
-
-                      {/* Thẻ input THẬT để chọn file (bị ẩn đi bằng class 'hidden') */}
                       <input
                         type="file"
                         accept="image/png, image/jpeg, image/jpg"
@@ -288,8 +342,6 @@ const InstructorCourseEditPage = () => {
                         ref={fileInputRef}
                         onChange={handleImageUpload}
                       />
-
-                      {/* Nút bấm ĐẸP - Khi bấm sẽ gọi lệnh click() của thẻ input ẩn */}
                       <button
                         onClick={() => fileInputRef.current.click()}
                         className="w-full py-3 bg-white border-2 border-dashed border-blue-400 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 active:scale-95"
@@ -315,7 +367,10 @@ const InstructorCourseEditPage = () => {
                     Kéo thả để sắp xếp lại vị trí các bài giảng.
                   </p>
                 </div>
-                <button className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2 text-sm">
+                <button
+                  onClick={openAddLessonModal}
+                  className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2 text-sm active:scale-95"
+                >
                   <FontAwesomeIcon icon={faPlus} /> Thêm bài giảng
                 </button>
               </div>
@@ -324,9 +379,7 @@ const InstructorCourseEditPage = () => {
                 {lessons.map((lesson, index) => (
                   <div
                     key={lesson.id}
-                    className={`flex items-center gap-4 p-4 border rounded-xl transition-all group
-                    ${lesson.isPublished ? "bg-white border-slate-200 hover:border-blue-300" : "bg-slate-50 border-slate-200 opacity-60"}
-                  `}
+                    className={`flex items-center gap-4 p-4 border rounded-xl transition-all group ${lesson.isPublished ? "bg-white border-slate-200 hover:border-blue-300" : "bg-slate-50 border-slate-200 opacity-60"}`}
                   >
                     <div className="cursor-grab text-slate-300 hover:text-slate-500 py-2">
                       <FontAwesomeIcon icon={faGripLines} />
@@ -353,7 +406,6 @@ const InstructorCourseEditPage = () => {
                         )}
                       </div>
                     </div>
-
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className="w-8 h-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
@@ -375,49 +427,7 @@ const InstructorCourseEditPage = () => {
             </div>
           )}
 
-          {/* TAB 4: GIÁ BÁN */}
-          {activeTab === "pricing" && (
-            <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
-              <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
-                Giá bán khóa học
-              </h2>
-              <p className="text-slate-500 text-sm mb-6">
-                Mức giá mới sẽ chỉ áp dụng cho các học viên đăng ký sau thời
-                điểm cập nhật.
-              </p>
-
-              <div className="max-w-md">
-                <label className="block text-sm font-bold text-slate-700 mb-3">
-                  Giá niêm yết (USD)
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <span className="text-slate-500 font-bold text-lg">$</span>
-                  </div>
-                  <input
-                    type="number"
-                    name="price"
-                    value={courseData.price}
-                    onChange={handleChange}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-10 pr-4 py-3 text-slate-900 font-black text-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-                  />
-                </div>
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-100 rounded-xl flex items-start gap-3">
-                  <FontAwesomeIcon
-                    icon={faInfoCircle}
-                    className="text-blue-600 mt-0.5"
-                  />
-                  <p className="text-xs text-blue-800 leading-relaxed font-medium">
-                    Học viên cũ (1,250 người) đã mua khóa học với giá trước đó
-                    vẫn sẽ có quyền truy cập trọn đời và nhận các bản cập nhật
-                    mới miễn phí.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* TAB 5: VÙNG NGUY HIỂM */}
+          {/* TAB 4: VÙNG NGUY HIỂM */}
           {activeTab === "danger" && (
             <div className="bg-white rounded-3xl border border-red-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <div className="flex items-center gap-3 mb-6">
@@ -428,7 +438,6 @@ const InstructorCourseEditPage = () => {
                   Vùng nguy hiểm
                 </h2>
               </div>
-
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50/50 border border-red-100 rounded-2xl">
                   <div>
@@ -445,7 +454,6 @@ const InstructorCourseEditPage = () => {
                     Hủy xuất bản
                   </button>
                 </div>
-
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50/50 border border-red-100 rounded-2xl">
                   <div>
                     <h4 className="font-bold text-slate-900 text-base">
@@ -468,6 +476,160 @@ const InstructorCourseEditPage = () => {
           )}
         </main>
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL THÊM BÀI GIẢNG (Hiển thị nổi lơ lửng trên cùng) */}
+      {/* ========================================================================= */}
+      {isLessonModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={closeLessonModal}
+          ></div>
+
+          <div className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fade-slide-up flex flex-col z-50">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100">
+              <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">
+                  <FontAwesomeIcon icon={faFilm} />
+                </div>
+                Thêm bài giảng mới
+              </h3>
+              <button
+                onClick={closeLessonModal}
+                disabled={isUploadingLesson}
+                className="w-8 h-8 flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-full transition-colors"
+              >
+                <FontAwesomeIcon icon={faXmark} className="text-lg" />
+              </button>
+            </div>
+
+            <div className="p-6">
+              <form
+                id="add-lesson-form"
+                onSubmit={handleSubmitLesson}
+                className="space-y-6"
+              >
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Tiêu đề bài giảng <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={lessonTitle}
+                    onChange={(e) => setLessonTitle(e.target.value)}
+                    placeholder="VD: Bài 1 - Biến và kiểu dữ liệu..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
+                    disabled={isUploadingLesson}
+                  />
+                </div>
+
+                {/* 🚨 Ô NHẬP MÔ TẢ MỚI ĐƯỢC THÊM VÀO 🚨 */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Mô tả bài giảng (Tùy chọn)
+                  </label>
+                  <textarea
+                    value={lessonDescription}
+                    onChange={(e) => setLessonDescription(e.target.value)}
+                    placeholder="Nhập mô tả ngắn gọn về nội dung bài giảng..."
+                    rows="3"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors resize-none"
+                    disabled={isUploadingLesson}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">
+                    Video bài giảng <span className="text-red-500">*</span>
+                  </label>
+                  <div
+                    onClick={() =>
+                      !isUploadingLesson && lessonFileInputRef.current.click()
+                    }
+                    className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center text-center transition-colors ${lessonVideoName ? "border-blue-400 bg-blue-50/50 cursor-default" : "border-slate-300 bg-slate-50 hover:bg-slate-100 cursor-pointer hover:border-blue-400"} ${isUploadingLesson ? "opacity-50 cursor-wait" : ""}`}
+                  >
+                    <input
+                      type="file"
+                      accept="video/mp4,video/x-m4v,video/*"
+                      className="hidden"
+                      ref={lessonFileInputRef}
+                      onChange={handleLessonVideoChange}
+                      disabled={isUploadingLesson}
+                    />
+                    {lessonVideoName ? (
+                      <div className="flex flex-col items-center text-blue-600">
+                        <FontAwesomeIcon
+                          icon={faFilm}
+                          className="text-4xl mb-3"
+                        />
+                        <p className="font-bold text-sm line-clamp-1 px-4">
+                          {lessonVideoName}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLessonVideoName("");
+                          }}
+                          className="mt-2 text-xs text-red-500 hover:text-red-700 font-semibold underline"
+                          disabled={isUploadingLesson}
+                        >
+                          Thay video khác
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="text-slate-500">
+                        <div className="w-12 h-12 bg-white rounded-full shadow-sm border border-slate-200 flex items-center justify-center mx-auto mb-3 text-blue-500">
+                          <FontAwesomeIcon
+                            icon={faCloudUploadAlt}
+                            className="text-xl"
+                          />
+                        </div>
+                        <p className="font-bold text-sm text-slate-700">
+                          Bấm để tải video lên
+                        </p>
+                        <p className="text-xs mt-1">
+                          Hỗ trợ định dạng MP4, tối đa 2GB
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3 rounded-b-3xl">
+              <button
+                type="button"
+                onClick={closeLessonModal}
+                disabled={isUploadingLesson}
+                className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                type="submit"
+                form="add-lesson-form"
+                disabled={isUploadingLesson}
+                className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md shadow-blue-600/20 transition-all flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-wait"
+              >
+                {isUploadingLesson ? (
+                  <>
+                    <FontAwesomeIcon
+                      icon={faSpinner}
+                      className="animate-spin"
+                    />{" "}
+                    Đang tải lên...
+                  </>
+                ) : (
+                  "Lưu bài giảng"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
