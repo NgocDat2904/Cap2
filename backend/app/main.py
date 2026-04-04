@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.modules.auth.auth_controller import router as auth_router
 from app.modules.user.user_controller import router as user_router
 from app.modules.instructor.instructor_controller import router as instructor_router
+from app.modules.course.course_controller import router as course_router
+from app.modules.video.video_controller import router as video_router
 
 #  PHẢI tạo app trước
 app = FastAPI()
@@ -27,6 +29,8 @@ app.add_middleware(
 app.include_router(auth_router)
 app.include_router(user_router)
 app.include_router(instructor_router)
+app.include_router(course_router)
+app.include_router(video_router)
 
 @app.get("/")
 def root():
