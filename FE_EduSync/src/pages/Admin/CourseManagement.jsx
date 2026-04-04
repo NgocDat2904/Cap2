@@ -13,10 +13,11 @@ import {
   faFileExport,
   faClockRotateLeft,
   faTimesCircle,
+  faBell,
 } from "@fortawesome/free-solid-svg-icons";
 
 // =========================================================================
-// MOCK DATA MỚI: CHUẨN LUỒNG ADMIN DUYỆT & ĐỊNH GIÁ
+// MOCK DATA
 // =========================================================================
 const initialCourses = [
   {
@@ -25,21 +26,23 @@ const initialCourses = [
     instructor: "Trần Việt Anh",
     category: "Frontend",
     price: 49.99,
-    status: "published", // Đã được Admin duyệt và định giá
+    status: "published",
     updatedDate: "20/03/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
+    has_new_update: true,
   },
   {
     id: "CRS-102",
     title: "Java Backend Toàn tập với Spring Boot 3",
     instructor: "Nguyễn Văn Chuyên Gia",
     category: "Backend",
-    price: 0, // Lúc giảng viên gửi lên chưa có giá
-    status: "pending", // 🚨 Nằm chờ Admin vào duyệt và gõ giá
+    price: 0,
+    status: "pending",
     updatedDate: "27/03/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+    has_new_update: false,
   },
   {
     id: "CRS-103",
@@ -47,10 +50,11 @@ const initialCourses = [
     instructor: "Kẻ Gian Lận",
     category: "Business Analysis",
     price: 0,
-    status: "rejected", // Admin xem xong thấy vi phạm nên Từ chối
+    status: "rejected",
     updatedDate: "25/03/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80",
+    has_new_update: false,
   },
   {
     id: "CRS-104",
@@ -58,10 +62,35 @@ const initialCourses = [
     instructor: "Hương Design",
     category: "UI/UX Design",
     price: 0,
-    status: "draft", // Giảng viên đang làm dở, chưa gửi lên
+    status: "draft",
     updatedDate: "10/02/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+    has_new_update: false,
+  },
+  {
+    id: "CRS-105",
+    title: "Tuyệt đỉnh C++ cho người mới bắt đầu",
+    instructor: "Trần Việt Anh",
+    category: "Backend",
+    price: 19.99,
+    status: "published",
+    updatedDate: "20/03/2026",
+    thumbnail:
+      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
+    has_new_update: false,
+  },
+  {
+    id: "CRS-106",
+    title: "Thiết kế Figma từ A tới Z",
+    instructor: "Hương Design",
+    category: "UI/UX Design",
+    price: 0,
+    status: "draft",
+    updatedDate: "10/02/2026",
+    thumbnail:
+      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+    has_new_update: false,
   },
 ];
 
@@ -83,9 +112,6 @@ const AdminCourseManagement = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
-  // =========================================================================
-  // LOGIC THỐNG KÊ
-  // =========================================================================
   const stats = {
     total: courses.length,
     pending: courses.filter((c) => c.status === "pending").length,
@@ -101,14 +127,16 @@ const AdminCourseManagement = () => {
       course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
       categoryFilter === "Tất cả" || course.category === categoryFilter;
-    const matchesStatus =
-      statusFilter === "all" || course.status === statusFilter;
+
+    let matchesStatus = false;
+    if (statusFilter === "all") matchesStatus = true;
+    else if (statusFilter === "has_update")
+      matchesStatus = course.has_new_update === true;
+    else matchesStatus = course.status === statusFilter;
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  // =========================================================================
-  // LOGIC HÀNH ĐỘNG CỦA ADMIN (HẬU KIỂM TRÊN DANH SÁCH)
-  // =========================================================================
   const toggleCourseSuspension = (id, currentStatus) => {
     const newStatus = currentStatus === "suspended" ? "published" : "suspended";
     const confirmMsg =
@@ -176,7 +204,8 @@ const AdminCourseManagement = () => {
   };
 
   return (
-    <div className="flex-1 p-6 sm:p-8 bg-slate-50 min-h-screen font-sans animate-fade-slide-up">
+    // Bỏ min-h-screen để thanh cuộn hoạt động mượt hơn
+    <div className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up h-full">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
@@ -228,7 +257,6 @@ const AdminCourseManagement = () => {
             key={idx}
             className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4 relative overflow-hidden"
           >
-            {/* Hiệu ứng chớp viền nếu có khóa chờ duyệt */}
             {idx === 1 && stats.pending > 0 && (
               <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-400 animate-pulse"></div>
             )}
@@ -247,9 +275,10 @@ const AdminCourseManagement = () => {
         ))}
       </div>
 
-      {/* VÙNG CHỨA BẢNG VÀ BỘ LỌC */}
-      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden relative">
-        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4 items-center justify-between">
+      {/* 🚨 KHU VỰC DANH SÁCH KHÓA HỌC (Đã chia ra ToolBar và Table riêng) */}
+      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
+        {/* 🚨 TOOLBAR TÌM KIẾM (Được dán chặt ở trên cùng nhờ sticky) */}
+        <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
           <div className="relative w-full md:w-96">
             <FontAwesomeIcon
               icon={faSearch}
@@ -278,10 +307,11 @@ const AdminCourseManagement = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:w-44 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer"
+              className="flex-1 md:w-56 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer"
             >
               <option value="all">Mọi trạng thái</option>
-              <option value="pending">Chờ duyệt</option>
+              <option value="pending">Chờ duyệt (Mới)</option>
+              <option value="has_update">🔔 Có cập nhật nội dung</option>
               <option value="published">Đang hoạt động</option>
               <option value="rejected">Bị từ chối</option>
               <option value="draft">Bản nháp</option>
@@ -289,13 +319,13 @@ const AdminCourseManagement = () => {
           </div>
         </div>
 
-        {/* BẢNG DỮ LIỆU */}
-        <div className="overflow-x-auto min-h-[400px]">
+        {/* 🚨 KHU VỰC BẢNG NỘI DUNG (Phần này sẽ tự do cuộn lên xuống) */}
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
+            <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
+              <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                 <th className="p-5 w-20 text-center">ID</th>
-                <th className="p-5 min-w-[250px]">Thông tin Khóa học</th>
+                <th className="p-5 min-w-[300px]">Thông tin Khóa học</th>
                 <th className="p-5">Chuyên ngành</th>
                 <th className="p-5 text-right">Giá bán</th>
                 <th className="p-5">Trạng thái</th>
@@ -307,33 +337,42 @@ const AdminCourseManagement = () => {
                 filteredCourses.map((course) => (
                   <tr
                     key={course.id}
-                    className="hover:bg-slate-50/80 transition-colors group"
+                    className={`hover:bg-slate-50/80 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}
                   >
                     <td className="p-5 text-center text-sm font-bold text-slate-400">
                       {course.id.replace("CRS-", "#")}
                     </td>
                     <td className="p-5">
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-start gap-4">
                         <img
                           src={course.thumbnail}
                           alt="Thumbnail"
-                          className="w-16 h-10 rounded-lg object-cover border border-slate-200 shadow-sm"
+                          className="w-20 h-12 rounded-lg object-cover border border-slate-200 shadow-sm mt-1"
                         />
                         <div className="min-w-0">
                           <p
-                            className="text-sm font-extrabold text-slate-800 line-clamp-1 hover:text-blue-600 cursor-pointer transition-colors"
                             onClick={() =>
                               navigate(`/admin/courses/${course.id}`)
                             }
+                            className="text-sm font-extrabold text-slate-800 line-clamp-1 hover:text-blue-600 cursor-pointer transition-colors"
                           >
                             {course.title}
                           </p>
-                          <p className="text-xs font-medium text-slate-500 mt-1">
-                            GV:{" "}
-                            <span className="font-bold text-slate-700">
-                              {course.instructor}
+
+                          {course.has_new_update && (
+                            <span className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md shadow-sm border border-amber-200 animate-pulse">
+                              <FontAwesomeIcon icon={faBell} /> MỚI CẬP NHẬT
                             </span>
-                          </p>
+                          )}
+
+                          {!course.has_new_update && (
+                            <p className="text-xs font-medium text-slate-500 mt-1">
+                              GV:{" "}
+                              <span className="font-bold text-slate-700">
+                                {course.instructor}
+                              </span>
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -342,8 +381,6 @@ const AdminCourseManagement = () => {
                         {course.category}
                       </span>
                     </td>
-
-                    {/* CỘT GIÁ TIỀN THỂ HIỆN QUYỀN LỰC CỦA ADMIN */}
                     <td className="p-5 text-right">
                       {course.status === "pending" ||
                       course.status === "draft" ? (
@@ -360,7 +397,6 @@ const AdminCourseManagement = () => {
                         </span>
                       )}
                     </td>
-
                     <td className="p-5">{renderStatusBadge(course.status)}</td>
                     <td className="p-5 text-center relative">
                       <button
@@ -380,26 +416,33 @@ const AdminCourseManagement = () => {
                             className="fixed inset-0 z-10"
                             onClick={() => setOpenActionMenuId(null)}
                           ></div>
-                          <div className="absolute right-8 top-10 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden animate-fade-slide-up">
-                            {/* NÚT CHUYỂN HƯỚNG TỚI TRANG ĐỊNH GIÁ & CHI TIẾT */}
+                          <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden animate-fade-slide-up">
                             <button
                               onClick={() => {
                                 setOpenActionMenuId(null);
-                                navigate(`/admin/courses/${course.id}`);
+                                navigate(
+                                  `/admin/courses/${course.id}/approval`,
+                                );
                               }}
                               className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${
-                                course.status === "pending"
-                                  ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
-                                  : "text-slate-700 hover:bg-slate-50"
+                                course.has_new_update
+                                  ? "text-amber-700 bg-amber-50 hover:bg-amber-100"
+                                  : course.status === "pending"
+                                    ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
+                                    : "text-slate-700 hover:bg-slate-50"
                               }`}
                             >
-                              <FontAwesomeIcon icon={faEye} className="w-4" />{" "}
-                              {course.status === "pending"
-                                ? "Duyệt & Định giá"
-                                : "Xem chi tiết"}
+                              <FontAwesomeIcon
+                                icon={course.has_new_update ? faBell : faEye}
+                                className="w-4"
+                              />{" "}
+                              {course.has_new_update
+                                ? "Xử lý bản cập nhật"
+                                : course.status === "pending"
+                                  ? "Duyệt & Định giá"
+                                  : "Xem chi tiết"}
                             </button>
 
-                            {/* Nút Đình chỉ (Chỉ hiện khi đã Published) */}
                             {course.status === "published" && (
                               <button
                                 onClick={() =>
@@ -415,7 +458,6 @@ const AdminCourseManagement = () => {
                               </button>
                             )}
 
-                            {/* Nút Khôi phục (Chỉ hiện khi bị Suspended) */}
                             {course.status === "suspended" && (
                               <button
                                 onClick={() =>
