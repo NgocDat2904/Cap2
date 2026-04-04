@@ -163,8 +163,7 @@ const LearnerLayout = () => {
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 mx-2 mb-2 rounded-xl border border-blue-100/50 shadow-sm">
                     <div className="flex justify-between items-end mb-2">
                       <h4 className="font-bold text-gray-800 text-sm line-clamp-1">
-                        {/* 🚨 SỬA LẠI: Lấy Tên thật của User để chào hỏi */}
-                        Chào, {userProfile?.fullName || "Học viên"}! 👋
+                        Chào, {userProfile?.fullName || "Học viên"}!
                       </h4>
                       <span className="text-blue-600 font-black text-sm">
                         60%

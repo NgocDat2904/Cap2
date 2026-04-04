@@ -14,6 +14,9 @@ import {
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 
+// 🚨 ĐÃ IMPORT THƯ VIỆN PHÁT VIDEO CHUẨN
+import ReactPlayer from "react-player";
+
 import CourseMindmap from "../../components/CourseMindmap";
 import CourseSummary from "../../components/CourseSummary";
 import CourseQuiz from "../../components/CourseQuiz";
@@ -27,6 +30,7 @@ const CourseLearningWorkspace = () => {
   const [activeRightTab, setActiveRightTab] = useState("videos");
   const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [likedVideos, setLikedVideos] = useState(["v2"]);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   const instructorInfo = {
     name: "Nguyễn Văn A",
@@ -34,14 +38,19 @@ const CourseLearningWorkspace = () => {
     avatar: "https://i.pravatar.cc/150?img=11",
   };
 
+  // 🚨 TOÀN BỘ DÙNG LINK MP4 CỦA GOOGLE - 100% SẼ PHÁT ĐƯỢC KHÔNG BỊ CHẶN
+  const MP4_TEST_LINK =
+    "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+
   const playlist = [
     {
       id: "v1",
       title: "01 - Welcome!",
-      duration: "05:00",
+      duration: "09:56",
       description: "Giới thiệu tổng quan về khóa học và các mục tiêu.",
       image:
         "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80",
+      videoUrl: MP4_TEST_LINK,
       completed: true,
       locked: false,
       timeline: [],
@@ -53,6 +62,7 @@ const CourseLearningWorkspace = () => {
       description: "Hướng dẫn cài đặt môi trường lập trình.",
       image:
         "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&q=80",
+      videoUrl: MP4_TEST_LINK,
       completed: true,
       locked: false,
       timeline: [],
@@ -60,17 +70,18 @@ const CourseLearningWorkspace = () => {
     {
       id: "v3",
       title: "03 - Component là gì?",
-      duration: "15:30",
+      duration: "12:15",
       description:
         "Khái niệm cốt lõi của React, cách tạo Functional Component.",
       image:
         "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&q=80",
+      videoUrl: MP4_TEST_LINK,
       completed: false,
       locked: false,
       timeline: [
         { time: "00:00", label: "Mở đầu khái niệm", seconds: 0 },
-        { time: "03:45", label: "Tạo Functional Component", seconds: 225 },
-        { time: "08:20", label: "Tái sử dụng Component", seconds: 500 },
+        { time: "01:30", label: "Gặp chú thỏ mập", seconds: 90 },
+        { time: "03:15", label: "Đàn bướm xuất hiện", seconds: 195 },
       ],
     },
     {
@@ -80,6 +91,7 @@ const CourseLearningWorkspace = () => {
       description: "Tìm hiểu useState Hook - Trái tim của ứng dụng.",
       image:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&q=80",
+      videoUrl: MP4_TEST_LINK,
       completed: false,
       locked: true,
       timeline: [],
@@ -91,13 +103,15 @@ const CourseLearningWorkspace = () => {
       description: "Hiểu về Effect Hook.",
       image:
         "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=300&q=80",
+      videoUrl: MP4_TEST_LINK,
       completed: false,
       locked: true,
       timeline: [],
     },
   ];
 
-  const [activeLesson, setActiveLesson] = useState(playlist[2]);
+  const [activeLesson, setActiveLesson] = useState(playlist[0]);
+  const playerRef = React.useRef(null);
 
   const handleSelectLesson = (lesson) => {
     if (lesson.locked && !isPremiumUser) {
@@ -106,6 +120,7 @@ const CourseLearningWorkspace = () => {
     }
     setActiveLesson(lesson);
     setActiveRightTab("timeline");
+    setIsPlaying(true);
   };
 
   const handleToggleLike = (e, lessonId) => {
@@ -115,6 +130,13 @@ const CourseLearningWorkspace = () => {
         ? prev.filter((id) => id !== lessonId)
         : [...prev, lessonId],
     );
+  };
+
+  const handleSeekVideo = (seconds) => {
+    if (playerRef.current) {
+      playerRef.current.seekTo(seconds, "seconds");
+      setIsPlaying(true);
+    }
   };
 
   const renderPaywall = (featureName) => (
@@ -157,21 +179,24 @@ const CourseLearningWorkspace = () => {
 
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         <div className="w-full lg:flex-1 flex flex-col min-w-0">
-          <div className="w-full bg-slate-900 aspect-video rounded-2xl overflow-hidden shadow-lg relative group border border-slate-800">
-            <div className="absolute inset-0 flex items-center justify-center bg-slate-900/30 group-hover:bg-slate-900/50 transition-all cursor-pointer z-10">
-              <FontAwesomeIcon
-                icon={faPlayCircle}
-                className="text-white text-7xl opacity-90 group-hover:scale-110 transition-transform shadow-sm rounded-full"
-              />
-            </div>
-            <img
-              src={activeLesson.image}
-              alt="Video cover"
-              className="w-full h-full object-cover opacity-60"
+          <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
+            <ReactPlayer
+              ref={playerRef}
+              className="absolute top-0 left-0"
+              url={activeLesson.videoUrl}
+              width="100%"
+              height="100%"
+              controls={true}
+              playing={isPlaying} // Bật tự động phát
+              muted={true}
+              onPlay={() => setIsPlaying(true)}
+              onPause={() => setIsPlaying(false)}
+              config={{
+                youtube: {
+                  playerVars: { showinfo: 0 },
+                },
+              }}
             />
-            <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-lg text-white text-sm font-bold z-20">
-              Phát video
-            </div>
           </div>
 
           <div className="mt-6 mb-8 px-1">
@@ -231,7 +256,6 @@ const CourseLearningWorkspace = () => {
             </div>
 
             <div className="bg-white border border-t-0 border-slate-200 rounded-b-2xl p-6 sm:p-8 min-h-[400px] shadow-sm">
-              {/* 🚨 TẤT CẢ NỘI DUNG TABS BÂY GIỜ CHỈ CÒN ĐÚNG 5 DÒNG GỌN GÀNG 🚨 */}
               {activeLeftTab === "summary" && (
                 <CourseSummary lessonTitle={activeLesson.title} />
               )}
@@ -288,7 +312,7 @@ const CourseLearningWorkspace = () => {
                       <div
                         key={index}
                         className="relative pl-6 cursor-pointer group"
-                        onClick={() => alert(`Tua video đến: ${point.time}`)}
+                        onClick={() => handleSeekVideo(point.seconds)}
                       >
                         <div className="absolute -left-[5px] top-1 w-2.5 h-2.5 bg-slate-300 rounded-full border-2 border-white group-hover:bg-blue-600 group-hover:scale-125 transition-all"></div>
                         <div className="group-hover:translate-x-1 transition-transform">
