@@ -110,6 +110,31 @@ const InstructorStudentsPage = () => {
       lastActive: "1 tháng trước",
       color: "bg-rose-500",
     },
+    // Thêm vài data để test cuộn
+    {
+      id: 6,
+      name: "Vũ Trọng Phụng",
+      email: "phung.vu@gmail.com",
+      avatar: "VP",
+      courseId: "python",
+      courseName: "Master Python from basics to advanced",
+      enrolledDate: "28/03/2026",
+      progress: 30,
+      lastActive: "10 phút trước",
+      color: "bg-teal-500",
+    },
+    {
+      id: 7,
+      name: "Hoàng Mộc Lan",
+      email: "lan.hoang@edusync.vn",
+      avatar: "HL",
+      courseId: "react",
+      courseName: "ReactJS Thực chiến 2026",
+      enrolledDate: "29/03/2026",
+      progress: 60,
+      lastActive: "4 giờ trước",
+      color: "bg-pink-500",
+    },
   ];
 
   const filteredStudents = students.filter((student) => {
@@ -130,8 +155,7 @@ const InstructorStudentsPage = () => {
   };
 
   const handleAction = (action, studentName) => {
-    setOpenDropdownId(null); // Đóng menu
-    // Dùng setTimeout nhỏ để hiệu ứng đóng menu mượt hơn trước khi alert
+    setOpenDropdownId(null);
     setTimeout(() => {
       switch (action) {
         case "view":
@@ -165,7 +189,8 @@ const InstructorStudentsPage = () => {
   };
 
   return (
-    <div className="flex-1 p-6 lg:p-8 bg-slate-50 min-h-screen animate-fade-slide-up">
+    // 🚨 Sửa min-h-screen thành h-full để thanh cuộn mượt mà
+    <div className="flex-1 p-6 lg:p-8 bg-slate-50 h-full animate-fade-slide-up">
       {/* HEADER */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
@@ -218,46 +243,47 @@ const InstructorStudentsPage = () => {
         </div>
       </div>
 
-      {/* THANH TÌM KIẾM & BỘ LỌC */}
-      <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 mb-6">
-        <div className="relative flex-1">
-          <FontAwesomeIcon
-            icon={faSearch}
-            className="absolute left-4 top-3.5 text-slate-400"
-          />
-          <input
-            type="text"
-            placeholder="Tìm kiếm theo tên hoặc email..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
-          />
+      {/* 🚨 VÙNG CHỨA BẢNG VÀ BỘ LỌC ĐÃ ĐƯỢC GỘP CHUNG VÀ CỐ ĐỊNH CHIỀU CAO */}
+      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
+        {/* 🚨 THANH CÔNG CỤ LỌC & TÌM KIẾM (Ghim dính lên trên) */}
+        <div className="sticky top-0 z-20 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center shadow-sm">
+          <div className="relative flex-1 w-full">
+            <FontAwesomeIcon
+              icon={faSearch}
+              className="absolute left-4 top-3.5 text-slate-400"
+            />
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên hoặc email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+          </div>
+          <div className="relative md:w-72 w-full shrink-0">
+            <FontAwesomeIcon
+              icon={faFilter}
+              className="absolute left-4 top-3.5 text-slate-400"
+            />
+            <select
+              value={filterCourse}
+              onChange={(e) => setFilterCourse(e.target.value)}
+              className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors appearance-none cursor-pointer truncate"
+            >
+              {courses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.name}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-        <div className="relative md:w-72 shrink-0">
-          <FontAwesomeIcon
-            icon={faFilter}
-            className="absolute left-4 top-3.5 text-slate-400"
-          />
-          <select
-            value={filterCourse}
-            onChange={(e) => setFilterCourse(e.target.value)}
-            className="w-full pl-11 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors appearance-none cursor-pointer"
-          >
-            {courses.map((course) => (
-              <option key={course.id} value={course.id}>
-                {course.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
 
-      {/* DANH SÁCH HỌC VIÊN */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-visible">
-        <div className="w-full min-w-[800px]">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
+        {/* 🚨 BẢNG DỮ LIỆU (Cuộn tự do ở giữa) */}
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
+          <table className="w-full text-left border-collapse min-w-[800px]">
+            <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
+              <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
                 <th className="p-5 w-1/3">Học viên</th>
                 <th className="p-5">Khóa học ghi danh</th>
                 <th className="p-5">Tiến độ</th>
@@ -328,6 +354,7 @@ const InstructorStudentsPage = () => {
                             className="text-sm"
                           />
                         </button>
+
                         {student.progress === 100 && (
                           <button
                             className="w-8 h-8 rounded-lg bg-amber-50 text-amber-500 flex items-center justify-center cursor-default"
@@ -340,9 +367,7 @@ const InstructorStudentsPage = () => {
                           </button>
                         )}
 
-                        {/* ======================================= */}
                         {/* THE 3-DOTS ACTION DROPDOWN MENU */}
-                        {/* ======================================= */}
                         <div className="relative inline-block text-left">
                           <button
                             onClick={(e) => toggleDropdown(student.id, e)}
@@ -395,8 +420,6 @@ const InstructorStudentsPage = () => {
                                 />{" "}
                                 Reset tiến độ (0%)
                               </button>
-
-                              {/* Vùng đỏ nguy hiểm */}
                               <button
                                 onClick={() =>
                                   handleAction("ban", student.name)
@@ -415,7 +438,10 @@ const InstructorStudentsPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="p-10 text-center text-slate-500">
+                  <td
+                    colSpan="4"
+                    className="p-10 text-center text-slate-500 font-medium"
+                  >
                     Không tìm thấy học viên nào phù hợp.
                   </td>
                 </tr>
@@ -424,8 +450,8 @@ const InstructorStudentsPage = () => {
           </table>
         </div>
 
-        {/* PHÂN TRANG */}
-        <div className="p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-sm">
+        {/* 🚨 PHÂN TRANG (Nằm cố định ở đáy bảng) */}
+        <div className="sticky bottom-0 z-20 p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-sm shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
           <p className="text-slate-500 font-medium">
             Hiển thị{" "}
             <span className="font-bold text-slate-700">

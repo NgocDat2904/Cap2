@@ -5,7 +5,7 @@ import { Markmap } from "markmap-view";
 const transformer = new Transformer();
 
 const mockMarkdownData = `
-# 🧠 Lập trình ReactJS Thực chiến
+# Lập trình ReactJS Thực chiến
 ## 1. Mở đầu
 - Cài đặt môi trường (NodeJS, VS Code)
 - Kiến trúc Component

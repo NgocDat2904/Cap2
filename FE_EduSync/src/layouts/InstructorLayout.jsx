@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
+import { getProfileAPI } from "../services/userAPI";
 import {
   faBars,
   faSearch,
@@ -22,6 +23,39 @@ const InstructorLayout = () => {
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
+  //  1. STATE LƯU THÔNG TIN PROFILE CỦA GIẢNG VIÊN
+  const [instructorProfile, setInstructorProfile] = useState({
+    fullName: "",
+    role: "Giảng viên",
+    avatarUrl: "",
+  });
+
+  // =========================================================================
+  //  2. GỌI API LẤY THÔNG TIN NGƯỜI DÙNG KHI MỞ TRANG
+  // =========================================================================
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      const token = localStorage.getItem("access_token");
+      const userId = localStorage.getItem("user_id");
+
+      if (token && userId) {
+        try {
+          const token = localStorage.getItem("access_token");
+          if (!token) return;
+
+          const data = await getProfileAPI(token);
+          setInstructorProfile(data); // Lưu data vào state
+        } catch (error) {
+          console.error("Lỗi lấy thông tin User trên Layout:", error);
+        }
+      }
+    };
+    fetchUserProfile();
+  }, []);
+
+  // =========================================================================
+  // XỬ LÝ RESIZE WINDOW
+  // =========================================================================
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -57,18 +91,16 @@ const InstructorLayout = () => {
   // =========================================================================
   const handleLogout = async (e) => {
     e.preventDefault();
-    handleLinkClick(); // Đóng sidebar trên mobile nếu đang mở
+    handleLinkClick();
 
     try {
       const token = localStorage.getItem("access_token");
       if (token) {
-        // Gọi API báo Backend vô hiệu hóa token này
         await logoutAPI(token);
       }
     } catch (error) {
       console.error("Lỗi khi đăng xuất API:", error);
     } finally {
-      // Dù API có lỗi hay không, cứ dọn sạch túi và đá văng ra Login
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
       localStorage.removeItem("user_id");
@@ -95,6 +127,7 @@ const InstructorLayout = () => {
             : "-translate-x-full w-64 md:translate-x-0 md:w-20"
         }`}
       >
+        {/* LOGO AREA */}
         <div
           className={`h-20 flex items-center border-b border-slate-100 transition-all duration-300
           ${isSidebarOpen ? "px-6" : "px-0 justify-center"}`}
@@ -129,8 +162,9 @@ const InstructorLayout = () => {
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3">
-          <ul className="space-y-1.5">
+        {/* NAVIGATION LINKS */}
+        <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3 flex flex-col">
+          <ul className="space-y-1.5 flex-1">
             {sidebarLinks.map((link) => {
               const isActive = location.pathname.includes(link.path);
               return (
@@ -198,7 +232,7 @@ const InstructorLayout = () => {
             })}
           </ul>
 
-          {/* NÚT ĐĂNG XUẤT ĐÃ ĐƯỢC CHUYỂN THÀNH BUTTON VÀ GẮN HÀM XỬ LÝ */}
+          {/* NÚT ĐĂNG XUẤT */}
           <div className="mt-4">
             <button
               onClick={handleLogout}
@@ -227,6 +261,8 @@ const InstructorLayout = () => {
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
+        {/* HEADER TOP CỦA LAYOUT */}
+        {/* HEADER TOP CỦA LAYOUT */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 transition-all relative z-10 sticky top-0 shadow-sm">
           <div className="flex items-center flex-1">
             <button
@@ -257,22 +293,47 @@ const InstructorLayout = () => {
 
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
-            <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => navigate("/instructor/account")}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
+              {/* 3. BINDING DỮ LIỆU STATE VÀO GIAO DIỆN Ở ĐÂY */}
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
-                  Nguyễn Văn A
+                  {/* Bắt bao trọn các trường hợp tên biến Backend có thể trả về */}
+                  {instructorProfile.fullName ||
+                    instructorProfile.full_name ||
+                    instructorProfile.name ||
+                    "Giảng viên"}
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  Giảng viên
+                  {instructorProfile.role || "Giảng viên"}
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-md">
-                <FontAwesomeIcon icon={faUserCircle} className="text-xl" />
-              </div>
+
+              {/* Logic Check Ảnh Đại Diện siêu thông minh */}
+              {instructorProfile.avatarUrl ||
+              instructorProfile.avatar ||
+              instructorProfile.avatar_url ? (
+                <img
+                  src={
+                    instructorProfile.avatarUrl ||
+                    instructorProfile.avatar ||
+                    instructorProfile.avatar_url
+                  }
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-md bg-slate-100"
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 text-white flex items-center justify-center shadow-md border-2 border-white">
+                  <FontAwesomeIcon icon={faUserCircle} className="text-xl" />
+                </div>
+              )}
             </button>
           </div>
         </header>
 
+        {/* PHẦN CHỨA CÁC TRANG CON */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto">
           <Outlet />
         </main>

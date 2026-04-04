@@ -63,6 +63,25 @@ const initialUsers = [
     joinDate: "14/02/2026",
     avatar: "https://i.pravatar.cc/150?img=68",
   },
+  // Thêm vài data giả để má test cuộn cho đã
+  {
+    id: "USR-006",
+    name: "Lê Văn Luyện Code",
+    email: "coder.pro@gmail.com",
+    role: "learner",
+    status: "active",
+    joinDate: "05/03/2026",
+    avatar: "https://i.pravatar.cc/150?img=12",
+  },
+  {
+    id: "USR-007",
+    name: "Hoàng Thị Thiết Kế",
+    email: "design.hoang@yahoo.com",
+    role: "instructor",
+    status: "active",
+    joinDate: "10/03/2026",
+    avatar: "https://i.pravatar.cc/150?img=5",
+  },
 ];
 
 const AdminUserManagement = () => {
@@ -104,7 +123,6 @@ const AdminUserManagement = () => {
       ),
     );
     setOpenActionMenuId(null);
-    // TODO: Bắn API cập nhật trạng thái xuống Backend
     alert(`Đã ${newStatus === "banned" ? "khóa" : "mở khóa"} người dùng!`);
   };
 
@@ -112,7 +130,6 @@ const AdminUserManagement = () => {
     if (window.confirm("Bạn có chắc chắn muốn xóa vĩnh viễn người dùng này?")) {
       setUsers(users.filter((user) => user.id !== id));
       setOpenActionMenuId(null);
-      // TODO: Bắn API Delete xuống Backend
     }
   };
 
@@ -161,7 +178,8 @@ const AdminUserManagement = () => {
   // GIAO DIỆN CHÍNH
   // =========================================================================
   return (
-    <div className="flex-1 p-6 sm:p-8 bg-slate-50 min-h-screen font-sans animate-fade-slide-up">
+    // 🚨 Bỏ min-h-screen, dùng h-full để thanh cuộn mượt mà
+    <div className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up h-full">
       {/* HEADER & THÊM MỚI */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
@@ -228,10 +246,10 @@ const AdminUserManagement = () => {
         ))}
       </div>
 
-      {/* VÙNG CHỨA BẢNG VÀ BỘ LỌC */}
-      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden relative">
-        {/* THANH CÔNG CỤ LỌC & TÌM KIẾM */}
-        <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col md:flex-row gap-4 items-center justify-between">
+      {/* 🚨 VÙNG CHỨA BẢNG VÀ BỘ LỌC (Đã chia ra ToolBar và Table riêng) */}
+      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
+        {/* 🚨 THANH CÔNG CỤ LỌC & TÌM KIẾM (Được ghim dính lên trên cùng) */}
+        <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
           <div className="relative w-full md:w-80">
             <FontAwesomeIcon
               icon={faSearch}
@@ -275,11 +293,11 @@ const AdminUserManagement = () => {
           </div>
         </div>
 
-        {/* BẢNG DỮ LIỆU (DATA TABLE) */}
-        <div className="overflow-x-auto min-h-[400px]">
+        {/* 🚨 BẢNG DỮ LIỆU (Phần thân cuộn tự do) */}
+        <div className="overflow-y-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
+            <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
+              <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                 <th className="p-5 w-16 text-center">ID</th>
                 <th className="p-5">Người dùng</th>
                 <th className="p-5">Vai trò</th>

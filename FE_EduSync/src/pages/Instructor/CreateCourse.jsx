@@ -32,7 +32,6 @@ const categories = [
 const InstructorCreateCourse = () => {
   const [activeTab, setActiveTab] = useState("basic");
 
-  // 🚨 ĐÃ XÓA FIELD "price" ĐỂ ADMIN TỰ QUYẾT ĐỊNH 🚨
   const [courseInfo, setCourseInfo] = useState({
     title: "",
     description: "",
