@@ -25,7 +25,7 @@ def get_profile(current_user=Depends(get_current_user)):
 # =========================
 # 🔄 UPDATE PROFILE (JSON)
 # =========================
-@router.put("/profile")
+@router.put("/update-profile")
 def update_profile(
     data: InstructorProfileUpdate,
     current_user=Depends(get_current_user)
@@ -53,7 +53,7 @@ def upload_avatar_api(
 # =========================
 # 🔥 API GỘP (TEXT + AVATAR)
 # =========================
-@router.put("/update-full-profile")
+@router.post("/update-full-profile")
 def update_full_profile_api(
     # 🔥 USER
     fullName: str = Form(None),
