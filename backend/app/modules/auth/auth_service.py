@@ -24,11 +24,11 @@ def register(user, role=None):
     if not role:
         role = "instructor" if user.email.endswith("@edusync.edu.vn") else "learner"
 
-    #  PROFILE FIELDS
+    # PROFILE FIELDS
     new_user = {
         "fullName": user.name,
         "email": user.email,
-        "password": hashed,
+        "password": hashed,  # ✅ dùng chuẩn 1 field duy nhất
         "role": role,
         "avatarUrl": "",
         "phone": "",
@@ -54,11 +54,20 @@ def login(user, role=None):
 
     password = str(user.password).strip()
 
-    if not verify_password(password, db_user["password"]):
+    # 🔥 FIX QUAN TRỌNG: support cả password & password_hash
+    hashed_password = db_user.get("password") or db_user.get("password_hash")
+
+    if not hashed_password:
+        raise HTTPException(
+            status_code=500,
+            detail="User missing password field (password/password_hash)"
+        )
+
+    if not verify_password(password, hashed_password):
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     # check role
-    if role and db_user["role"] != role:
+    if role and db_user.get("role") != role:
         raise HTTPException(status_code=403, detail="Unauthorized role")
 
     token = create_access_token({
