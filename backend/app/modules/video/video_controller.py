@@ -1,19 +1,16 @@
 from fastapi import APIRouter
 from app.modules.video.video_service import VideoService
-from pydantic import BaseModel
+from app.modules.video.video_schema import VideoRequest
 
 router = APIRouter()
 video_service = VideoService()
 
-class VideoRequest(BaseModel):
-    course_id: str
-    url: str
 
 @router.post("/videos/upload-url")
-async def get_upload_url(filename: str):
-    return await video_service.generate_upload_url(filename)
+async def get_upload_url(filename: str, content_type: str = "video/mp4"):
+    return await video_service.generate_upload_url(filename, content_type)
 
 
 @router.post("/videos")
 async def save_video(data: VideoRequest):
-    return await video_service.save_video(data.course_id, data.url)
+    return await video_service.save_video(data)
