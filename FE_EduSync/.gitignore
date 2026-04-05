@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+# Chặn file key cụ thể
+edusync-491910-0a7be5d8fd86.json
+
+# Chặn tất cả các file JSON chứa key (đề phòng sau này đổi tên)
+*.json

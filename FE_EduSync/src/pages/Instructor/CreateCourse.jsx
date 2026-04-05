@@ -6,12 +6,13 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 // IMPORT 5 API SIÊU CẤP TỪ SERVICE 
-import { 
-  createCourseAPI, 
-  getPresignedUrlAPI, 
-  uploadVideoToGCS, 
-  saveVideoToDBAPI, 
-  submitCourseAPI 
+import {
+  createCourseAPI,
+  getPresignedUrlAPI,
+  uploadVideoToGCS,
+  saveVideoToDBAPI,
+  submitCourseAPI,
+  uploadCourseThumbnailAPI,
 } from "../../services/courseAPI";
 
 const categories = [
@@ -40,6 +41,7 @@ const InstructorCreateCourse = () => {
   });
 
   const [thumbnailPreview, setThumbnailPreview] = useState(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [uploadedVideos, setUploadedVideos] = useState([]);
 
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -63,9 +65,11 @@ const InstructorCreateCourse = () => {
   const handleThumbnailChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      setThumbnailFile(file);
       const imageUrl = URL.createObjectURL(file);
       setThumbnailPreview(imageUrl);
     }
+    e.target.value = "";
   };
 
   const handleVideoUploadClick = () => fileInputRef.current.click();
@@ -122,12 +126,20 @@ const InstructorCreateCourse = () => {
       const token = localStorage.getItem("access_token");
       if (!token) throw new Error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
 
+      let courseImageUrl = "";
+      if (thumbnailFile) {
+        setUploadProgressText("Đang tải ảnh bìa lên Cloudinary...");
+        const thumbRes = await uploadCourseThumbnailAPI(thumbnailFile, token);
+        courseImageUrl = thumbRes.url || "";
+      }
+
       // BƯỚC 1: TẠO KHÓA HỌC
       setUploadProgressText("Đang tạo khóa học mới...");
       const coursePayload = {
         title: courseInfo.title,
         description: courseInfo.description,
         category: courseInfo.category,
+        image: courseImageUrl,
       };
       const createResponse = await createCourseAPI(coursePayload, token);
       const newCourseId = createResponse.id;
@@ -140,17 +152,22 @@ const InstructorCreateCourse = () => {
 
           // 2. Xin vé thông hành GCS
           const urlData = await getPresignedUrlAPI(newCourseId, video.file.name, video.file.type, token);
-          
+          if (!urlData?.upload_url || !urlData?.file_url) {
+            throw new Error("Backend không trả upload_url / file_url — kiểm tra API presign.");
+          }
+
           // 3. Up thẳng lên mây Google
           setUploadProgressText(`Đang đẩy Video ${i + 1} lên đám mây... (Chờ chút nha)`);
           await uploadVideoToGCS(urlData.upload_url, video.file);
 
-          // 4. Báo Backend lưu Video vào Database
+          // 4. Báo Backend lưu Video vào Database (url = link công khai file trên GCS)
           const videoDbPayload = {
+            url: urlData.file_url,
+            storage_path: urlData.storage_path,
+            thumbnail_url: courseImageUrl || undefined,
             title: video.title,
             description: video.description,
             file_name: video.file.name,
-            // Thêm các trường khác nếu Backend yêu cầu (vd: duration, size...)
           };
           await saveVideoToDBAPI(newCourseId, videoDbPayload, token);
         }
@@ -167,7 +184,11 @@ const InstructorCreateCourse = () => {
         // Reset form cho sạch sẽ
         setCourseInfo({ title: "", description: "", category: "", prerequisites: "", enableQA: true, visibility: "public" });
         setUploadedVideos([]);
+        if (thumbnailPreview?.startsWith("blob:")) {
+          URL.revokeObjectURL(thumbnailPreview);
+        }
         setThumbnailPreview(null);
+        setThumbnailFile(null);
       }
 
     } catch (error) {

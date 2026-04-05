@@ -86,7 +86,7 @@ class CourseRepository:
             return []
 
 
-    # ✅ FIND BY INSTRUCTOR (FIX CHUẨN)
+    # FIND BY INSTRUCTOR (FIX CHUẨN)
     async def find_by_instructor(self, instructor_id: str):
         try:
             obj_id = ObjectId(instructor_id)
@@ -103,5 +103,12 @@ class CourseRepository:
             return []
 
         except Exception as e:
-            print("❌ Find by instructor error:", e)
+            print("Find by instructor error:", e)
             return []
+
+    def count(self, filter: dict) -> int:
+        try:
+            return self.collection.count_documents(filter)
+        except Exception as e:
+            print("Count error:", e)
+            return 0

@@ -29,7 +29,6 @@ const EduSyncHome = () => {
       rating: 4.8,
       students: 1520,
       price: 1222000,
-      originalPrice: 1500000,
       isBestseller: true,
       image:
         "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -43,7 +42,6 @@ const EduSyncHome = () => {
       rating: 4.9,
       students: 3420,
       price: 499000,
-      originalPrice: 800000,
       isBestseller: true,
       image:
         "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -57,7 +55,6 @@ const EduSyncHome = () => {
       rating: 4.7,
       students: 890,
       price: 899000,
-      originalPrice: null,
       isBestseller: false,
       image:
         "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
@@ -71,7 +68,6 @@ const EduSyncHome = () => {
       rating: 4.6,
       students: 2100,
       price: 599000,
-      originalPrice: null,
       isBestseller: false,
       image:
         "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",

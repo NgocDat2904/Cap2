@@ -22,8 +22,6 @@ const CourseDetailPage = () => {
   // =========================================================================
   const courseDetail = {
     title: "Lập trình Python từ cơ bản đến nâng cao",
-    subtitle:
-      "Làm chủ Python 3, xây dựng ứng dụng thực tế và tự động hóa công việc chỉ trong 30 ngày.",
     category: "Lập trình",
     instructor: "Nguyễn Văn A",
     instructorId: "INST-001", // Giả lập thêm ID Giảng viên để chuyển trang
@@ -33,8 +31,7 @@ const CourseDetailPage = () => {
     duration: "8h 30m",
     lessonCount: 24,
     price: 1222000,
-    originalPrice: 1500000,
-    thumbnail:
+    thumbnail:  // ảnh đại diện khóa học
       "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
   };
 
@@ -45,7 +42,7 @@ const CourseDetailPage = () => {
       duration: "10:25",
       views: 1520,
       timeAgo: "4 giờ trước",
-      image:
+      image:  // ảnh đại diện bài giảng (thường là ảnh đại diện của khóa học và bài giảng giống nhau nên tạm thời dùng chung 1 ảnh)
         "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?auto=format&fit=crop&w=300&q=80",
     },
     {
@@ -123,11 +120,11 @@ const CourseDetailPage = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
               {courseDetail.title}
             </h1>
-            <p className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed max-w-2xl">
+            {/* <p className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed max-w-2xl">
               {courseDetail.subtitle}
-            </p>
+            </p> */}
 
-            {/* 🚨 MỚI THÊM: Biến Avatar + Tên thành Link bấm được 🚨 */}
+            {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
             <Link
               to={`/instructors/${courseDetail.instructorId}`} // Bẻ lái sang trang Profile Giảng viên
               className="flex items-center gap-4 mb-10 group w-max cursor-pointer"
@@ -203,46 +200,45 @@ const CourseDetailPage = () => {
       {/* 2. FLOATING PRICING CARD (Thẻ nổi chứa video và giá) */}
       {/* Trên PC: Nó nằm nổi lên góc phải màn hình. Trên Mobile: Nó rớt xuống dưới. */}
       {/* ===================================================================== */}
-      <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0">
-        <div className="bg-white rounded-3xl p-5 shadow-2xl shadow-slate-900/20 border border-slate-100 flex flex-col">
-          {/* Ảnh Preview */}
-          <div className="relative aspect-video rounded-2xl overflow-hidden mb-6 group cursor-pointer">
+     <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
+        {/* Đã giảm p-6 thành p-5 và giảm bo góc xuống 28px cho cân đối với chiều cao mới */}
+        <div className="bg-white rounded-[28px] p-5 shadow-2xl shadow-black/40 border border-slate-100 flex flex-col h-fit">
+          
+          {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
+          <div className="relative aspect-video rounded-xl overflow-hidden mb-4 group cursor-pointer border border-slate-100">
             <img
               src={courseDetail.thumbnail}
               alt="Preview"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-slate-900/30 flex items-center justify-center">
-              <div className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 shadow-lg transform group-hover:scale-110 transition-transform">
+              {/* Nút Play: Giảm từ w-16 xuống w-14 */}
+              <div className="w-14 h-14 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 shadow-xl transform group-hover:scale-110 transition-transform">
                 <FontAwesomeIcon
                   icon={faPlayCircle}
                   className="text-3xl ml-1"
                 />
               </div>
             </div>
-            <span className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-xs font-bold px-2 py-1 rounded">
+            <span className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-md">
               Xem trước
             </span>
           </div>
 
-          {/* Giá tiền */}
-          <div className="flex items-end gap-3 mb-6">
-            <span className="text-3xl font-black text-slate-900">
+          {/* Giá tiền: Giảm mb-6 xuống mb-4, chữ từ 32px xuống 30px (text-3xl) */}
+          <div className="flex items-end gap-3 mb-4">
+            <span className="text-3xl font-black text-slate-900 tracking-tight leading-none">
               {formatCurrency(courseDetail.price)}
             </span>
-            {courseDetail.originalPrice && (
-              <span className="text-base text-slate-400 font-semibold line-through mb-1">
-                {formatCurrency(courseDetail.originalPrice)}
-              </span>
-            )}
           </div>
 
-          {/* Nút Mua ngay (Màu xanh lá cây như wireframe) */}
-          <button className="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-colors shadow-lg shadow-green-600/30 flex items-center justify-center gap-2 text-lg active:scale-95">
+          {/* Nút Mua ngay: Giảm py-4 xuống py-3.5 */}
+          <button className="w-full py-3.5 bg-[#1dbf54] hover:bg-[#19a347] text-white font-extrabold rounded-xl transition-colors shadow-lg shadow-[#1dbf54]/30 flex items-center justify-center gap-2 text-lg active:scale-95">
             <FontAwesomeIcon icon={faCartShopping} /> Mua ngay
           </button>
 
-          <p className="text-center text-xs text-slate-500 mt-4 font-medium">
+          {/* Text hoàn tiền: Giảm mt-4 xuống mt-3, text-xs */}
+          <p className="text-center text-xs text-slate-500 mt-3 font-medium">
             Hoàn tiền trong 30 ngày nếu không hài lòng
           </p>
         </div>
