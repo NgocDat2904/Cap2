@@ -15,7 +15,7 @@ export const getInstructorProfileAPI = async (token) => {
 
 // 2. CẬP NHẬT HỒ SƠ
 export const updateInstructorProfileAPI = async (data, token) => {
-  const response = await axios.put(`${API_URL}/update-full-profile`, data, {
+  const response = await axios.post(`${API_URL}/update-full-profile`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "multipart/form-data",
