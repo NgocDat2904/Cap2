@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom"; // 🚨 Đã thêm useParams
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  fetchAdminCourseDetailAPI,
+  approveCourseAPI,
+  rejectCourseAPI,
+} from "../../services/adminCourseAPI";
 import {
   faArrowLeft,
   faPlayCircle,
@@ -21,90 +26,51 @@ import {
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 
-// =========================================================================
-// MOCK DATABASE: Giả lập Database chứa đủ 4 kịch bản
-// =========================================================================
-const mockDatabase = [
-  {
-    id: "CRS-101",
-    title: "Lập trình ReactJS Thực chiến dự án EduSync",
-    instructor: "Trần Việt Anh",
-    category: "Frontend",
-    price: 49.99,
-    status: "published", // 4 trạng thái (pending, published, rejected, draft) + có thể có trạng thái suspended (đình chỉ) nếu có vấn đề nghiêm trọng
-    updatedDate: "20/03/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
-    has_new_update: true, // KHÓA CÓ CẬP NHẬT MỚI
-    lessons: [
-      { id: "v1", title: "Bài 1: ReactJS", duration: "15:20", size: "55MB" },
-    ],
-  },
-  {
-    id: "CRS-102",
-    title: "Java Backend Toàn tập với Spring Boot 3",
-    instructor: "Nguyễn Văn Chuyên Gia",
-    category: "Backend",
-    price: 0,
-    status: "pending", // KHÓA CHỜ DUYỆT
-    updatedDate: "27/03/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
-    has_new_update: false,
-    lessons: [
-      {
-        id: "v1",
-        title: "Bài 1: Spring Boot",
-        duration: "15:20",
-        size: "55MB",
-      },
-    ],
-  },
-  {
-    id: "CRS-103",
-    title: "Khóa học lùa gà làm giàu siêu tốc",
-    instructor: "Kẻ Gian Lận",
-    category: "Business Analysis",
-    price: 0,
-    status: "rejected", // KHÓA BỊ TỪ CHỐI
-    updatedDate: "25/03/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80",
-    has_new_update: false,
-    lessons: [],
-  },
-  {
-    id: "CRS-104",
-    title: "UI/UX Design Cơ bản",
-    instructor: "Hương Design",
-    category: "UI/UX Design",
-    price: 0,
-    status: "draft", // KHÓA LÀ BẢN NHÁP
-    updatedDate: "10/02/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-    has_new_update: false,
-    lessons: [],
-  },
-];
+const THUMB_FALLBACK =
+  "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
+
+function formatUpdatedDate(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  return d.toLocaleDateString("vi-VN");
+}
 
 const AdminCourseDetail = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); //Lấy ID khóa học từ đường dẫn URL (ví dụ: CRS-101)
+  const { id } = useParams();
 
   const [course, setCourse] = useState(null);
   const [adminPrice, setAdminPrice] = useState("");
+  const [loadState, setLoadState] = useState({ loading: true, error: "" });
+  const [actionLoading, setActionLoading] = useState(false);
 
-  useEffect(() => {
-    const foundCourse = mockDatabase.find((c) => c.id === id);
-    if (foundCourse) {
-      setCourse(foundCourse);
-      setAdminPrice(foundCourse.price || "");
+  const loadCourse = useCallback(async () => {
+    const token = localStorage.getItem("access_token");
+    if (!token || !id) {
+      setLoadState({ loading: false, error: "Thiếu phiên đăng nhập hoặc mã khóa học." });
+      setCourse(null);
+      return;
+    }
+    setLoadState({ loading: true, error: "" });
+    try {
+      const data = await fetchAdminCourseDetailAPI(id, token);
+      setCourse(data);
+      setAdminPrice(
+        data.price !== undefined && data.price !== null ? String(data.price) : "",
+      );
+      setLoadState({ loading: false, error: "" });
+    } catch (e) {
+      setCourse(null);
+      setLoadState({ loading: false, error: e.message || "Không tải được khóa học" });
     }
   }, [id]);
 
-  // Đang load dữ liệu thì xoay vòng vòng
-  if (!course) {
+  useEffect(() => {
+    loadCourse();
+  }, [loadCourse]);
+
+  if (loadState.loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-400">
         <FontAwesomeIcon
@@ -116,34 +82,76 @@ const AdminCourseDetail = () => {
     );
   }
 
+  if (loadState.error || !course) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
+        <p className="font-bold text-red-600 mb-4">{loadState.error || "Không có dữ liệu"}</p>
+        <button
+          type="button"
+          onClick={() => navigate("/admin/approvals")}
+          className="px-4 py-2 bg-slate-200 rounded-xl font-bold hover:bg-slate-300"
+        >
+          Về hàng đợi duyệt
+        </button>
+      </div>
+    );
+  }
+
   // =========================================================================
   // LOGIC HÀNH ĐỘNG CỦA ADMIN
   // =========================================================================
-  const handleApproveCourse = () => {
-    if (adminPrice === "") {
-      alert("Vui lòng nhập giá bán cho khóa học trước khi xuất bản!");
+  const handleApproveCourse = async () => {
+    if (course.status !== "pending") return;
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("Phiên đăng nhập hết hạn.");
       return;
     }
-    if (
-      window.confirm(`Xác nhận xuất bản khóa học này với giá $${adminPrice}?`)
-    ) {
-      setCourse({
-        ...course,
-        status: "published",
-        price: adminPrice,
-        has_new_update: false,
-      });
-      alert("🎉 Đã xuất bản khóa học lên hệ thống thành công!");
+    const p =
+      adminPrice === "" || adminPrice === null
+        ? 0
+        : parseFloat(String(adminPrice).replace(",", "."));
+    if (Number.isNaN(p) || p < 0) {
+      alert("Giá không hợp lệ (USD, ≥ 0 — 0 = miễn phí).");
+      return;
+    }
+    const label = p === 0 ? "Miễn phí" : `$${p}`;
+    if (!window.confirm(`Xác nhận xuất bản khóa học này với giá ${label}?`)) {
+      return;
+    }
+    setActionLoading(true);
+    try {
+      await approveCourseAPI(id, p, token);
+      alert("Đã xuất bản khóa học lên hệ thống.");
+      navigate("/admin/approvals");
+    } catch (e) {
+      alert(e.message || "Phê duyệt thất bại");
+    } finally {
+      setActionLoading(false);
     }
   };
 
-  const handleRejectCourse = () => {
+  const handleRejectCourse = async () => {
+    if (course.status !== "pending") return;
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("Phiên đăng nhập hết hạn.");
+      return;
+    }
     const reason = window.prompt(
       "Nhập lý do từ chối để phản hồi cho Giảng viên:",
+      "",
     );
-    if (reason !== null) {
-      setCourse({ ...course, status: "rejected" });
-      alert("Đã từ chối khóa học và gửi thông báo cho Giảng viên.");
+    if (reason === null) return;
+    setActionLoading(true);
+    try {
+      await rejectCourseAPI(id, reason, token);
+      alert("Đã từ chối khóa học.");
+      await loadCourse();
+    } catch (e) {
+      alert(e.message || "Từ chối thất bại");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -170,11 +178,14 @@ const AdminCourseDetail = () => {
   };
 
   const handleDeleteCourse = () => {
-    if (window.confirm("CẢNH BÁO: Xóa vĩnh viễn khóa học này?")) {
-      alert("Đã xóa!");
-      navigate("/admin/courses");
-    }
+    alert("Chức năng xóa khóa học chưa được kết nối API.");
   };
+
+  const firstLesson =
+    course.lessons?.find((l) => l.play_url || l.url) || null;
+  const firstVideoUrl = firstLesson
+    ? firstLesson.play_url || firstLesson.url || ""
+    : "";
 
   // =========================================================================
   // HÀM RENDER CỘT PHẢI - 5 GIAO DIỆN TÁCH BIỆT RÕ RÀNG
@@ -262,14 +273,23 @@ const AdminCourseDetail = () => {
           </div>
           <div className="flex flex-col gap-3 relative z-10">
             <button
+              type="button"
               onClick={handleApproveCourse}
-              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-colors shadow-lg shadow-emerald-500/30 active:scale-95 flex justify-center items-center gap-2"
+              disabled={actionLoading}
+              className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-colors shadow-lg shadow-emerald-500/30 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50"
             >
-              <FontAwesomeIcon icon={faCheckCircle} /> Phê duyệt & Xuất bản
+              {actionLoading ? (
+                <FontAwesomeIcon icon={faSpinner} spin />
+              ) : (
+                <FontAwesomeIcon icon={faCheckCircle} />
+              )}{" "}
+              Phê duyệt & Xuất bản
             </button>
             <button
+              type="button"
               onClick={handleRejectCourse}
-              className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors"
+              disabled={actionLoading}
+              className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
             >
               Từ chối duyệt
             </button>
@@ -292,6 +312,11 @@ const AdminCourseDetail = () => {
             Bạn đã từ chối duyệt khóa học này. Giảng viên cần phải chỉnh sửa lại
             nội dung và gửi lại yêu cầu duyệt.
           </p>
+          {course.rejectReason ? (
+            <p className="text-xs text-red-800 font-bold mt-3 text-left bg-white/60 p-2 rounded-lg border border-red-100">
+              Lý do: {course.rejectReason}
+            </p>
+          ) : null}
         </div>
       );
     }
@@ -422,15 +447,32 @@ const AdminCourseDetail = () => {
         {/* CỘT TRÁI: VIDEO & GIÁO TRÌNH */}
         <div className="w-full lg:w-2/3 space-y-8">
           <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-800 aspect-video relative flex flex-col items-center justify-center group">
-            <img
-              src={course.thumbnail}
-              alt="Thumbnail"
-              className="absolute inset-0 w-full h-full object-cover opacity-40"
-            />
-            <button className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-blue-600 hover:scale-110 transition-all duration-300 shadow-2xl">
-              <FontAwesomeIcon icon={faPlayCircle} className="text-5xl ml-1" />
-            </button>
-            <div className="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-black tracking-widest rounded-lg">
+            {firstVideoUrl ? (
+              <video
+                src={firstVideoUrl}
+                controls
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+                playsInline
+              />
+            ) : (
+              <>
+                <img
+                  src={course.thumbnail || THUMB_FALLBACK}
+                  alt="Thumbnail"
+                  className="absolute inset-0 w-full h-full object-cover opacity-40"
+                  onError={(ev) => {
+                    ev.currentTarget.src = THUMB_FALLBACK;
+                  }}
+                />
+                <button
+                  type="button"
+                  className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-blue-600 hover:scale-110 transition-all duration-300 shadow-2xl pointer-events-none"
+                >
+                  <FontAwesomeIcon icon={faPlayCircle} className="text-5xl ml-1" />
+                </button>
+              </>
+            )}
+            <div className="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-black tracking-widest rounded-lg z-20 pointer-events-none">
               ADMIN AUDIT
             </div>
           </div>
@@ -446,9 +488,20 @@ const AdminCourseDetail = () => {
                   key={lesson.id}
                   className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${index === course.lessons.length - 1 && course.has_new_update ? "border-amber-300 bg-amber-50/30" : ""}`}
                 >
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-400">
-                    <FontAwesomeIcon icon={faPlayCircle} className="text-lg" />
-                  </div>
+                  {lesson.thumbnail_url ? (
+                    <img
+                      src={lesson.thumbnail_url}
+                      alt=""
+                      className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200"
+                      onError={(ev) => {
+                        ev.currentTarget.style.display = "none";
+                      }}
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-400">
+                      <FontAwesomeIcon icon={faPlayCircle} className="text-lg" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
                       {lesson.title}

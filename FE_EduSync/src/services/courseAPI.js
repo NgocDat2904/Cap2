@@ -1,6 +1,30 @@
 // services/courseAPI.js
 const BASE_URL = "http://localhost:8000";
 
+// Ảnh bìa khóa học (Cloudinary) — dùng chung cho từng bài giảng
+export const uploadCourseThumbnailAPI = async (file, token) => {
+  const fd = new FormData();
+  fd.append("file", file);
+  const response = await fetch(`${BASE_URL}/instructor/courses/thumbnail`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: fd,
+  });
+  if (!response.ok) {
+    let detail = "Không tải được ảnh bìa lên Cloudinary";
+    try {
+      const err = await response.json();
+      if (typeof err.detail === "string") detail = err.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+  return response.json();
+};
+
 // 1. Tạo khóa học mới (Nháp)
 export const createCourseAPI = async (courseData, token) => {
   const response = await fetch(`${BASE_URL}/instructor/courses`, {
@@ -21,7 +45,8 @@ export const getPresignedUrlAPI = async (courseId, fileName, contentType, token)
   // ĐÃ SỬA CHUẨN 100% THEO POSTMAN: Ép tên file lên thẳng thanh địa chỉ URL
   // Dùng encodeURIComponent để lỡ tên video của má có dấu cách (space) thì nó không bị lỗi mạng
   const safeFileName = encodeURIComponent(fileName);
-  const urlVideo = `http://localhost:8000/videos/upload-url?filename=${safeFileName}`;
+  const ct = encodeURIComponent(contentType || "video/mp4");
+  const urlVideo = `http://localhost:8000/videos/upload-url?filename=${safeFileName}&content_type=${ct}`;
   
   const response = await fetch(urlVideo, {
     method: "POST", 
@@ -66,7 +91,20 @@ export const saveVideoToDBAPI = async (courseId, videoData, token) => {
     }),
   });
   
-  if (!response.ok) throw new Error("Lỗi khi lưu thông tin video vào CSDL");
+  if (!response.ok) {
+    let detail = "Lỗi khi lưu thông tin video vào CSDL";
+    try {
+      const err = await response.json();
+      if (Array.isArray(err.detail)) {
+        detail = err.detail.map((d) => d.msg || JSON.stringify(d)).join("; ");
+      } else if (typeof err.detail === "string") {
+        detail = err.detail;
+      }
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
   return await response.json();
 };
 
