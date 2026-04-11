@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import certifi
 
-MONGO_URL = "mongodb+srv://admin:123456aA.@cluster0.sivzwjm.mongodb.net/?appName=Cluster0"
+MONGO_URL = "mongodb+srv://edusync_db_new:123456aA@cluster0.viv2auh.mongodb.net/?appName=Cluster0"
 
 client = MongoClient(
     MONGO_URL,
@@ -9,11 +9,13 @@ client = MongoClient(
     tlsCAFile=certifi.where()
 )
 
-# test connection
 try:
     client.admin.command("ping")
     print("✅ Connected to MongoDB")
 except Exception as e:
     print("❌ MongoDB connection error:", e)
 
-db = client["edusyncDB"]
+db = client["edusync_db"]
+
+print("🔥 CONNECT DB:", db.name)
+print("🔥 COLLECTIONS:", db.list_collection_names())
