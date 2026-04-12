@@ -1,16 +1,17 @@
-from app.database.mongodb import db
+from datetime import datetime
+
 from bson import ObjectId
 from bson.errors import InvalidId
-from datetime import datetime
+
+from app.database.mongodb import db
 
 
 class CourseRepository:
-
     def __init__(self):
         self.collection = db.courses
 
+    # ===================== UTILS =====================
 
-    # 🔥 SAFE convert (không mutate object gốc)
     def _convert_id(self, doc):
         if not doc:
             return None
@@ -21,30 +22,45 @@ class CourseRepository:
 
         return new_doc
 
-
     def _convert_list(self, docs):
         return [self._convert_id(doc) for doc in docs]
 
+    # ===================== CRUD =====================
 
-    # ✅ GET BY ID
     async def get_by_id(self, course_id: str):
         try:
-            course = self.collection.find_one({"_id": ObjectId(course_id)})
+            course = self.collection.find_one(
+                {"_id": ObjectId(course_id)}
+            )
             return self._convert_id(course)
         except InvalidId:
             return None
 
+    # 🔥 PUBLIC DETAIL
+    async def get_public_by_id(self, course_id: str):
+        try:
+            course = self.collection.find_one(
+                {
+                    "_id": ObjectId(course_id),
+                    "status": "APPROVED",
+                }
+            )
+            return self._convert_id(course)
+        except InvalidId:
+            return None
 
-    # ✅ CREATE COURSE (🔥 bạn đang thiếu cái này)
     async def create(self, data: dict):
-        data["created_at"] = datetime.utcnow()
-        data["updated_at"] = datetime.utcnow()
+        now = datetime.utcnow()
 
-        result = self.collection.insert_one(data)
+        payload = {
+            **data,
+            "created_at": now,
+            "updated_at": now,
+        }
+
+        result = self.collection.insert_one(payload)
         return str(result.inserted_id)
 
-
-    # ✅ UPDATE
     async def update(self, course_id: str, data: dict):
         try:
             result = self.collection.update_one(
@@ -52,16 +68,16 @@ class CourseRepository:
                 {
                     "$set": {
                         **data,
-                        "updated_at": datetime.utcnow()
+                        "updated_at": datetime.utcnow(),
                     }
-                }
+                },
             )
             return result.modified_count > 0
         except InvalidId:
             return False
 
+    # ===================== QUERY =====================
 
-    # ✅ FIND WITH PAGINATION
     async def find(self, filter: dict, page: int = 1, limit: int = 10):
         try:
             page = max(page, 1)
@@ -77,31 +93,93 @@ class CourseRepository:
                 .limit(limit)
             )
 
-            courses = list(cursor)
-
-            return self._convert_list(courses)
+            return self._convert_list(list(cursor))
 
         except Exception as e:
             print("❌ Find error:", e)
             return []
 
-
-    # ✅ FIND BY INSTRUCTOR (FIX CHUẨN)
-    async def find_by_instructor(self, instructor_id: str):
+    # 🔥 PUBLIC COURSES
+    def find_public(self, filter: dict, page: int = 1, limit: int = 10):
         try:
-            obj_id = ObjectId(instructor_id)
+            page = max(page, 1)
+            limit = min(max(limit, 1), 100)
 
-            cursor = self.collection.find({
-                "instructor_id": obj_id
-            })
+            skip = (page - 1) * limit
 
-            courses = list(cursor)
+            cursor = (
+                self.collection
+                .find(
+                    filter,
+                    {
+                        "title": 1,
+"category": 1,
+"price": 1,
+                        "image": 1,
+                        "status": 1,
+                        "created_at": 1,
+                    },
+                )
+                .sort("created_at", -1)
+                .skip(skip)
+                .limit(limit)
+            )
 
-            return self._convert_list(courses)
-
-        except InvalidId:
-            return []
+            return self._convert_list(list(cursor))
 
         except Exception as e:
-            print("❌ Find by instructor error:", e)
+            print("❌ Find public error:", e)
             return []
+
+    # 🔥 SEARCH
+    def search(self, filter: dict, page: int = 1, limit: int = 10):
+        try:
+            page = max(page, 1)
+            limit = min(max(limit, 1), 100)
+
+            skip = (page - 1) * limit
+
+            cursor = (
+                self.collection
+                .find(
+                    filter,
+                    {
+                        "title": 1,
+                        "category": 1,
+                        "price": 1,
+                        "image": 1,
+                        "status": 1,
+                        "score": {"$meta": "textScore"},
+                    },
+                )
+                .sort([("score", {"$meta": "textScore"})])
+                .skip(skip)
+                .limit(limit)
+            )
+
+            return self._convert_list(list(cursor))
+
+        except Exception as e:
+            print("❌ Search error:", e)
+            return []
+
+    async def find_by_instructor(self, instructor_id: str):
+        try:
+            cursor = self.collection.find({
+                "instructor_id": instructor_id
+            })
+
+            return self._convert_list(list(cursor))
+
+        except Exception as e:
+            print("Find by instructor error:", e)
+            return []
+
+    # ===================== COUNT =====================
+
+    def count(self, filter: dict) -> int:
+        try:
+            return self.collection.count_documents(filter)
+        except Exception as e:
+            print("Count error:", e)
+            return 0
