@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
 
 from app.middleware.auth_middleware import require_role
 from app.modules.course.course_service import CourseService
@@ -12,6 +12,45 @@ def _http_from_exc(e: Exception) -> HTTPException:
     msg = str(e) if str(e) else repr(e)
     return HTTPException(status_code=400, detail=msg)
 
+
+# ===================== PUBLIC (LEARNER) =====================
+
+@router.get("/courses")
+async def get_all_courses(
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+):
+    return await course_service.get_public_courses(page, limit)
+
+
+@router.get("/courses/search")
+async def search_courses(
+    keyword: str = Query("", description="Search keyword"),
+    category: str = Query("", description="Filter by category"),
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
+):
+    keyword = keyword.strip()
+
+    return await course_service.search_courses(
+        keyword,
+        category,
+        page,
+        limit,
+    )
+
+
+@router.get("/courses/{course_id}")
+async def get_course_detail(course_id: str):
+    data = await course_service.get_public_course_detail(course_id)
+
+    if not data:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    return data
+
+
+# ===================== INSTRUCTOR =====================
 
 @router.get("/instructor/courses")
 async def get_my_courses(user=Depends(require_role(["instructor"]))):
@@ -50,10 +89,12 @@ async def submit_course(
         raise _http_from_exc(e) from e
 
 
+# ===================== ADMIN =====================
+
 @router.get("/admin/courses/pending")
 async def get_pending_courses(
-    page: int = 1,
-    limit: int = 10,
+    page: int = Query(1, ge=1),
+    limit: int = Query(10, ge=1, le=100),
     user=Depends(require_role(["admin"])),
 ):
     return await course_service.get_pending_courses(page, limit)
