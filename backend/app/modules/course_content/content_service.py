@@ -16,6 +16,7 @@ class ContentService:
         section = {
             "course_id": ObjectId(data["course_id"]),
             "title": data["title"],
+            "order_index": data.get("order_index", 1), 
             "created_at": datetime.utcnow()
         }
 
