@@ -1,20 +1,21 @@
 from pydantic import BaseModel, Field
+from typing import Optional
 
 
 class VideoRequest(BaseModel):
-    course_id: str
-    url: str = Field(
-        default="",
-        description="URL tham chiếu (thường không phát được nếu bucket private — dùng storage_path)",
-    )
-    storage_path: str | None = Field(
+    lesson_id: str
+
+    video_url: Optional[str] = Field(
         default=None,
-        description="Đường dẫn object trong bucket (từ API presign: storage_path)",
+        description="Public URL để stream video",
     )
-    thumbnail_url: str | None = Field(
+
+    storage_path: Optional[str] = Field(
         default=None,
-        description="Ảnh đại diện (Cloudinary), chung với khóa học",
+        description="Path trong GCS bucket",
     )
-    title: str | None = None
-    description: str | None = None
-    file_name: str | None = None
+
+    thumbnail_url: Optional[str] = None
+    title: Optional[str] = None
+    description: Optional[str] = None
+    file_name: Optional[str] = None
