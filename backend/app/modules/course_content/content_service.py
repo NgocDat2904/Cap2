@@ -10,48 +10,85 @@ class ContentService:
 
     async def create_section(self, data, user_id):
 
+        # 🔥 Validate input
+        if not data.get("course_id"):
+            raise HTTPException(400, "course_id is required")
+
+        if not data.get("title"):
+            raise HTTPException(400, "title is required")
+
         if not ObjectId.is_valid(data["course_id"]):
             raise HTTPException(400, "Invalid course_id")
+
+        course = db.courses.find_one({
+            "_id": ObjectId(data["course_id"])
+        })
+
+        if not course:
+            raise HTTPException(404, "Course not found")
+
+        # 🔥 CHECK OWNER
+        if str(course["instructor_id"]) != user_id:
+            raise HTTPException(403, "Not your course")
 
         section = {
             "course_id": ObjectId(data["course_id"]),
             "title": data["title"],
-            "order_index": data.get("order_index", 1), 
+            "order_index": data.get("order_index", 1),
             "created_at": datetime.utcnow()
         }
 
         result = db.sections.insert_one(section)
-        return {"id": str(result.inserted_id)}
+
+        return {
+            "message": "Section created",
+            "id": str(result.inserted_id)
+        }
 
     # ===================== CREATE LESSON =====================
 
     async def create_lesson(self, data, user_id):
 
+        # 🔥 Validate input
+        if not data.get("section_id"):
+            raise HTTPException(400, "section_id is required")
+
+        if not data.get("title"):
+            raise HTTPException(400, "title is required")
+
         if not ObjectId.is_valid(data["section_id"]):
             raise HTTPException(400, "Invalid section_id")
+
+        section = db.sections.find_one({
+            "_id": ObjectId(data["section_id"])
+        })
+
+        if not section:
+            raise HTTPException(404, "Section not found")
+
+        # 🔥 CHECK OWNER
+        course = db.courses.find_one({
+            "_id": section["course_id"]
+        })
+
+        if not course:
+            raise HTTPException(404, "Course not found")
+
+        if str(course["instructor_id"]) != user_id:
+            raise HTTPException(403, "Not your course")
 
         lesson = {
             "section_id": ObjectId(data["section_id"]),
             "title": data["title"],
-            "order_index": data["order_index"],
+            "order_index": data.get("order_index", 1),
             "created_at": datetime.utcnow()
         }
 
         result = db.lessons.insert_one(lesson)
-        return {"id": str(result.inserted_id)}
 
-    # ===================== CREATE VIDEO =====================
-
-    async def create_video(self, data, user_id):
-
-        if not ObjectId.is_valid(data["lesson_id"]):
-            raise HTTPException(400, "Invalid lesson_id")
-
-        video = {
-            "lesson_id": ObjectId(data["lesson_id"]),
-            "video_url": data["video_url"],
-            "created_at": datetime.utcnow()
+        return {
+            "message": "Lesson created",
+            "id": str(result.inserted_id)
         }
 
-        result = db.videos.insert_one(video)
-        return {"id": str(result.inserted_id)}
+    # ❌ REMOVE create_video → dùng VideoService

@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
 
 from app.middleware.auth_middleware import require_role
 from app.modules.course.course_service import CourseService
+from app.modules.course.course_model import (
+    CourseDetailResponse,
+    CourseResponse,
+)
 from app.utils.cloudinary import upload_image
 
 router = APIRouter()
@@ -20,7 +24,10 @@ async def get_all_courses(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
 ):
-    return await course_service.get_public_courses(page, limit)
+    try:
+        return await course_service.get_public_courses(page, limit)
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @router.get("/courses/search")
@@ -30,31 +37,45 @@ async def search_courses(
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
 ):
-    keyword = keyword.strip()
+    try:
+        keyword = keyword.strip()
 
-    return await course_service.search_courses(
-        keyword,
-        category,
-        page,
-        limit,
-    )
+        return await course_service.search_courses(
+            keyword,
+            category,
+            page,
+            limit,
+        )
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
-@router.get("/courses/{course_id}")
+# 🔥 MAIN API (MATCH UI)
+@router.get("/courses/{course_id}", response_model=CourseDetailResponse)
 async def get_course_detail(course_id: str):
-    data = await course_service.get_public_course_detail(course_id)
+    try:
+        data = await course_service.get_public_course_detail(course_id)
 
-    if not data:
-        raise HTTPException(status_code=404, detail="Course not found")
+        if not data:
+            raise HTTPException(status_code=404, detail="Course not found")
 
-    return data
+        return data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        print("❌ Get course detail error:", e)
+        raise HTTPException(500, "Internal server error")
 
 
 # ===================== INSTRUCTOR =====================
 
 @router.get("/instructor/courses")
 async def get_my_courses(user=Depends(require_role(["instructor"]))):
-    return await course_service.get_instructor_courses(user["id"])
+    try:
+        return await course_service.get_instructor_courses(user["id"])
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @router.post("/instructor/courses")
@@ -65,7 +86,7 @@ async def create_course(
     try:
         return await course_service.create_course(data, user["id"])
     except Exception as e:
-        raise _http_from_exc(e) from e
+        raise _http_from_exc(e)
 
 
 @router.post("/instructor/courses/thumbnail")
@@ -73,9 +94,11 @@ async def upload_course_thumbnail(
     file: UploadFile = File(...),
     _user=Depends(require_role(["instructor"])),
 ):
-    """Ảnh bìa khóa học (Cloudinary) — dùng chung làm thumbnail các bài giảng."""
-    url = upload_image(file.file)
-    return {"url": url}
+    try:
+        url = upload_image(file.file)
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @router.put("/instructor/courses/{course_id}/submit")
@@ -86,7 +109,7 @@ async def submit_course(
     try:
         return await course_service.submit_course(course_id, user["id"])
     except Exception as e:
-        raise _http_from_exc(e) from e
+        raise _http_from_exc(e)
 
 
 # ===================== ADMIN =====================
@@ -97,7 +120,10 @@ async def get_pending_courses(
     limit: int = Query(10, ge=1, le=100),
     user=Depends(require_role(["admin"])),
 ):
-    return await course_service.get_pending_courses(page, limit)
+    try:
+        return await course_service.get_pending_courses(page, limit)
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @router.get("/admin/courses/{course_id}")
@@ -105,10 +131,16 @@ async def get_admin_course_detail(
     course_id: str,
     user=Depends(require_role(["admin"])),
 ):
-    data = await course_service.get_admin_course_detail(course_id)
-    if not data:
-        raise HTTPException(status_code=404, detail="Course not found")
-    return data
+    try:
+        data = await course_service.get_admin_course_detail(course_id)
+
+        if not data:
+            raise HTTPException(status_code=404, detail="Course not found")
+
+        return data
+
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 @router.put("/admin/courses/{course_id}/approve")
@@ -120,7 +152,7 @@ async def approve_course(
     try:
         return await course_service.approve_course(course_id, price)
     except Exception as e:
-        raise _http_from_exc(e) from e
+        raise _http_from_exc(e)
 
 
 @router.put("/admin/courses/{course_id}/reject")
@@ -132,4 +164,4 @@ async def reject_course(
     try:
         return await course_service.reject_course(course_id, reason)
     except Exception as e:
-        raise _http_from_exc(e) from e
+        raise _http_from_exc(e)
