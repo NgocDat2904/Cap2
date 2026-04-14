@@ -5,11 +5,11 @@ from datetime import datetime
 from app.modules.video.video_repository import VideoRepository
 from app.modules.video.video_schema import VideoRequest
 from app.database.mongodb import db
-from app.storage.gcs_client import GCSClient   # 🔥 thêm dòng này
+from app.storage.gcs_client import GCSClient
 
 
 video_repository = VideoRepository()
-gcs_client = GCSClient()   # 🔥 thêm dòng này
+gcs_client = GCSClient()
 
 
 class VideoService:
@@ -32,7 +32,6 @@ class VideoService:
         except Exception as e:
             print("🔥 GCS ERROR:", e)
             raise HTTPException(500, str(e))
-
 
     # ===================== CREATE =====================
 
@@ -72,16 +71,27 @@ class VideoService:
 
         # 🔥 3. Validate video data
         if not data.video_url and not data.storage_path:
-            raise HTTPException(
-                400,
-                "Cần url hoặc storage_path",
-            )
+            raise HTTPException(400, "Cần url hoặc storage_path")
 
-        # 🔥 4. Insert
+        # ===================== BUILD DATA =====================
+
         doc = {
             "lesson_id": ObjectId(data.lesson_id),
+            "course_id": course["_id"],   # 🔥 QUAN TRỌNG
+
             "video_url": data.video_url,
             "storage_path": data.storage_path,
+
+            # 🔥 UI DATA
+            "title": data.title or lesson.get("title"),
+            "description": data.description,
+
+            "thumbnail_url": data.thumbnail_url,
+            "image": data.image or data.thumbnail_url,
+
+            "duration": data.duration or "10:00",
+            "views": data.views or 0,
+
             "created_at": datetime.utcnow(),
         }
 

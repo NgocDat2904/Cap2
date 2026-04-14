@@ -36,7 +36,6 @@ class CourseRepository:
         except InvalidId:
             return None
 
-    # 🔥 PUBLIC DETAIL
     async def get_public_by_id(self, course_id: str):
         try:
             course = self.collection.find_one(
@@ -48,6 +47,61 @@ class CourseRepository:
             return self._convert_id(course)
         except InvalidId:
             return None
+
+    # ===================== 🔥 MAIN AGGREGATION =====================
+
+    async def get_public_by_id_with_sections(self, course_id: str):
+        try:
+            pipeline = [
+                {
+                    "$match": {
+                        "_id": ObjectId(course_id),
+                        "status": "APPROVED"
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "sections",
+                        "let": {"courseId": "$_id"},
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {
+                                        "$eq": ["$course_id", "$$courseId"]
+                                    }
+                                }
+                            },
+                            {
+                                "$lookup": {
+                                    "from": "lessons",
+                                    "localField": "_id",
+                                    "foreignField": "section_id",
+                                    "as": "lessons"
+                                }
+                            },
+                            {
+                                "$sort": {"created_at": 1}
+                            }
+                        ],
+                        "as": "sections"
+                    }
+                }
+            ]
+
+            result = list(self.collection.aggregate(pipeline))
+
+            if not result:
+                return None
+
+            return result[0]
+
+        except InvalidId:
+            return None
+        except Exception as e:
+            print("❌ Aggregation error:", e)
+            return None
+
+    # ===================== CREATE / UPDATE =====================
 
     async def create(self, data: dict):
         now = datetime.utcnow()
@@ -99,7 +153,6 @@ class CourseRepository:
             print("❌ Find error:", e)
             return []
 
-    # 🔥 PUBLIC COURSES
     def find_public(self, filter: dict, page: int = 1, limit: int = 10):
         try:
             page = max(page, 1)
@@ -131,7 +184,6 @@ class CourseRepository:
             print("❌ Find public error:", e)
             return []
 
-    # 🔥 SEARCH
     def search(self, filter: dict, page: int = 1, limit: int = 10):
         try:
             page = max(page, 1)
@@ -163,7 +215,6 @@ class CourseRepository:
             print("❌ Search error:", e)
             return []
 
-    # 🔥 FIND BY INSTRUCTOR (FIX CHUẨN)
     async def find_by_instructor(self, instructor_id: str):
         try:
             cursor = self.collection.find({

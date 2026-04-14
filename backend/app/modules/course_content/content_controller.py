@@ -21,10 +21,3 @@ async def create_lesson(
 ):
     return await service.create_lesson(data, user["id"])
 
-
-@router.post("/videos")
-async def create_video(
-    data: dict,
-    user=Depends(require_role(["instructor"]))
-):
-    return await service.create_video(data, user["id"])
