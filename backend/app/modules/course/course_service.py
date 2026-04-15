@@ -1,27 +1,17 @@
 from datetime import datetime
 from bson import ObjectId
-
 from app.modules.auth.auth_repository import get_user_by_id
 from app.storage.gcs_client import GCSClient
-from .course_repository import CourseRepository
+from app.modules.course.course_repository import CourseRepository
 
 course_repository = CourseRepository()
 _gcs = GCSClient()
 
 
-_CATEGORY_LABELS = {
-    "frontend": "Frontend Web Development",
-    "backend": "Backend Web Development",
-    "mobile": "Mobile Programming",
-    "ai": "AI & Machine Learning",
-    "data_analysis": "Data Analysis",
-    "data_engineer": "Data Engineering",
-    "uiux": "UI/UX Design",
-    "ba": "Business Analysis",
-}
-
-
 class CourseService:
+
+    def __init__(self):
+        self.repo = CourseRepository()
 
     # ===================== COMMON =====================
 
@@ -36,7 +26,19 @@ class CourseService:
     def _category_display(self, cat_id: str):
         if not cat_id:
             return "—"
-        return _CATEGORY_LABELS.get(cat_id, cat_id)
+
+        DISPLAY_MAP = {
+            "frontend": "Frontend Web Development",
+            "backend": "Backend Web Development",
+            "mobile": "Mobile Programming",
+            "ai": "AI & Machine Learning",
+            "data_analysis": "Data Analysis",
+            "data_engineer": "Data Engineering",
+            "uiux": "UI/UX Design",
+            "ba": "Business Analysis",
+        }
+
+        return DISPLAY_MAP.get(cat_id, cat_id)
 
     @staticmethod
     def _dt_iso(value):
@@ -67,7 +69,6 @@ class CourseService:
 
         course_thumb = (course.get("image") or "").strip()
 
-        # ===================== INSTRUCTOR =====================
         instructor = None
         iid = course.get("instructor_id")
 
@@ -81,7 +82,6 @@ class CourseService:
                     "avatar": user.get("avatar") or "https://i.pravatar.cc/150?img=11"
                 }
 
-        # ===================== SECTIONS + LESSONS =====================
         sections = []
         total_lessons = 0
 
@@ -90,7 +90,6 @@ class CourseService:
 
             for i, l in enumerate(sec.get("lessons", [])):
                 raw_url = l.get("url") or ""
-
                 path = l.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
 
                 if path:
@@ -158,9 +157,8 @@ class CourseService:
     async def get_instructor_courses(self, instructor_id: str):
         courses = await course_repository.find_by_instructor(instructor_id)
 
-        result = []
-        for c in courses:
-            result.append({
+        return [
+            {
                 "id": c["id"],
                 "title": c.get("title", ""),
                 "category": self._category_display(c.get("category", "")),
@@ -168,9 +166,9 @@ class CourseService:
                 "students": 0,
                 "price": c.get("price", 0),
                 "image": c.get("image", ""),
-            })
-
-        return result
+            }
+            for c in courses
+        ]
 
     async def create_course(self, data: dict, instructor_id: str):
         if not data.get("title"):
@@ -232,31 +230,19 @@ class CourseService:
         }
 
     async def approve_course(self, course_id: str, price: float):
-        course = await course_repository.get_by_id(course_id)
-
-        if not course:
-            raise Exception("Course not found")
-
         await course_repository.update(course_id, {
             "status": "APPROVED",
             "price": price,
             "is_locked": False
         })
-
         return {"message": "Course approved"}
 
     async def reject_course(self, course_id: str, reason: str = ""):
-        course = await course_repository.get_by_id(course_id)
-
-        if not course:
-            raise Exception("Course not found")
-
         await course_repository.update(course_id, {
             "status": "REJECTED",
             "reject_reason": reason,
             "is_locked": False
         })
-
         return {"message": "Course rejected"}
 
     async def get_admin_course_detail(self, course_id: str):
@@ -265,22 +251,44 @@ class CourseService:
         if not course:
             return None
 
-        iid = str(course.get("instructor_id")) if course.get("instructor_id") else None
-        instructor_name = "—"
-
-        if iid:
-            u = get_user_by_id(iid)
-            if u:
-                instructor_name = u.get("fullName") or u.get("email") or "—"
-
         return {
             "id": str(course["_id"]),
             "title": course.get("title", ""),
             "description": course.get("description", ""),
-            "instructor": instructor_name,
             "category": self._category_display(course.get("category")),
             "price": float(course.get("price") or 0),
             "status": course.get("status"),
             "thumbnail": course.get("image") or "",
             "sections": course.get("sections", [])
+        }
+
+    # ===================== TOP =====================
+
+    async def get_top_courses(self):
+        return self.repo.get_top_courses()
+
+    # ===================== FILTER =====================
+
+    async def filter_courses(self, category, price, page, limit):
+
+        skip = (page - 1) * limit
+
+        courses = self.repo.filter_courses(
+            category=category,
+            price=price,
+            skip=skip,
+            limit=limit
+        )
+
+        return [self._map_course(c) for c in courses]
+
+    # ===================== MAP =====================
+
+    def _map_course(self, course):
+        return {
+            "id": str(course["_id"]),
+            "title": course.get("title"),
+            "category": self._category_display(course.get("category")),
+            "image": course.get("image"),
+            "price": course.get("price", 0),
         }
