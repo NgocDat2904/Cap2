@@ -7,6 +7,17 @@ from app.database.mongodb import db
 
 
 class CourseRepository:
+
+    CATEGORY_MAP = {
+    "Frontend Web Development": "frontend",
+    "Backend Web Development": "backend",
+    "Mobile Programming": "mobile",
+    "AI & Machine Learning": "ai",
+    "Data Analysis": "data_analysis",
+    "Data Engineering": "data_engineer",
+    "UI/UX Design": "uiux",
+    "Business Analysis": "ba",
+}
     def __init__(self):
         self.collection = db.courses
 
@@ -48,7 +59,7 @@ class CourseRepository:
         except InvalidId:
             return None
 
-    # ===================== 🔥 MAIN AGGREGATION =====================
+    # ===================== AGGREGATION =====================
 
     async def get_public_by_id_with_sections(self, course_id: str):
         try:
@@ -235,3 +246,75 @@ class CourseRepository:
         except Exception as e:
             print("Count error:", e)
             return 0
+
+    # ===================== TOP COURSES =====================
+
+    def get_top_courses(self, limit: int = 4):
+
+        pipeline = [
+            {"$group": {"_id": "$course_id", "students": {"$sum": 1}}},
+            {"$sort": {"students": -1}},
+            {"$limit": limit},
+            {
+                "$lookup": {
+                    "from": "courses",
+                    "localField": "_id",
+                    "foreignField": "_id",
+                    "as": "course"
+                }
+            },
+            {"$unwind": "$course"},
+            {"$match": {"course.status": "APPROVED"}},
+            {
+                "$project": {
+                    "_id": 0,
+                    "id": {"$toString": "$course._id"},
+                    "title": "$course.title",
+                    "image": "$course.image",
+                    "price": "$course.price",
+                    "students": 1
+                }
+            }
+        ]
+
+        return list(db.enrollments.aggregate(pipeline))
+
+    # ===================== FILTER COURSES =====================
+
+    def filter_courses(self, category=None, price=None, skip=0, limit=10):
+
+        query = {
+            "status": "APPROVED"
+        }
+
+        if category and category != "all":
+            mapped_category = self.CATEGORY_MAP.get(category, category)
+            query["category"] = mapped_category
+        
+        
+
+        if price and price != "all":
+
+            if price == "free":
+                query["price"] = 0
+
+            elif price == "under_1m":
+                query["price"] = {"$lt": 1_000_000}
+
+            elif price == "1m_2m":
+                query["price"] = {
+                    "$gte": 1_000_000,
+                    "$lte": 2_000_000
+                }
+
+            elif price == "above_2m":
+                query["price"] = {"$gt": 2_000_000}
+
+        cursor = (
+            self.collection
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+        )
+
+        return list(cursor)
