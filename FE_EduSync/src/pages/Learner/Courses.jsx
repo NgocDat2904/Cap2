@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Link } from "react-router-dom";
 import {
@@ -6,7 +6,13 @@ import {
   faUsers,
   faPlayCircle,
   faCheckCircle,
+  faSpinner,
+  faMagnifyingGlass,
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  getPublicCoursesAPI,
+  searchPublicCoursesAPI,
+} from "../../services/learnerCourseAPI";
 
 const LearnerCoursesPage = () => {
   // State quản lý bộ lọc trên Mobile
@@ -15,6 +21,13 @@ const LearnerCoursesPage = () => {
   // State lưu trữ lựa chọn bộ lọc
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedPrice, setSelectedPrice] = useState("all");
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [courses, setCourses] = useState([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [page, setPage] = useState(1);
+  const limit = 12;
 
   // =========================================================================
   // MOCK DATA: Dữ liệu giả lập
@@ -39,82 +52,53 @@ const LearnerCoursesPage = () => {
     { id: "over_2m", name: "Trên 2.000.000đ" },
   ];
 
-  const courses = [
-    {
-      id: 1,
-      title: "Lập trình Python từ cơ bản đến nâng cao cho người mới bắt đầu",
-      instructor: "Nguyễn Văn A",
-      avatar: "https://i.pravatar.cc/150?img=11",
-      thumbnail:
-        "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      students: 1250,
-      videoCount: 45,
-      price: 1222000,
-      // isBestseller: true,
-    },
-    {
-      id: 2,
-      title: "Làm chủ ReactJS và TailwindCSS để xây dựng Web App thực tế",
-      instructor: "Trần Thị B",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      thumbnail:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      students: 3420,
-      videoCount: 62,
-      price: 1550000,
-      // isBestseller: false,
-    },
-    {
-      id: 3,
-      title: "Digital Marketing thực chiến: Chạy Ads Facebook & Google",
-      instructor: "Lê Hoàng C",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      thumbnail:
-        "https://images.unsplash.com/photo-1557804506-669a67965ba0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      rating: 4.6,
-      students: 890,
-      videoCount: 30,
-      price: 890000,
-      originalPrice: 1200000,
-      // isBestseller: false,
-    },
-    {
-      id: 4,
-      title: "Nhập môn Thiết kế Đồ họa với Adobe Illustrator",
-      instructor: "Phạm Minh D",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      thumbnail:
-        "https://images.unsplash.com/photo-1626785774573-4b799315345d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      students: 560,
-      videoCount: 25,
-      price: 0,
-      // isBestseller: false,
-    },
-    {
-      id: 5,
-      title: "Kỹ năng Lãnh đạo & Quản lý dự án hiệu quả dành cho Manager",
-      instructor: "Hoàng Tuấn E",
-      avatar: "https://i.pravatar.cc/150?img=14",
-      thumbnail:
-        "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      students: 410,
-      videoCount: 38,
-      price: 2500000,
-      // isBestseller: true,
-    },
-    {
-      id: 6,
-      title: "Xây dựng tư duy Logic và thuật toán cơ bản bằng C++",
-      instructor: "Nguyễn Văn A",
-      avatar: "https://i.pravatar.cc/150?img=11",
-      thumbnail:
-        "https://images.unsplash.com/photo-1587620962725-abab7fe55159?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      students: 2100,
-      videoCount: 50,
-      price: 500000,
-      // isBestseller: false,
-    },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const useSearch = Boolean(searchKeyword.trim() || selectedCategory !== "all");
+        const payload = {
+          keyword: searchKeyword.trim(),
+          category: selectedCategory === "all" ? "" : selectedCategory,
+          page,
+          limit,
+        };
+        const data = useSearch
+          ? await searchPublicCoursesAPI(payload)
+          : await getPublicCoursesAPI({ page, limit });
+        if (!cancelled) {
+          setCourses(Array.isArray(data.items) ? data.items : []);
+          setTotal(Number(data.total || 0));
+        }
+      } catch (e) {
+        if (!cancelled) {
+          setError(e.message || "Không tải được khóa học");
+          setCourses([]);
+          setTotal(0);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      cancelled = true;
+    };
+  }, [searchKeyword, selectedCategory, page]);
+
+  const filteredCourses = useMemo(() => {
+    if (selectedPrice === "all") return courses;
+    return courses.filter((c) => {
+      const p = Number(c.price || 0);
+      if (selectedPrice === "free") return p === 0;
+      if (selectedPrice === "under_1m") return p > 0 && p < 1000000;
+      if (selectedPrice === "1m_to_2m") return p >= 1000000 && p <= 2000000;
+      if (selectedPrice === "over_2m") return p > 2000000;
+      return true;
+    });
+  }, [courses, selectedPrice]);
 
   // Hàm format tiền tệ VNĐ
   const formatCurrency = (amount) => {
@@ -237,35 +221,43 @@ const LearnerCoursesPage = () => {
           <div className="hidden lg:flex justify-between items-end mb-6">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-800">
-                10,542 kết quả khóa học
+                {total.toLocaleString()} kết quả khóa học
               </h1>
               <p className="text-slate-500 text-sm mt-1 font-medium">
                 Khám phá các kỹ năng mới cùng chuyên gia
               </p>
             </div>
-            {/* Bộ sắp xếp */}
-            {/* <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-slate-600">
-                Sắp xếp theo:
-              </span>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-slate-200 text-slate-700 text-sm font-bold rounded-lg pl-4 pr-10 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer shadow-sm">
-                  <option>Phổ biến nhất</option>
-                  <option>Mới nhất</option>
-                  <option>Đánh giá cao</option>
-                  <option>Giá từ thấp - cao</option>
-                </select>
-                <FontAwesomeIcon
-                  icon={faChevronDown}
-                  className="absolute right-3.5 top-3.5 text-slate-400 text-sm pointer-events-none"
-                />
-              </div>
-            </div> */}
+            <div className="relative w-[360px]">
+              <FontAwesomeIcon
+                icon={faMagnifyingGlass}
+                className="absolute left-3 top-3 text-slate-400 text-sm"
+              />
+              <input
+                value={searchKeyword}
+                onChange={(e) => {
+                  setPage(1);
+                  setSearchKeyword(e.target.value);
+                }}
+                placeholder="Tìm kiếm khóa học..."
+                className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
           </div>
 
           {/* Lưới khóa học (Grid) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 lg:gap-8">
-            {courses.map((course) => (
+            {loading && (
+              <div className="col-span-full text-center text-slate-500 py-12">
+                <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+                Đang tải khóa học...
+              </div>
+            )}
+            {!loading && error && (
+              <div className="col-span-full text-center text-red-600 py-12">{error}</div>
+            )}
+            {!loading &&
+              !error &&
+              filteredCourses.map((course) => (
               <div
                 key={course.id}
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer"
@@ -305,7 +297,7 @@ const LearnerCoursesPage = () => {
                   {/* Tác giả */}
                   <div className="flex items-center gap-2 mb-3">
                     <img
-                      src={course.avatar}
+                      src="https://i.pravatar.cc/150?img=11"
                       alt="Avatar"
                       className="w-6 h-6 rounded-full object-cover"
                     />
@@ -367,20 +359,21 @@ const LearnerCoursesPage = () => {
           {/* Phân trang (Pagination) */}
           <div className="mt-12 flex justify-center">
             <div className="flex items-center gap-2">
-              <button className="w-10 h-10 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold transition-colors cursor-not-allowed opacity-50">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="w-10 h-10 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-50 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 &lt;
               </button>
               <button className="w-10 h-10 rounded-xl bg-blue-600 text-white font-bold shadow-md shadow-blue-600/30">
-                1
+                {page}
               </button>
-              <button className="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition-colors">
-                2
-              </button>
-              <button className="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition-colors">
-                3
-              </button>
-              <span className="text-slate-400 font-bold px-1">...</span>
-              <button className="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition-colors">
+              <button
+                onClick={() => setPage((p) => p + 1)}
+                disabled={page * limit >= total}
+                className="w-10 h-10 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+              >
                 &gt;
               </button>
             </div>
