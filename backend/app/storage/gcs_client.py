@@ -7,7 +7,7 @@ from google.cloud import storage
 class GCSClient:
     def __init__(self):
         self.client = storage.Client.from_service_account_json(
-            "E:Keys/edusync-491910-0a7be5d8fd86.json"
+            "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json"
         )
         self.bucket_name = "edusync-videos-c2se-01"
 
