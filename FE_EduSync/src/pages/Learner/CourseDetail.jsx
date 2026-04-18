@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -10,78 +10,52 @@ import {
   faCheckCircle,
   faEllipsisVertical,
   faCartShopping,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
 
 const CourseDetailPage = () => {
   const navigate = useNavigate();
   // Lấy courseId từ URL hiện tại (ví dụ: đang ở trang /courses/123 thì courseId = 123)
   const { courseId } = useParams();
 
-  // =========================================================================
-  // MOCK DATA: Dữ liệu chi tiết khóa học
-  // =========================================================================
-  const courseDetail = {
-    title: "Lập trình Python từ cơ bản đến nâng cao",
-    category: "Lập trình",
-    instructor: "Nguyễn Văn A",
-    instructorId: "INST-001", // Giả lập thêm ID Giảng viên để chuyển trang
-    instructorTitle: "Senior Software Engineer",
-    avatar: "https://i.pravatar.cc/150?img=11",
-    students: 1520,
-    duration: "8h 30m",
-    lessonCount: 24,
-    price: 1222000,
-    thumbnail:  // ảnh đại diện khóa học
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  };
+  const [courseDetail, setCourseDetail] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const lessons = [
-    {
-      id: 1,
-      title: "Giới thiệu khóa học & Cài đặt môi trường",
-      duration: "10:25",
-      views: 1520,
-      timeAgo: "4 giờ trước",
-      image:  // ảnh đại diện bài giảng (thường là ảnh đại diện của khóa học và bài giảng giống nhau nên tạm thời dùng chung 1 ảnh)
-        "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      id: 2,
-      title: "Biến, Kiểu dữ liệu và Các phép toán cơ bản",
-      duration: "18:40",
-      views: 1450,
-      timeAgo: "1 ngày trước",
-      image:
-        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      id: 3,
-      title: "Cấu trúc rẽ nhánh (If - Else) trong Python",
-      duration: "22:15",
-      views: 1200,
-      timeAgo: "2 ngày trước",
-      image:
-        "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      id: 4,
-      title: "Vòng lặp For và While - Thực hành vẽ hình",
-      duration: "25:00",
-      views: 980,
-      timeAgo: "3 ngày trước",
-      image:
-        "https://images.unsplash.com/photo-1542831371-29b0f74f9713?auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      id: 5,
-      title: "Làm việc với List, Tuple và Dictionary",
-      duration: "30:50",
-      views: 850,
-      timeAgo: "5 ngày trước",
-      image:
-        "https://images.unsplash.com/photo-1504639725590-34d0984388bd?auto=format&fit=crop&w=300&q=80",
-    },
-  ];
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const data = await getCourseDetailAPI(courseId);
+        if (!cancelled) setCourseDetail(data);
+      } catch (e) {
+        if (!cancelled) setError(e.message || "Không tải được chi tiết khóa học");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    if (courseId) load();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
+
+  const lessons = useMemo(() => {
+    if (!courseDetail?.sections) return [];
+    return courseDetail.sections.flatMap((s) =>
+      (s.lessons || []).map((l) => ({
+        id: l.id,
+        title: l.title,
+        duration: l.duration || "--:--",
+        views: l.views || 0,
+        timeAgo: "Mới cập nhật",
+        image: l.image || courseDetail.thumbnail,
+      })),
+    );
+  }, [courseDetail]);
 
   // Hàm format tiền tệ VNĐ
   const formatCurrency = (amount) => {
@@ -90,6 +64,19 @@ const CourseDetailPage = () => {
       currency: "VND",
     }).format(amount);
   };
+
+  if (loading) {
+    return (
+      <div className="w-full py-24 text-center text-slate-500">
+        <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
+        Đang tải chi tiết khóa học...
+      </div>
+    );
+  }
+
+  if (error || !courseDetail) {
+    return <div className="w-full py-24 text-center text-red-600">{error || "Không có dữ liệu"}</div>;
+  }
 
   return (
     <div className="animate-fade-slide-up w-full pb-20 relative">
@@ -126,11 +113,11 @@ const CourseDetailPage = () => {
 
             {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
             <Link
-              to={`/instructors/${courseDetail.instructorId}`} // Bẻ lái sang trang Profile Giảng viên
+              to={`/instructors/${courseDetail.instructor?.id || ""}`}
               className="flex items-center gap-4 mb-10 group w-max cursor-pointer"
             >
               <img
-                src={courseDetail.avatar}
+                src={courseDetail.instructor?.avatar || "https://i.pravatar.cc/150?img=11"}
                 alt="Instructor"
                 className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover group-hover:border-blue-400 transition-colors shadow-sm"
               />
@@ -140,7 +127,7 @@ const CourseDetailPage = () => {
                 </p>
                 <div className="flex items-center gap-1.5">
                   <p className="text-white font-bold group-hover:text-blue-400 transition-colors">
-                    {courseDetail.instructor}
+                    {courseDetail.instructor?.name || "Giảng viên EduSync"}
                   </p>
                   <FontAwesomeIcon
                     icon={faCheckCircle}
@@ -148,7 +135,7 @@ const CourseDetailPage = () => {
                   />
                 </div>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  {courseDetail.instructorTitle}
+                  {courseDetail.instructor?.title || "Instructor"}
                 </p>
               </div>
             </Link>
@@ -206,8 +193,8 @@ const CourseDetailPage = () => {
           
           {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
           <div className="relative aspect-video rounded-xl overflow-hidden mb-4 group cursor-pointer border border-slate-100">
-            <img
-              src={courseDetail.thumbnail}
+              <img
+              src={courseDetail.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"}
               alt="Preview"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
