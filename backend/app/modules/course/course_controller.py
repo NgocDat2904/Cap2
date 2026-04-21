@@ -52,7 +52,28 @@ async def search_courses(
 
 @router.get("/courses/top")
 async def get_top_courses():
-    return await course_service.get_top_courses()
+    try:
+        return await course_service.get_top_courses()
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
+@router.get("/courses/filter")
+async def filter_courses(
+    category: str = Query("all"),
+    price: str = Query("all"),
+    page: int = Query(1),
+    limit: int = Query(10),
+):
+    try:
+        return await course_service.filter_courses(
+            category,
+            price,
+            page,
+            limit
+        )
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 # 🔥 MAIN API (MATCH UI)
@@ -71,21 +92,6 @@ async def get_course_detail(course_id: str):
     except Exception as e:
         print("❌ Get course detail error:", e)
         raise HTTPException(500, "Internal server error")
-    
-
-@router.get("/courses/filter")
-async def filter_courses(
-    category: str = Query("all"),
-    price: str = Query("all"),
-    page: int = Query(1),
-    limit: int = Query(10),
-):
-    return await course_service.filter_courses(
-        category,
-        price,
-        page,
-        limit
-    )
 
 
 # ===================== INSTRUCTOR =====================

@@ -264,11 +264,17 @@ const LearnerCoursesPage = () => {
               >
                 {/* Ảnh bìa & Badge */}
                 <div className="relative aspect-video overflow-hidden bg-slate-200">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {course.thumbnail ? (
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
+                      <span className="text-slate-600 font-semibold">Không có ảnh</span>
+                    </div>
+                  )}
                   {/* Lớp overlay đen mờ hiện ra khi hover */}
                   <div className="absolute inset-0 bg-slate-900/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center text-blue-600 transform scale-50 group-hover:scale-100 transition-transform duration-300">
