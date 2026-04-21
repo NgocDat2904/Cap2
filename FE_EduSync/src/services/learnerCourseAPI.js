@@ -32,7 +32,7 @@ export async function searchPublicCoursesAPI({
 }
 
 export async function getCourseDetailAPI(courseId) {
-  const res = await fetch(`${BASE_URL}/courses/${courseId}`);
+  const res = await fetch(`${BASE_URL}/courses/detail/${courseId}`);
   if (res.status === 404) throw new Error("Không tìm thấy khóa học");
   if (!res.ok) throw new Error(await parseError(res, "Không tải được chi tiết khóa học"));
   return res.json();
