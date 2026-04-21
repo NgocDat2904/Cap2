@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends
 from app.middleware.auth_middleware import require_role
 from app.modules.video.video_service import VideoService
-from app.modules.video.video_schema import VideoRequest
+from app.modules.video.video_schema import VideoRequest, GenerateTranscriptRequest
 
 router = APIRouter()
 video_service = VideoService()
@@ -26,3 +26,17 @@ async def save_video(
     user=Depends(require_role(["instructor"]))
 ):
     return await video_service.save_video(data, user["id"])
+
+
+@router.post("/instructor/videos/{video_id}/transcript")
+async def generate_video_transcript(
+    video_id: str,
+    body: GenerateTranscriptRequest,
+    user=Depends(require_role(["instructor"])),
+):
+    return await video_service.generate_transcript(
+        video_id=video_id,
+        instructor_id=user["id"],
+        language=body.language or "vi",
+        force=body.force,
+    )
