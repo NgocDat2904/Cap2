@@ -2,10 +2,14 @@
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
-    "@fortawesome/react-fontawesome": "^3.2.0"
+    "@fortawesome/react-fontawesome": "^3.2.0",
+    "lucide-react": "^1.8.0",
+    "react-player": "^3.4.0",
+    "react-router-dom": "^7.14.1"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.27",
+    "nodemon": "^3.1.14",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1"
   }

@@ -1,4 +1,5 @@
 import uuid
+import os
 from datetime import timedelta
 
 from google.cloud import storage
@@ -6,12 +7,21 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        self.client = storage.Client.from_service_account_json(
-            "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json"
-        )
+        key_path = "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json"
+        self.client = None
+        try:
+            if os.path.exists(key_path):
+                self.client = storage.Client.from_service_account_json(key_path)
+            else:
+                # Fallback để backend vẫn boot khi máy local chưa có key file.
+                self.client = storage.Client()
+        except Exception:
+            self.client = None
         self.bucket_name = "edusync-videos-c2se-01"
 
     def generate_signed_url(self, filename: str, content_type: str = "video/mp4"):
+        if not self.client:
+            raise RuntimeError("GCS credentials chưa sẵn sàng trên máy local")
         bucket = self.client.bucket(self.bucket_name)
 
         unique_filename = f"videos/{uuid.uuid4()}_{filename}"
@@ -33,6 +43,8 @@ class GCSClient:
     def generate_read_signed_url(
         self, object_name: str, expiration_hours: int = 168
     ) -> str:
+        if not self.client:
+            raise RuntimeError("GCS credentials chưa sẵn sàng trên máy local")
         bucket = self.client.bucket(self.bucket_name)
         blob = bucket.blob(object_name)
         return blob.generate_signed_url(

@@ -5,33 +5,57 @@ import {
   faUserCircle,
   faPaperPlane,
 } from "@fortawesome/free-solid-svg-icons";
+import { aiChatAPI, aiChatByVideoAPI } from "../services/aiAPI";
 
-const CourseChatbot = () => {
-  // Đưa Logic xử lý tin nhắn vào bên trong Component này
+const CourseChatbot = ({ lessonContext, videoId }) => {
   const [chatMessages, setChatMessages] = useState([
     {
       isAi: true,
-      text: "Chào bạn! Mình là AI Trợ giảng của khóa học. Bạn có câu hỏi nào không?",
+      text: "Chào bạn! Mình là AI trợ giảng. Hỏi mình về nội dung bài học (theo transcript/mô tả) nhé.",
     },
   ]);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSendChat = (e) => {
+  const handleSendChat = async (e) => {
     e.preventDefault();
     const input = e.target.elements.chatInput.value;
-    if (!input.trim()) return;
+    if (!input.trim() || sending) return;
 
-    setChatMessages([...chatMessages, { isAi: false, text: input }]);
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setError("Vui lòng đăng nhập để chat với AI.");
+      return;
+    }
+    setError("");
+
+    const userMsg = { isAi: false, text: input.trim() };
+    const nextMessages = [...chatMessages, userMsg];
+    setChatMessages(nextMessages);
     e.target.reset();
+    setSending(true);
 
-    setTimeout(() => {
-      setChatMessages((prev) => [
-        ...prev,
+    try {
+      const data = videoId
+        ? await aiChatByVideoAPI(token, videoId, nextMessages)
+        : await aiChatAPI(token, lessonContext, nextMessages);
+      setChatMessages([
+        ...nextMessages,
+        { isAi: true, text: data.reply || "..." },
+      ]);
+    } catch (err) {
+      setChatMessages([
+        ...nextMessages,
         {
           isAi: true,
-          text: "Đây là câu trả lời tự động từ AI. Hệ thống đang phân tích...",
+          text:
+            err.message ||
+            "Có lỗi khi gọi AI. Kiểm tra backend và GEMINI_API_KEY.",
         },
       ]);
-    }, 1000);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -42,14 +66,19 @@ const CourseChatbot = () => {
         </div>
         <div>
           <p className="text-sm font-bold text-slate-800">
-            EduSync AI Assistant
+            EduSync AI (Gemini)
           </p>
           <p className="text-[10px] text-green-600 font-bold flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-green-500 rounded-full inline-block animate-pulse"></span>{" "}
-            Đang hoạt động
+            {sending ? "Đang trả lời..." : "Sẵn sàng"}
           </p>
         </div>
       </div>
+      {error && (
+        <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-b border-red-100">
+          {error}
+        </div>
+      )}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
         {chatMessages.map((msg, idx) => (
           <div
@@ -79,10 +108,12 @@ const CourseChatbot = () => {
           placeholder="Hỏi AI về nội dung bài giảng..."
           className="flex-1 bg-slate-100 border-transparent focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-400 rounded-lg px-4 py-2 text-sm outline-none transition-all"
           autoComplete="off"
+          disabled={sending}
         />
         <button
           type="submit"
-          className="w-10 h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center justify-center transition-colors shadow-sm"
+          disabled={sending}
+          className="w-10 h-10 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg flex items-center justify-center transition-colors shadow-sm"
         >
           <FontAwesomeIcon icon={faPaperPlane} />
         </button>

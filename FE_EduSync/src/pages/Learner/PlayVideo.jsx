@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -73,6 +73,13 @@ const CourseLearningWorkspace = () => {
       duration: "12:15",
       description:
         "Khái niệm cốt lõi của React, cách tạo Functional Component.",
+      transcript: [
+        "Trong bài này chúng ta tìm hiểu Component trong React.",
+        "Component là khối UI độc lập có thể tái sử dụng: nhận props và trả về phần tử giao diện.",
+        "Functional Component là hàm JavaScript (hoặc mũi tên) trả về JSX.",
+        "Ví dụ: function Welcome(props) { return <h1>Hello {props.name}</h1>; }",
+        "Ta có thể tách nhỏ giao diện thành nhiều component để dễ bảo trì và kiểm thử.",
+      ].join("\n"),
       image:
         "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&q=80",
       videoUrl: MP4_TEST_LINK,
@@ -112,6 +119,20 @@ const CourseLearningWorkspace = () => {
 
   const [activeLesson, setActiveLesson] = useState(playlist[0]);
   const playerRef = React.useRef(null);
+
+  const lessonContext = useMemo(
+    () => ({
+      title: activeLesson.title,
+      description: activeLesson.description || "",
+      transcript: activeLesson.transcript || undefined,
+    }),
+    [
+      activeLesson.title,
+      activeLesson.description,
+      activeLesson.transcript,
+    ],
+  );
+  const activeVideoId = activeLesson._id || activeLesson.id;
 
   const handleSelectLesson = (lesson) => {
     if (lesson.locked && !isPremiumUser) {
@@ -257,23 +278,30 @@ const CourseLearningWorkspace = () => {
 
             <div className="bg-white border border-t-0 border-slate-200 rounded-b-2xl p-6 sm:p-8 min-h-[400px] shadow-sm">
               {activeLeftTab === "summary" && (
-                <CourseSummary lessonTitle={activeLesson.title} />
+                <CourseSummary lessonContext={lessonContext} videoId={activeVideoId} />
               )}
               {activeLeftTab === "mindmap" &&
                 (!isPremiumUser ? (
                   renderPaywall("Sơ đồ tư duy AI")
                 ) : (
-                  <CourseMindmap />
+                  <CourseMindmap
+                    lessonContext={lessonContext}
+                    videoId={activeVideoId}
+                  />
                 ))}
               {activeLeftTab === "quiz" &&
                 (!isPremiumUser ? (
                   renderPaywall("Bài tập trắc nghiệm AI")
                 ) : (
                   <CourseQuiz
+                    lessonContext={lessonContext}
+                    videoId={activeVideoId}
                     onSwitchToDiscussion={() => setActiveLeftTab("discussion")}
                   />
                 ))}
-              {activeLeftTab === "chatbot" && <CourseChatbot />}
+              {activeLeftTab === "chatbot" && (
+                <CourseChatbot lessonContext={lessonContext} videoId={activeVideoId} />
+              )}
               {(activeLeftTab === "discussion" ||
                 activeLeftTab === "review") && <CourseDiscussion />}
             </div>
