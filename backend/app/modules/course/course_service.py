@@ -155,7 +155,10 @@ class CourseService:
         }
 
     async def get_public_course_detail(self, course_id: str):
-        course = await course_repository.get_public_by_id_with_sections(course_id)
+        try:
+            course = await course_repository.get_public_by_id_with_sections(course_id)
+        except Exception:
+            course = None
 
         if not course:
             return None
@@ -351,3 +354,68 @@ class CourseService:
             "thumbnail": course.get("image") or "",
             "sections": []
         }
+
+    # ===================== FILTER & TOP COURSES =====================
+
+    async def filter_courses(self, category: str = "all", price: str = "all", page: int = 1, limit: int = 10):
+        """Lọc khóa học theo category và price range"""
+        filter = {"status": "APPROVED"}
+
+        # Lọc theo category
+        if category and category != "all":
+            filter["category"] = category
+
+        # Lọc theo giá
+        if price and price != "all":
+            if price == "free":
+                filter["price"] = 0
+            elif price == "under_500k":
+                filter["price"] = {"$gt": 0, "$lt": 500000}
+            elif price == "500k_to_1m":
+                filter["price"] = {"$gte": 500000, "$lt": 1000000}
+            elif price == "1m_to_2m":
+                filter["price"] = {"$gte": 1000000, "$lt": 2000000}
+            elif price == "over_2m":
+                filter["price"] = {"$gt": 2000000}
+
+        courses = course_repository.find_public(filter, page, limit)
+        total = course_repository.count(filter)
+
+        return {
+            "items": [self._serialize_public_card(c) for c in courses],
+            "total": total,
+            "page": page,
+            "limit": limit,
+        }
+
+    async def get_top_courses(self, limit: int = 4):
+        """Lấy 4 khóa học có nhiều học sinh nhất"""
+        try:
+            filter = {"status": "APPROVED"}
+            
+            # Lấy tất cả khóa học approved
+            all_courses = course_repository.find_public(filter, page=1, limit=1000)
+            
+            if not all_courses:
+                return {
+                    "items": [],
+                    "total": 0,
+                }
+            
+            # Sắp xếp theo số học sinh (descending) và lấy top limit
+            sorted_courses = sorted(
+                all_courses, 
+                key=lambda c: int(c.get("students", 0)), 
+                reverse=True
+            )[:limit]
+            
+            return {
+                "items": [self._serialize_public_card(c) for c in sorted_courses],
+                "total": len(sorted_courses),
+            }
+        except Exception as e:
+            print("❌ Get top courses error:", e)
+            return {
+                "items": [],
+                "total": 0,
+            }
