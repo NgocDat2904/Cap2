@@ -55,7 +55,11 @@ const AdminCourseDetail = () => {
     setLoadState({ loading: true, error: "" });
     try {
       const data = await fetchAdminCourseDetailAPI(id, token);
-      setCourse(data);
+      setCourse({
+        ...data,
+        lessons: Array.isArray(data?.lessons) ? data.lessons : [],
+        status: String(data?.status || "").toLowerCase(),
+      });
       setAdminPrice(
         data.price !== undefined && data.price !== null ? String(data.price) : "",
       );
@@ -181,8 +185,8 @@ const AdminCourseDetail = () => {
     alert("Chức năng xóa khóa học chưa được kết nối API.");
   };
 
-  const firstLesson =
-    course.lessons?.find((l) => l.play_url || l.url) || null;
+  const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
+  const firstLesson = lessons.find((l) => l.play_url || l.url) || null;
   const firstVideoUrl = firstLesson
     ? firstLesson.play_url || firstLesson.url || ""
     : "";
@@ -480,13 +484,13 @@ const AdminCourseDetail = () => {
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
             <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
               <FontAwesomeIcon icon={faListUl} className="text-blue-600" />
-              Giáo trình ({course.lessons.length} bài)
+              Giáo trình ({lessons.length} bài)
             </h3>
             <div className="space-y-3">
-              {course.lessons.map((lesson, index) => (
+              {lessons.map((lesson, index) => (
                 <div
                   key={lesson.id}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${index === course.lessons.length - 1 && course.has_new_update ? "border-amber-300 bg-amber-50/30" : ""}`}
+                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${index === lessons.length - 1 && course.has_new_update ? "border-amber-300 bg-amber-50/30" : ""}`}
                 >
                   {lesson.thumbnail_url ? (
                     <img
@@ -505,7 +509,7 @@ const AdminCourseDetail = () => {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
                       {lesson.title}
-                      {index === course.lessons.length - 1 &&
+                      {index === lessons.length - 1 &&
                         course.has_new_update && (
                           <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase">
                             Mới thêm
@@ -521,7 +525,7 @@ const AdminCourseDetail = () => {
                   </div>
                 </div>
               ))}
-              {course.lessons.length === 0 && (
+              {lessons.length === 0 && (
                 <p className="text-sm text-slate-400 text-center py-4">
                   Chưa có bài giảng nào.
                 </p>

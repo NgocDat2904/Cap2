@@ -12,6 +12,9 @@ dnspython==2.8.0
 ecdsa==0.19.2
 email-validator==2.3.0
 fastapi==0.135.3
+faster-whisper==1.0.3
+google-cloud-storage==2.14.0
+google-genai==0.3.0
 h11==0.16.0
 idna==3.11
 jmespath==1.1.0

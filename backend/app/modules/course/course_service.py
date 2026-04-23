@@ -182,16 +182,23 @@ class CourseService:
         raw_lessons = video_repository.get_by_course(str(course.get("_id")))
         lessons = []
         for i, l in enumerate(raw_lessons):
-            raw_url = l.get("url") or ""
+            raw_url = l.get("video_url") or l.get("url") or ""
             path = l.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
 
+            play_url = ""
             if path:
                 try:
                     play_url = _gcs.generate_read_signed_url(path)
-                except Exception:
-                    play_url = raw_url
+                    print(f"✅ Generated signed URL for video: {path[:50]}...")
+                except Exception as e:
+                    print(f"❌ Failed to generate signed URL for {path}: {str(e)}")
+                    play_url = raw_url or ""
             else:
-                play_url = raw_url
+                if raw_url:
+                    print(f"⚠️ No storage_path found, using raw_url: {raw_url[:50]}...")
+                    play_url = raw_url
+                else:
+                    print(f"⚠️ Video {i+1} has no URL or storage_path")
 
             lessons.append({
                 "id": str(l.get("_id") or f"v{i+1}"),
@@ -303,6 +310,7 @@ class CourseService:
         await course_repository.update(course_id, {
             "status": "PENDING",
             "is_locked": True,
+            "submitted_at": datetime.utcnow(),
         })
 
         return {"message": "Submitted successfully"}
@@ -315,8 +323,28 @@ class CourseService:
         courses = course_repository.find_public(filter, page, limit)
         total = course_repository.count(filter)
 
+        items = []
+        for c in courses:
+            instructor_name = "Giảng viên EduSync"
+            iid = c.get("instructor_id")
+            if iid:
+                u = get_user_by_id(str(iid))
+                if u:
+                    instructor_name = u.get("fullName") or u.get("email") or instructor_name
+
+            course_id = str(c.get("_id")) if c.get("_id") is not None else str(c.get("id", ""))
+            submitted_at = c.get("submitted_at") or c.get("updated_at") or c.get("created_at")
+            items.append({
+                "id": course_id,
+                "title": c.get("title", ""),
+                "thumbnail": c.get("image") or "",
+                "instructor": instructor_name,
+                "submittedAt": self._dt_iso(submitted_at),
+                "videoCount": self._video_count(course_id),
+            })
+
         return {
-            "items": courses,
+            "items": items,
             "total": total,
             "page": page,
             "limit": limit,
@@ -344,14 +372,57 @@ class CourseService:
         if not course:
             return None
 
+        raw_lessons = video_repository.get_by_course(course_id)
+        lessons = []
+        for i, l in enumerate(raw_lessons):
+            raw_url = l.get("video_url") or l.get("url") or ""
+            path = l.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
+            
+            play_url = ""
+            if path:
+                try:
+                    play_url = _gcs.generate_read_signed_url(path)
+                    print(f"✅ Generated signed URL for video: {path[:50]}...")
+                except Exception as e:
+                    print(f"❌ Failed to generate signed URL for {path}: {str(e)}")
+                    play_url = raw_url or ""
+            else:
+                if raw_url:
+                    print(f"⚠️ No storage_path found, using raw_url: {raw_url[:50]}...")
+                    play_url = raw_url
+                else:
+                    print(f"⚠️ Video {i+1} has no URL or storage_path")
+
+            lessons.append({
+                "id": str(l.get("_id") or f"v{i+1}"),
+                "title": l.get("title") or l.get("file_name") or f"Bài {i+1}",
+                "duration": l.get("duration") or "10:00",
+                "size": l.get("size") or "—",
+                "thumbnail_url": (l.get("thumbnail_url") or "").strip(),
+                "play_url": play_url,
+                "url": raw_url,
+            })
+
+        instructor_name = "Giảng viên EduSync"
+        iid = course.get("instructor_id")
+        if iid:
+            u = get_user_by_id(str(iid))
+            if u:
+                instructor_name = u.get("fullName") or u.get("email") or instructor_name
+
         return {
             "id": course.get("id"),
             "title": course.get("title", ""),
             "description": course.get("description", ""),
             "category": self._category_display(course.get("category")),
             "price": float(course.get("price") or 0),
-            "status": course.get("status"),
+            "status": str(course.get("status") or "").lower(),
             "thumbnail": course.get("image") or "",
+            "instructor": instructor_name,
+            "has_new_update": bool(course.get("has_new_update", False)),
+            "rejectReason": course.get("reject_reason", ""),
+            "updatedAt": self._dt_iso(course.get("updated_at")),
+            "lessons": lessons,
             "sections": []
         }
 
