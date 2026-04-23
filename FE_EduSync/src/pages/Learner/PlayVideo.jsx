@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -13,9 +13,7 @@ import {
   faUnlock,
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
-
-// 🚨 ĐÃ IMPORT THƯ VIỆN PHÁT VIDEO CHUẨN
-import ReactPlayer from "react-player";
+import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
 
 import CourseMindmap from "../../components/CourseMindmap";
 import CourseSummary from "../../components/CourseSummary";
@@ -29,110 +27,82 @@ const CourseLearningWorkspace = () => {
   const [activeLeftTab, setActiveLeftTab] = useState("summary");
   const [activeRightTab, setActiveRightTab] = useState("videos");
   const [isPremiumUser, setIsPremiumUser] = useState(false);
-  const [likedVideos, setLikedVideos] = useState(["v2"]);
+  const [likedVideos, setLikedVideos] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
-
-  const instructorInfo = {
-    name: "Nguyễn Văn A",
-    followers: "12.5K người follow",
-    avatar: "https://i.pravatar.cc/150?img=11",
-  };
-
-  // 🚨 TOÀN BỘ DÙNG LINK MP4 CỦA GOOGLE - 100% SẼ PHÁT ĐƯỢC KHÔNG BỊ CHẶN
-  const MP4_TEST_LINK =
-    "https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
-
-  const playlist = [
-    {
-      id: "v1",
-      title: "01 - Welcome!",
-      duration: "09:56",
-      description: "Giới thiệu tổng quan về khóa học và các mục tiêu.",
-      image:
-        "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80",
-      videoUrl: MP4_TEST_LINK,
-      completed: true,
-      locked: false,
-      timeline: [],
-    },
-    {
-      id: "v2",
-      title: "02 - Cài đặt môi trường (VS Code)",
-      duration: "10:25",
-      description: "Hướng dẫn cài đặt môi trường lập trình.",
-      image:
-        "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&q=80",
-      videoUrl: MP4_TEST_LINK,
-      completed: true,
-      locked: false,
-      timeline: [],
-    },
-    {
-      id: "v3",
-      title: "03 - Component là gì?",
-      duration: "12:15",
-      description:
-        "Khái niệm cốt lõi của React, cách tạo Functional Component.",
-      transcript: [
-        "Trong bài này chúng ta tìm hiểu Component trong React.",
-        "Component là khối UI độc lập có thể tái sử dụng: nhận props và trả về phần tử giao diện.",
-        "Functional Component là hàm JavaScript (hoặc mũi tên) trả về JSX.",
-        "Ví dụ: function Welcome(props) { return <h1>Hello {props.name}</h1>; }",
-        "Ta có thể tách nhỏ giao diện thành nhiều component để dễ bảo trì và kiểm thử.",
-      ].join("\n"),
-      image:
-        "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=300&q=80",
-      videoUrl: MP4_TEST_LINK,
-      completed: false,
-      locked: false,
-      timeline: [
-        { time: "00:00", label: "Mở đầu khái niệm", seconds: 0 },
-        { time: "01:30", label: "Gặp chú thỏ mập", seconds: 90 },
-        { time: "03:15", label: "Đàn bướm xuất hiện", seconds: 195 },
-      ],
-    },
-    {
-      id: "v4",
-      title: "04 - Quản lý State (Khóa)",
-      duration: "20:15",
-      description: "Tìm hiểu useState Hook - Trái tim của ứng dụng.",
-      image:
-        "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&q=80",
-      videoUrl: MP4_TEST_LINK,
-      completed: false,
-      locked: true,
-      timeline: [],
-    },
-    {
-      id: "v5",
-      title: "05 - Vòng đời Component (Khóa)",
-      duration: "18:40",
-      description: "Hiểu về Effect Hook.",
-      image:
-        "https://images.unsplash.com/photo-1504639725590-34d0984388bd?w=300&q=80",
-      videoUrl: MP4_TEST_LINK,
-      completed: false,
-      locked: true,
-      timeline: [],
-    },
-  ];
-
-  const [activeLesson, setActiveLesson] = useState(playlist[0]);
+  const [courseDetail, setCourseDetail] = useState(null);
+  const [loadingCourse, setLoadingCourse] = useState(true);
+  const [courseError, setCourseError] = useState("");
+  const [activeLesson, setActiveLesson] = useState(null);
   const playerRef = React.useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadCourseDetail = async () => {
+      if (!courseId) {
+        setCourseError("Thiếu courseId.");
+        setLoadingCourse(false);
+        return;
+      }
+      setLoadingCourse(true);
+      setCourseError("");
+      try {
+        const data = await getCourseDetailAPI(courseId);
+        if (!cancelled) setCourseDetail(data);
+      } catch (error) {
+        if (!cancelled) setCourseError(error.message || "Không tải được dữ liệu khóa học");
+      } finally {
+        if (!cancelled) setLoadingCourse(false);
+      }
+    };
+
+    loadCourseDetail();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId]);
+
+  const playlist = useMemo(() => {
+    const sections = courseDetail?.sections || [];
+    return sections.flatMap((section) =>
+      (section.lessons || []).map((lesson) => ({
+        id: lesson.id,
+        title: lesson.title || "Untitled lesson",
+        duration: lesson.duration || "00:00",
+        description: lesson.description || "",
+        transcript: lesson.transcript || "",
+        image: lesson.image || courseDetail?.thumbnail || "",
+        videoUrl: lesson.play_url || lesson.url || "",
+        completed: false,
+        locked: false,
+        timeline: [],
+        views: lesson.views || 0,
+      })),
+    );
+  }, [courseDetail]);
+
+  useEffect(() => {
+    if (playlist.length === 0) {
+      setActiveLesson(null);
+      return;
+    }
+    const matched = playlist.find((lesson) => String(lesson.id) === String(lessonId));
+    setActiveLesson(matched || playlist[0]);
+  }, [playlist, lessonId]);
 
   const lessonContext = useMemo(
     () => ({
-      title: activeLesson.title,
-      description: activeLesson.description || "",
-      transcript: activeLesson.transcript || undefined,
+      title: activeLesson?.title || "",
+      description: activeLesson?.description || "",
+      transcript: activeLesson?.transcript || undefined,
     }),
     [
-      activeLesson.title,
-      activeLesson.description,
-      activeLesson.transcript,
+      activeLesson?.title,
+      activeLesson?.description,
+      activeLesson?.transcript,
     ],
   );
-  const activeVideoId = activeLesson._id || activeLesson.id;
+  const activeVideoId = activeLesson?._id || activeLesson?.id;
 
   const handleSelectLesson = (lesson) => {
     if (lesson.locked && !isPremiumUser) {
@@ -143,6 +113,33 @@ const CourseLearningWorkspace = () => {
     setActiveRightTab("timeline");
     setIsPlaying(true);
   };
+
+  const instructorInfo = {
+    name: courseDetail?.instructor?.name || "Giảng viên EduSync",
+    followers: "Giảng viên trên EduSync",
+    avatar: courseDetail?.instructor?.avatar || "https://i.pravatar.cc/150?img=11",
+  };
+
+  if (loadingCourse) {
+    return (
+      <div className="w-full py-24 text-center text-slate-500">
+        <FontAwesomeIcon icon={faClockRotateLeft} className="mr-2" />
+        Đang tải nội dung khóa học...
+      </div>
+    );
+  }
+
+  if (courseError) {
+    return <div className="w-full py-24 text-center text-red-600">{courseError}</div>;
+  }
+
+  if (!activeLesson) {
+    return (
+      <div className="w-full py-24 text-center text-slate-500">
+        Khóa học chưa có bài giảng để phát.
+      </div>
+    );
+  }
 
   const handleToggleLike = (e, lessonId) => {
     e.stopPropagation();
@@ -155,7 +152,7 @@ const CourseLearningWorkspace = () => {
 
   const handleSeekVideo = (seconds) => {
     if (playerRef.current) {
-      playerRef.current.seekTo(seconds, "seconds");
+      playerRef.current.currentTime = seconds;
       setIsPlaying(true);
     }
   };
@@ -201,23 +198,22 @@ const CourseLearningWorkspace = () => {
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         <div className="w-full lg:flex-1 flex flex-col min-w-0">
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
-            <ReactPlayer
-              ref={playerRef}
-              className="absolute top-0 left-0"
-              url={activeLesson.videoUrl}
-              width="100%"
-              height="100%"
-              controls={true}
-              playing={isPlaying} // Bật tự động phát
-              muted={true}
-              onPlay={() => setIsPlaying(true)}
-              onPause={() => setIsPlaying(false)}
-              config={{
-                youtube: {
-                  playerVars: { showinfo: 0 },
-                },
-              }}
-            />
+            {activeLesson.videoUrl ? (
+              <video
+                ref={playerRef}
+                src={activeLesson.videoUrl}
+                controls
+                className="absolute inset-0 w-full h-full object-contain bg-black"
+                playsInline
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+              />
+            ) : (
+              <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 text-sm bg-gradient-to-br from-slate-900 to-slate-800 gap-4">
+                <FontAwesomeIcon icon={faPlayCircle} className="text-5xl opacity-30" />
+                <p>Bài giảng này chưa có URL phát video hợp lệ.</p>
+              </div>
+            )}
           </div>
 
           <div className="mt-6 mb-8 px-1">

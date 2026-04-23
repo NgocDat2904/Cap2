@@ -46,7 +46,7 @@ export const getPresignedUrlAPI = async (courseId, fileName, contentType, token)
   // Dùng encodeURIComponent để lỡ tên video của má có dấu cách (space) thì nó không bị lỗi mạng
   const safeFileName = encodeURIComponent(fileName);
   const ct = encodeURIComponent(contentType || "video/mp4");
-  const urlVideo = `http://localhost:8000/videos/upload-url?filename=${safeFileName}&content_type=${ct}`;
+  const urlVideo = `${BASE_URL}/instructor/videos/upload-url?filename=${safeFileName}&content_type=${ct}`;
   
   const response = await fetch(urlVideo, {
     method: "POST", 
@@ -79,16 +79,13 @@ export const uploadVideoToGCS = async (presignedUrl, file) => {
 
 // 4. Báo Backend lưu Video vào Database
 export const saveVideoToDBAPI = async (courseId, videoData, token) => {
-  const response = await fetch(`${BASE_URL}/videos`, {
+  const response = await fetch(`${BASE_URL}/instructor/videos`, {
     method: "POST",
     headers: {
       "Authorization": `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({
-      ...videoData,
-      course_id: courseId, 
-    }),
+    body: JSON.stringify(videoData),
   });
   
   if (!response.ok) {
@@ -106,6 +103,54 @@ export const saveVideoToDBAPI = async (courseId, videoData, token) => {
     throw new Error(detail);
   }
   return await response.json();
+};
+
+export const createSectionAPI = async (sectionData, token) => {
+  const response = await fetch(`${BASE_URL}/instructor/sections`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(sectionData),
+  });
+
+  if (!response.ok) {
+    let detail = "Lỗi khi tạo section";
+    try {
+      const err = await response.json();
+      if (typeof err.detail === "string") detail = err.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+
+  return response.json();
+};
+
+export const createLessonAPI = async (lessonData, token) => {
+  const response = await fetch(`${BASE_URL}/instructor/lessons`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(lessonData),
+  });
+
+  if (!response.ok) {
+    let detail = "Lỗi khi tạo bài giảng";
+    try {
+      const err = await response.json();
+      if (typeof err.detail === "string") detail = err.detail;
+    } catch {
+      /* ignore */
+    }
+    throw new Error(detail);
+  }
+
+  return response.json();
 };
 
 // 5. Gửi duyệt khóa học

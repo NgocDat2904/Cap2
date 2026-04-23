@@ -20,13 +20,6 @@ const ProtectedRoute = ({ allowedRoles }) => {
   const userRole = normalize(localStorage.getItem("user_role"));
   const location = useLocation();
 
-  console.log("ProtectedRoute", {
-    path: location.pathname,
-    token,
-    userRole,
-    allowedRoles,
-  });
-
   if (!token) {
     if (location.pathname.includes("/instructor")) {
       return <Navigate to="/instructor/login" replace />;

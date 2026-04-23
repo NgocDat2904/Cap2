@@ -7,15 +7,17 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        key_path = "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json"
+        key_path = os.getenv("GCS_KEY_PATH", "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json")
         self.client = None
         try:
             if os.path.exists(key_path):
                 self.client = storage.Client.from_service_account_json(key_path)
+                print(f"✅ GCS initialized with credentials from: {key_path}")
             else:
-                # Fallback để backend vẫn boot khi máy local chưa có key file.
+                print(f"⚠️ GCS key file not found at: {key_path}. Using default credentials.")
                 self.client = storage.Client()
-        except Exception:
+        except Exception as e:
+            print(f"❌ Failed to initialize GCS client: {str(e)}")
             self.client = None
         self.bucket_name = "edusync-videos-c2se-01"
 
@@ -44,14 +46,21 @@ class GCSClient:
         self, object_name: str, expiration_hours: int = 168
     ) -> str:
         if not self.client:
+            print(f"❌ GCS client not available, cannot generate read URL for: {object_name}")
             raise RuntimeError("GCS credentials chưa sẵn sàng trên máy local")
-        bucket = self.client.bucket(self.bucket_name)
-        blob = bucket.blob(object_name)
-        return blob.generate_signed_url(
-            version="v4",
-            expiration=timedelta(hours=expiration_hours),
-            method="GET",
-        )
+        try:
+            bucket = self.client.bucket(self.bucket_name)
+            blob = bucket.blob(object_name)
+            signed_url = blob.generate_signed_url(
+                version="v4",
+                expiration=timedelta(hours=expiration_hours),
+                method="GET",
+            )
+            print(f"✅ Generated signed read URL for: {object_name}")
+            return signed_url
+        except Exception as e:
+            print(f"❌ Error generating signed URL for {object_name}: {str(e)}")
+            raise
 
     def object_name_from_public_url(self, url: str) -> str | None:
         """Lấy object path từ URL công khai GCS (bucket mặc định của client)."""

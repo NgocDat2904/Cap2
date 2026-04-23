@@ -13,6 +13,8 @@ import {
   saveVideoToDBAPI,
   submitCourseAPI,
   uploadCourseThumbnailAPI,
+  createSectionAPI,
+  createLessonAPI,
 } from "../../services/courseAPI";
 
 const categories = [
@@ -144,6 +146,24 @@ const InstructorCreateCourse = () => {
       const createResponse = await createCourseAPI(coursePayload, token);
       const newCourseId = createResponse.id;
 
+      // Tạo section mặc định để chứa danh sách video upload ở màn này
+      let defaultSectionId = null;
+      if (uploadedVideos.length > 0) {
+        setUploadProgressText("Đang tạo section nội dung...");
+        const sectionRes = await createSectionAPI(
+          {
+            course_id: newCourseId,
+            title: "Nội dung khóa học",
+            order_index: 1,
+          },
+          token,
+        );
+        defaultSectionId = sectionRes?.id;
+        if (!defaultSectionId) {
+          throw new Error("Không tạo được section cho khóa học");
+        }
+      }
+
       // BƯỚC 2 + 3 + 4: XỬ LÝ UP TỪNG VIDEO
       if (uploadedVideos.length > 0) {
         for (let i = 0; i < uploadedVideos.length; i++) {
@@ -160,9 +180,24 @@ const InstructorCreateCourse = () => {
           setUploadProgressText(`Đang đẩy Video ${i + 1} lên đám mây... (Chờ chút nha)`);
           await uploadVideoToGCS(urlData.upload_url, video.file);
 
+          // Mỗi video tạo một lesson rồi mới gắn video vào lesson đó
+          const lessonRes = await createLessonAPI(
+            {
+              section_id: defaultSectionId,
+              title: video.title || `Bài ${i + 1}`,
+              order_index: i + 1,
+            },
+            token,
+          );
+          const lessonId = lessonRes?.id;
+          if (!lessonId) {
+            throw new Error(`Không tạo được lesson cho video ${i + 1}`);
+          }
+
           // 4. Báo Backend lưu Video vào Database (url = link công khai file trên GCS)
           const videoDbPayload = {
-            url: urlData.file_url,
+            lesson_id: lessonId,
+            video_url: urlData.file_url,
             storage_path: urlData.storage_path,
             thumbnail_url: courseImageUrl || undefined,
             title: video.title,
