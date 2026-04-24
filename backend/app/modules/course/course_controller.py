@@ -110,9 +110,13 @@ async def create_course(
     user=Depends(require_role(["instructor"])),
 ):
     try:
+        print("DATA RECEIVED:", data)  # 👈 thêm dòng này
+
         return await course_service.create_course(data, user["id"])
+
     except Exception as e:
-        raise _http_from_exc(e)
+        print("CREATE ERROR:", str(e))  # 👈 thêm dòng này
+        raise HTTPException(400, str(e))
 
 
 @router.post("/instructor/courses/thumbnail")
