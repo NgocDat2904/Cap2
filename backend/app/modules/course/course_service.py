@@ -320,8 +320,8 @@ class CourseService:
     async def get_pending_courses(self, page=1, limit=10):
         filter = {"status": "PENDING"}
 
-        courses = course_repository.find_public(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.find_public(filter, page, limit)
+        total = await course_repository.count(filter)
 
         items = []
         for c in courses:
