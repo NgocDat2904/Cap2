@@ -101,9 +101,10 @@ async def get_my_courses(user=Depends(require_role(["instructor"]))):
     try:
         return await course_service.get_instructor_courses(user["id"])
     except Exception as e:
+        print("🔥 ERROR:", str(e))   # 👈 thêm dòng này
         raise HTTPException(500, str(e))
 
-
+    
 @router.post("/instructor/courses")
 async def create_course(
     data: dict,
@@ -140,6 +141,20 @@ async def submit_course(
         return await course_service.submit_course(course_id, user["id"])
     except Exception as e:
         raise _http_from_exc(e)
+    
+
+@router.get("/instructor/courses/{course_id}")
+async def get_instructor_course_detail(
+    course_id: str,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.get_instructor_course_detail(
+            course_id,
+            user["id"]
+        )
+    except Exception as e:
+        raise HTTPException(500, str(e))
 
 
 # ===================== ADMIN =====================

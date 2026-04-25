@@ -257,18 +257,32 @@ class CourseService:
     async def get_instructor_courses(self, instructor_id: str):
         courses = await course_repository.find_by_instructor(instructor_id)
 
-        return [
-            {
-                "id": c["id"],
-                "title": c.get("title", ""),
-                "category": self._category_display(c.get("category", "")),
-                "status": self.map_status(c.get("status")),
-                "students": 0,
-                "price": c.get("price", 0),
-                "image": c.get("image", ""),
-            }
-            for c in courses
-        ]
+        result = []
+
+        for c in courses:
+            course_id = str(c.get("_id")) if c.get("_id") else c.get("id")
+
+            result.append({
+            "id": course_id,
+            "title": c.get("title", ""),
+            "category": self._category_display(c.get("category", "")),
+
+            # 🔥 map status cho FE
+            "status": self.map_status(c.get("status")),
+
+            "students": self._count_students(course_id),  # có thể để 0 nếu chưa làm
+            "lessons": self._count_lessons(course_id),    # có thể để 0
+            "price": c.get("price", 0),
+            "image": c.get("image", "")
+        })
+
+        return result
+    
+    def _count_students(self, course_id: str):
+        return 0  # sau này bạn thay bằng query thật
+    
+    def _count_lessons(self, course_id: str):
+        return 0
 
     async def create_course(self, data: dict, instructor_id: str):
         if not data.get("title"):
@@ -314,6 +328,29 @@ class CourseService:
         })
 
         return {"message": "Submitted successfully"}
+    
+    async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
+       course = await course_repository.get_by_id(course_id)
+
+       if not course:
+        return None
+
+    # 🔥 Check quyền sở hữu
+       if str(course.get("instructor_id")) != instructor_id:
+        raise Exception("Permission denied")
+
+       return {
+        "id": course.get("id"),
+        "title": course.get("title", ""),
+        "description": course.get("description", ""),
+        "category": course.get("category", ""),
+        "image": course.get("image", ""),
+        "price": course.get("price", 0),
+        "status": self.map_status(course.get("status")),
+        "createdAt": self._dt_iso(course.get("created_at")),
+        "updatedAt": self._dt_iso(course.get("updated_at"))
+        }
+    
 
     # ===================== ADMIN =====================
 
