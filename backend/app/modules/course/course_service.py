@@ -5,7 +5,12 @@ from app.modules.video.video_repository import VideoRepository
 from app.storage.gcs_client import GCSClient
 from app.database.mongodb import db
 from .course_repository import CourseRepository
+from app.modules.lesson.lesson_repository import LessonRepository
+from app.modules.enrollment.enrollment_repository import EnrollmentRepository
 
+
+lesson_repository = LessonRepository()
+enrollment_repository = EnrollmentRepository()
 course_repository = CourseRepository()
 video_repository = VideoRepository()
 _gcs = GCSClient()
@@ -279,10 +284,30 @@ class CourseService:
         return result
     
     def _count_students(self, course_id: str):
-        return 0  # sau này bạn thay bằng query thật
+        try:
+            return enrollment_repository.count_by_course(course_id)
+        except:
+            return 0  # sau này bạn thay bằng query thật
     
     def _count_lessons(self, course_id: str):
-        return 0
+        try:
+            from app.database.mongodb import db
+            from bson import ObjectId
+
+            sections = list(db.sections.find({
+            "course_id": ObjectId(course_id)
+        }))
+
+            section_ids = [s["_id"] for s in sections]
+
+            return db.lessons.count_documents({
+            "section_id": {"$in": section_ids}
+        })
+
+        except Exception as e:
+            print("Count lesson error:", e)
+            return 0
+     
 
     async def create_course(self, data: dict, instructor_id: str):
         if not data.get("title"):
@@ -350,6 +375,90 @@ class CourseService:
         "createdAt": self._dt_iso(course.get("created_at")),
         "updatedAt": self._dt_iso(course.get("updated_at"))
         }
+    
+
+
+    # ===================== LEARNER =====================
+    async def enroll(self, course_id: str, user_id: str):
+        from app.database.mongodb import db
+        from bson import ObjectId
+
+    # 🔥 check đã enroll chưa
+        exists = db.enrollments.find_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        if exists:
+           return {"message": "Already enrolled"}
+
+    # 🔥 insert
+        db.enrollments.insert_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        return {"message": "Enrolled successfully"}
+    
+
+    async def get_course_students(self, course_id: str):
+        enrollments = list(db.enrollments.find({
+        "course_id": ObjectId(course_id)
+    }))
+
+        user_ids = [e["learner_id"] for e in enrollments]
+
+        users = list(db.users.find({
+        "_id": {"$in": user_ids}
+    }))
+
+        return [
+            {
+            "id": str(u["_id"]),
+            "name": u.get("fullName"),
+            "email": u.get("email"),
+            "avatar": u.get("avatar_url")
+        }
+        for u in users
+    ]
+
+
+    async def unenroll(self, course_id: str, user_id: str):
+
+        result = db.enrollments.delete_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        if result.deleted_count == 0:
+            return {"message": "Not enrolled"}
+
+        return {"message": "Unenrolled successfully"}
+    
+
+    async def get_my_courses(self, user_id: str):   
+
+        enrollments = list(db.enrollments.find({
+        "learner_id": ObjectId(user_id)
+    }))
+
+        course_ids = [e["course_id"] for e in enrollments]
+
+        courses = list(db.courses.find({
+        "_id": {"$in": course_ids}
+    }))
+
+        return [
+        {
+            "id": str(c["_id"]),
+            "title": c.get("title"),
+            "image": c.get("image"),
+            "price": c.get("price", 0),
+            "status": c.get("status")
+        }
+        for c in courses
+    ]
+
     
 
     # ===================== ADMIN =====================
