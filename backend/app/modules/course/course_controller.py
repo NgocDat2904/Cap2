@@ -5,6 +5,7 @@ from app.modules.course.course_service import CourseService
 from app.modules.course.course_model import (
     CourseDetailResponse,
     CourseResponse,
+    EnrollRequest,
 )
 from app.utils.cloudinary import upload_image
 
@@ -155,6 +156,39 @@ async def get_instructor_course_detail(
         )
     except Exception as e:
         raise HTTPException(500, str(e))
+    
+
+
+
+# ===================== Learner =====================
+@router.post("/courses/enroll")
+async def enroll_course(
+    data: EnrollRequest,
+    user=Depends(require_role(["learner", "instructor"]))
+):
+    return await course_service.enroll(data.course_id, user["id"])
+
+@router.get("/courses/{course_id}/students")
+async def get_course_students(
+    course_id: str,
+    user=Depends(require_role(["instructor", "admin"]))
+):
+    return await course_service.get_course_students(course_id)
+
+
+@router.delete("/courses/enroll")
+async def unenroll_course(
+    data: EnrollRequest,
+    user=Depends(require_role(["learner"]))
+):
+    return await course_service.unenroll(data.course_id, user["id"])
+
+
+@router.get("/me/courses")
+async def get_my_learning_courses(
+    user=Depends(require_role(["learner"]))
+):
+    return await course_service.get_my_courses(user["id"])
 
 
 # ===================== ADMIN =====================
@@ -210,6 +244,8 @@ async def reject_course(
         return await course_service.reject_course(course_id, reason)
     except Exception as e:
         raise _http_from_exc(e)
+
+
 
 
 
