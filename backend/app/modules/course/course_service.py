@@ -149,8 +149,8 @@ class CourseService:
     async def get_public_courses(self, page=1, limit=10):
         filter = {"status": "APPROVED"}
 
-        courses = course_repository.find_public(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.find_public(filter, page, limit)
+        total = await course_repository.count(filter)
 
         return {
             "items": [self._serialize_public_card(c) for c in courses],
@@ -247,8 +247,8 @@ class CourseService:
         if category:
             filter["category"] = category
 
-        courses = course_repository.search(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.search(filter, page, limit)
+        total = await course_repository.count(filter)
 
         return {
             "items": [self._serialize_public_card(c) for c in courses],
@@ -611,7 +611,7 @@ class CourseService:
             filter = {"status": "APPROVED"}
             
             # Lấy tất cả khóa học approved
-            all_courses = course_repository.find_public(filter, page=1, limit=1000)
+            all_courses = await course_repository.find_public(filter, page=1, limit=1000)
             
             if not all_courses:
                 return {
