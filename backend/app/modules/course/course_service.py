@@ -433,10 +433,10 @@ class CourseService:
     }
 
     async def update_course(self, course_id: str, instructor_id: str, data: dict):
-
     # 1. Lấy course
         course = db.courses.find_one({
-        "_id": ObjectId(course_id)
+        "_id": ObjectId(course_id),
+        "is_deleted": {"$ne": True}  # ✅ FIX
     })
 
         if not course:
@@ -446,8 +446,9 @@ class CourseService:
         if str(course.get("instructor_id")) != instructor_id:
            raise Exception("Permission denied")
 
-    # 3. Không cho sửa status
+    # 3. ❌ Không cho sửa status & price
         data.pop("status", None)
+        data.pop("price", None)  # ✅ QUAN TRỌNG
 
     # 4. Nếu course đã APPROVED → sửa thì quay lại PENDING
         if course.get("status") == "APPROVED":
