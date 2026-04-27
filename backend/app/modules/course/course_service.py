@@ -355,27 +355,146 @@ class CourseService:
         return {"message": "Submitted successfully"}
     
     async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
-       course = await course_repository.get_by_id(course_id)
+    # 1. Lấy course
+        course = await course_repository.get_by_id(course_id)
 
-       if not course:
-        return None
+        if not course:
+           return None
 
-    # 🔥 Check quyền sở hữu
-       if str(course.get("instructor_id")) != instructor_id:
-        raise Exception("Permission denied")
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
 
-       return {
-        "id": course.get("id"),
-        "title": course.get("title", ""),
-        "description": course.get("description", ""),
-        "category": course.get("category", ""),
-        "image": course.get("image", ""),
-        "price": course.get("price", 0),
-        "status": self.map_status(course.get("status")),
-        "createdAt": self._dt_iso(course.get("created_at")),
-        "updatedAt": self._dt_iso(course.get("updated_at"))
+    # 2. Lấy instructor
+        instructor = db.users.find_one({
+        "_id": ObjectId(instructor_id)
+    })
+
+        instructor_name = instructor.get("fullName", "Unknown")
+        avatar = instructor.get("avatar_url", "")
+
+    # 3. Đếm students
+        students = db.enrollments.count_documents({
+        "course_id": ObjectId(course_id)
+    })
+
+    # 4. Đếm lessons
+        sections = list(db.sections.find({
+        "course_id": ObjectId(course_id)
+    }))
+
+        section_ids = [s["_id"] for s in sections]
+
+        lessons = list(db.lessons.find({
+        "section_id": {"$in": section_ids}
+    }))
+
+        lesson_count = len(lessons)
+
+    # 5. Build lessons list
+        lessons_list = []
+
+        for l in lessons:
+            lessons_list.append({
+            "id": str(l["_id"]),
+            "order": l.get("order_index", 1),
+            "title": l.get("title", ""),
+            "description": l.get("description", ""),
+            "duration": "10:00",  # mock
+            "docs": 0,
+            "quizStatus": "draft",
+            "quizStats": {
+                "questions": 0,
+                "avgScore": "0/10",
+                "passRate": "0%"
+            },
+            "videoStats": {
+                "views": 0,
+                "completion": "0%",
+                "avgTime": "00:00"
+            },
+            "studentQuestions": []
+        })
+
+    # 6. Return đúng format FE
+        return {
+        "courseDetail": {
+            "id": course["id"],
+            "title": course.get("title", ""),
+            "category": self._category_display(course.get("category")),
+            "instructor": instructor_name,
+            "students": students,
+            "duration": "0h",  # có thể tính sau
+            "lessonCount": lesson_count,
+            "price": course.get("price", 0),
+            "thumbnail": course.get("image", ""),
+            "avatar": avatar
+        },
+        "lessonsList": lessons_list
+    }
+
+    async def update_course(self, course_id: str, instructor_id: str, data: dict):
+
+    # 1. Lấy course
+        course = db.courses.find_one({
+        "_id": ObjectId(course_id)
+    })
+
+        if not course:
+          raise Exception("Course not found")
+
+    # 2. Check quyền
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
+
+    # 3. Không cho sửa status
+        data.pop("status", None)
+
+    # 4. Nếu course đã APPROVED → sửa thì quay lại PENDING
+        if course.get("status") == "APPROVED":
+           data["status"] = "PENDING"
+
+    # 5. Update
+        db.courses.update_one(
+        {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                **data,
+                "updated_at": datetime.utcnow()
+            }
         }
+    )
+
+        return {"message": "Course updated successfully"}
     
+
+    async def delete_course(self, course_id: str, instructor_id: str):
+
+        course = db.courses.find_one({
+        "_id": ObjectId(course_id)
+    })
+
+        if not course:
+           raise Exception("Course not found")
+
+    # Check quyền
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
+
+    #  OPTION 1: SOFT DELETE (RECOMMENDED)
+        db.courses.update_one(
+        {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                "is_deleted": True
+            }
+        }
+    )
+
+    #  OPTION 2 (nếu muốn xóa thật)
+    # db.courses.delete_one({"_id": ObjectId(course_id)})
+
+        return {"message": "Course deleted successfully"}
+
 
 
     # ===================== LEARNER =====================
