@@ -157,6 +157,35 @@ async def get_instructor_course_detail(
     except Exception as e:
         raise HTTPException(500, str(e))
     
+@router.put("/instructor/courses/{course_id}")
+async def update_course(
+    course_id: str,
+    data: dict,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.update_course(
+            course_id,
+            user["id"],
+            data
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
+    
+
+@router.delete("/instructor/courses/{course_id}")
+async def delete_course(
+    course_id: str,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.delete_course(
+            course_id,
+            user["id"]
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
+    
 
 
 

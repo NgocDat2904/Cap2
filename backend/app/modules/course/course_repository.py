@@ -76,6 +76,9 @@ class CourseRepository:
 
             skip = (page - 1) * limit
 
+            # ✅ FIX Ở ĐÂY
+            filter["is_deleted"] = {"$ne": True}
+
             cursor = (
                 self.collection
                 .find(filter)
@@ -101,7 +104,8 @@ class CourseRepository:
             obj_id = ObjectId(instructor_id)
 
             cursor = self.collection.find({
-                "instructor_id": obj_id
+                "instructor_id": obj_id,
+                "is_deleted": {"$ne": True} 
             })
 
             # ❌ BEFORE: await cursor.to_list()
@@ -135,6 +139,8 @@ class CourseRepository:
             page = max(page, 1)
             limit = min(max(limit, 1), 100)
             skip = (page - 1) * limit
+
+            filter["is_deleted"] = {"$ne": True}
 
             cursor = (
                 self.collection
