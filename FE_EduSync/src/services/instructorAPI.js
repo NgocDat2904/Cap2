@@ -33,3 +33,23 @@ export const getInstructorCoursesAPI = async (token) => {
   });
   return response.data;
 };
+
+// 4. LẤY CHI TIẾT KHÓA HỌC CỦA INSTRUCTOR
+export const getInstructorCourseDetailAPI = async (courseId, token) => {
+  const response = await axios.get(`${API_URL}/courses/${courseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+// 5. Xóa khóa học
+export const deleteCourseAPI = async (courseId, token) => {
+  const response = await axios.delete(`${API_URL}/courses/${courseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
