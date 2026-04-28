@@ -15,6 +15,7 @@ import {
   faFolderOpen,
 } from "@fortawesome/free-solid-svg-icons";
 import { getInstructorCoursesAPI } from "../../services/instructorAPI";
+import { deleteCourseAPI } from "../../services/instructorAPI";
 
 const InstructorMyCourses = () => {
   // ==================== STATES ====================
@@ -24,6 +25,7 @@ const InstructorMyCourses = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
+const [deletingId, setDeletingId] = useState(null);
 
   // ==================== EFFECTS ====================
   useEffect(() => {
@@ -34,6 +36,8 @@ const InstructorMyCourses = () => {
   useEffect(() => {
     applyFilters();
   }, [allCourses, searchQuery, activeFilter]);
+
+  
 
   // ==================== FUNCTIONS ====================
   const fetchCourses = async () => {
@@ -78,6 +82,26 @@ const InstructorMyCourses = () => {
 
     setFilteredCourses(result);
   };
+  const handleDeleteCourse = async (courseId) => {
+  if (!window.confirm("Bạn có chắc muốn xóa khóa học này không? Thao tác này không thể hoàn tác.")) return;
+
+  try {
+    setDeletingId(courseId);
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+      return;
+    }
+    await deleteCourseAPI(courseId, token);
+    // Cập nhật UI ngay, không cần fetch lại
+    setAllCourses(prev => prev.filter(c => c.id !== courseId));
+  } catch (err) {
+    setError(err.message || "Lỗi khi xóa khóa học");
+    console.error("Error deleting course:", err);
+  } finally {
+    setDeletingId(null);
+  }
+};
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -326,12 +350,16 @@ const InstructorMyCourses = () => {
                     View Details
                   </Link>
                   <button
-                    className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90"
-                    title="Delete course"
-                    onClick={() => alert("Delete functionality coming soon")}
-                  >
-                    <FontAwesomeIcon icon={faTrash} className="text-lg" />
-                  </button>
+  className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+  title="Delete course"
+  disabled={deletingId === course.id}
+  onClick={() => handleDeleteCourse(course.id)}
+>
+  <FontAwesomeIcon
+    icon={deletingId === course.id ? faSpinner : faTrash}
+    className={`text-lg ${deletingId === course.id ? "animate-spin" : ""}`}
+  />
+</button>
                 </div>
               </div>
             </div>
