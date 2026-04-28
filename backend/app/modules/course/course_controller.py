@@ -5,6 +5,7 @@ from app.modules.course.course_service import CourseService
 from app.modules.course.course_model import (
     CourseDetailResponse,
     CourseResponse,
+    EnrollRequest,
 )
 from app.utils.cloudinary import upload_image
 
@@ -101,18 +102,23 @@ async def get_my_courses(user=Depends(require_role(["instructor"]))):
     try:
         return await course_service.get_instructor_courses(user["id"])
     except Exception as e:
+        print("🔥 ERROR:", str(e))   # 👈 thêm dòng này
         raise HTTPException(500, str(e))
 
-
+    
 @router.post("/instructor/courses")
 async def create_course(
     data: dict,
     user=Depends(require_role(["instructor"])),
 ):
     try:
+        print("DATA RECEIVED:", data)  # 👈 thêm dòng này
+
         return await course_service.create_course(data, user["id"])
+
     except Exception as e:
-        raise _http_from_exc(e)
+        print("CREATE ERROR:", str(e))  # 👈 thêm dòng này
+        raise HTTPException(400, str(e))
 
 
 @router.post("/instructor/courses/thumbnail")
@@ -136,6 +142,82 @@ async def submit_course(
         return await course_service.submit_course(course_id, user["id"])
     except Exception as e:
         raise _http_from_exc(e)
+    
+
+@router.get("/instructor/courses/{course_id}")
+async def get_instructor_course_detail(
+    course_id: str,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.get_instructor_course_detail(
+            course_id,
+            user["id"]
+        )
+    except Exception as e:
+        raise HTTPException(500, str(e))
+    
+@router.put("/instructor/courses/{course_id}")
+async def update_course(
+    course_id: str,
+    data: dict,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.update_course(
+            course_id,
+            user["id"],
+            data
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
+    
+
+@router.delete("/instructor/courses/{course_id}")
+async def delete_course(
+    course_id: str,
+    user=Depends(require_role(["instructor"]))
+):
+    try:
+        return await course_service.delete_course(
+            course_id,
+            user["id"]
+        )
+    except Exception as e:
+        raise HTTPException(400, str(e))
+    
+
+
+
+# ===================== Learner =====================
+@router.post("/courses/enroll")
+async def enroll_course(
+    data: EnrollRequest,
+    user=Depends(require_role(["learner", "instructor"]))
+):
+    return await course_service.enroll(data.course_id, user["id"])
+
+@router.get("/courses/{course_id}/students")
+async def get_course_students(
+    course_id: str,
+    user=Depends(require_role(["instructor", "admin"]))
+):
+    return await course_service.get_course_students(course_id)
+
+
+@router.delete("/courses/enroll")
+async def unenroll_course(
+    data: EnrollRequest,
+    user=Depends(require_role(["learner"]))
+):
+    return await course_service.unenroll(data.course_id, user["id"])
+
+
+@router.get("/me/courses")
+async def get_my_learning_courses(
+    user=Depends(require_role(["learner"]))
+):
+    return await course_service.get_my_courses(user["id"])
 
 
 # ===================== ADMIN =====================
@@ -191,6 +273,8 @@ async def reject_course(
         return await course_service.reject_course(course_id, reason)
     except Exception as e:
         raise _http_from_exc(e)
+
+
 
 
 

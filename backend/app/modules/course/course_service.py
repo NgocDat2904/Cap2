@@ -5,7 +5,12 @@ from app.modules.video.video_repository import VideoRepository
 from app.storage.gcs_client import GCSClient
 from app.database.mongodb import db
 from .course_repository import CourseRepository
+from app.modules.lesson.lesson_repository import LessonRepository
+from app.modules.enrollment.enrollment_repository import EnrollmentRepository
 
+
+lesson_repository = LessonRepository()
+enrollment_repository = EnrollmentRepository()
 course_repository = CourseRepository()
 video_repository = VideoRepository()
 _gcs = GCSClient()
@@ -144,8 +149,8 @@ class CourseService:
     async def get_public_courses(self, page=1, limit=10):
         filter = {"status": "APPROVED"}
 
-        courses = course_repository.find_public(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.find_public(filter, page, limit)
+        total = await course_repository.count(filter)
 
         return {
             "items": [self._serialize_public_card(c) for c in courses],
@@ -242,8 +247,8 @@ class CourseService:
         if category:
             filter["category"] = category
 
-        courses = course_repository.search(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.search(filter, page, limit)
+        total = await course_repository.count(filter)
 
         return {
             "items": [self._serialize_public_card(c) for c in courses],
@@ -257,18 +262,52 @@ class CourseService:
     async def get_instructor_courses(self, instructor_id: str):
         courses = await course_repository.find_by_instructor(instructor_id)
 
-        return [
-            {
-                "id": c["id"],
-                "title": c.get("title", ""),
-                "category": self._category_display(c.get("category", "")),
-                "status": self.map_status(c.get("status")),
-                "students": 0,
-                "price": c.get("price", 0),
-                "image": c.get("image", ""),
-            }
-            for c in courses
-        ]
+        result = []
+
+        for c in courses:
+            course_id = str(c.get("_id")) if c.get("_id") else c.get("id")
+
+            result.append({
+            "id": course_id,
+            "title": c.get("title", ""),
+            "category": self._category_display(c.get("category", "")),
+
+            # 🔥 map status cho FE
+            "status": self.map_status(c.get("status")),
+
+            "students": self._count_students(course_id),  # có thể để 0 nếu chưa làm
+            "lessons": self._count_lessons(course_id),    # có thể để 0
+            "price": c.get("price", 0),
+            "image": c.get("image", "")
+        })
+
+        return result
+    
+    def _count_students(self, course_id: str):
+        try:
+            return enrollment_repository.count_by_course(course_id)
+        except:
+            return 0  # sau này bạn thay bằng query thật
+    
+    def _count_lessons(self, course_id: str):
+        try:
+            from app.database.mongodb import db
+            from bson import ObjectId
+
+            sections = list(db.sections.find({
+            "course_id": ObjectId(course_id)
+        }))
+
+            section_ids = [s["_id"] for s in sections]
+
+            return db.lessons.count_documents({
+            "section_id": {"$in": section_ids}
+        })
+
+        except Exception as e:
+            print("Count lesson error:", e)
+            return 0
+     
 
     async def create_course(self, data: dict, instructor_id: str):
         if not data.get("title"):
@@ -314,14 +353,241 @@ class CourseService:
         })
 
         return {"message": "Submitted successfully"}
+    
+    async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
+    # 1. Lấy course
+        course = await course_repository.get_by_id(course_id)
+
+        if not course:
+           return None
+
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
+
+    # 2. Lấy instructor
+        instructor = db.users.find_one({
+        "_id": ObjectId(instructor_id)
+    })
+
+        instructor_name = instructor.get("fullName", "Unknown")
+        avatar = instructor.get("avatar_url", "")
+
+    # 3. Đếm students
+        students = db.enrollments.count_documents({
+        "course_id": ObjectId(course_id)
+    })
+
+    # 4. Đếm lessons
+        sections = list(db.sections.find({
+        "course_id": ObjectId(course_id)
+    }))
+
+        section_ids = [s["_id"] for s in sections]
+
+        lessons = list(db.lessons.find({
+        "section_id": {"$in": section_ids}
+    }))
+
+        lesson_count = len(lessons)
+
+    # 5. Build lessons list
+        lessons_list = []
+
+        for l in lessons:
+            lessons_list.append({
+            "id": str(l["_id"]),
+            "order": l.get("order_index", 1),
+            "title": l.get("title", ""),
+            "description": l.get("description", ""),
+            "duration": "10:00",  # mock
+            "docs": 0,
+            "quizStatus": "draft",
+            "quizStats": {
+                "questions": 0,
+                "avgScore": "0/10",
+                "passRate": "0%"
+            },
+            "videoStats": {
+                "views": 0,
+                "completion": "0%",
+                "avgTime": "00:00"
+            },
+            "studentQuestions": []
+        })
+
+    # 6. Return đúng format FE
+        return {
+        "courseDetail": {
+            "id": course["id"],
+            "title": course.get("title", ""),
+            "category": self._category_display(course.get("category")),
+            "instructor": instructor_name,
+            "students": students,
+            "duration": "0h",  # có thể tính sau
+            "lessonCount": lesson_count,
+            "price": course.get("price", 0),
+            "thumbnail": course.get("image", ""),
+            "avatar": avatar
+        },
+        "lessonsList": lessons_list
+    }
+
+    async def update_course(self, course_id: str, instructor_id: str, data: dict):
+    # 1. Lấy course
+        course = db.courses.find_one({
+        "_id": ObjectId(course_id),
+        "is_deleted": {"$ne": True}  # ✅ FIX
+    })
+
+        if not course:
+          raise Exception("Course not found")
+
+    # 2. Check quyền
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
+
+    # 3. ❌ Không cho sửa status & price
+        data.pop("status", None)
+        data.pop("price", None)  # ✅ QUAN TRỌNG
+
+    # 4. Nếu course đã APPROVED → sửa thì quay lại PENDING
+        if course.get("status") == "APPROVED":
+           data["status"] = "PENDING"
+
+    # 5. Update
+        db.courses.update_one(
+        {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                **data,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+
+        return {"message": "Course updated successfully"}
+    
+
+    async def delete_course(self, course_id: str, instructor_id: str):
+
+        course = db.courses.find_one({
+        "_id": ObjectId(course_id)
+    })
+
+        if not course:
+           raise Exception("Course not found")
+
+    # Check quyền
+        if str(course.get("instructor_id")) != instructor_id:
+           raise Exception("Permission denied")
+
+    #  OPTION 1: SOFT DELETE (RECOMMENDED)
+        db.courses.update_one(
+        {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                "is_deleted": True
+            }
+        }
+    )
+
+    #  OPTION 2 (nếu muốn xóa thật)
+    # db.courses.delete_one({"_id": ObjectId(course_id)})
+
+        return {"message": "Course deleted successfully"}
+
+
+
+    # ===================== LEARNER =====================
+    async def enroll(self, course_id: str, user_id: str):
+        from app.database.mongodb import db
+        from bson import ObjectId
+
+    # 🔥 check đã enroll chưa
+        exists = db.enrollments.find_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        if exists:
+           return {"message": "Already enrolled"}
+
+    # 🔥 insert
+        db.enrollments.insert_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        return {"message": "Enrolled successfully"}
+    
+
+    async def get_course_students(self, course_id: str):
+        enrollments = list(db.enrollments.find({
+        "course_id": ObjectId(course_id)
+    }))
+
+        user_ids = [e["learner_id"] for e in enrollments]
+
+        users = list(db.users.find({
+        "_id": {"$in": user_ids}
+    }))
+
+        return [
+            {
+            "id": str(u["_id"]),
+            "name": u.get("fullName"),
+            "email": u.get("email"),
+            "avatar": u.get("avatar_url")
+        }
+        for u in users
+    ]
+
+
+    async def unenroll(self, course_id: str, user_id: str):
+
+        result = db.enrollments.delete_one({
+        "course_id": ObjectId(course_id),
+        "learner_id": ObjectId(user_id)
+    })
+
+        if result.deleted_count == 0:
+            return {"message": "Not enrolled"}
+
+        return {"message": "Unenrolled successfully"}
+    
+
+    async def get_my_courses(self, user_id: str):   
+
+        enrollments = list(db.enrollments.find({
+        "learner_id": ObjectId(user_id)
+    }))
+
+        course_ids = [e["course_id"] for e in enrollments]
+
+        courses = list(db.courses.find({
+        "_id": {"$in": course_ids}
+    }))
+
+        return [
+        {
+            "id": str(c["_id"]),
+            "title": c.get("title"),
+            "image": c.get("image"),
+            "price": c.get("price", 0),
+            "status": c.get("status")
+        }
+        for c in courses
+    ]
+
+    
 
     # ===================== ADMIN =====================
 
     async def get_pending_courses(self, page=1, limit=10):
         filter = {"status": "PENDING"}
 
-        courses = course_repository.find_public(filter, page, limit)
-        total = course_repository.count(filter)
+        courses = await course_repository.find_public(filter, page, limit)
+        total = await course_repository.count(filter)
 
         items = []
         for c in courses:
@@ -465,7 +731,7 @@ class CourseService:
             filter = {"status": "APPROVED"}
             
             # Lấy tất cả khóa học approved
-            all_courses = course_repository.find_public(filter, page=1, limit=1000)
+            all_courses = await course_repository.find_public(filter, page=1, limit=1000)
             
             if not all_courses:
                 return {
