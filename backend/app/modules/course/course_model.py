@@ -1,8 +1,12 @@
 from datetime import datetime
 from typing import Optional, List
 from enum import Enum
-
 from pydantic import BaseModel, Field
+
+
+
+
+
 
 
 # ===================== ENUM =====================
@@ -67,6 +71,10 @@ class InstructorInfo(BaseModel):
     title: Optional[str] = None
     avatar: Optional[str] = None
 
+
+# ===================== LEARNER =====================
+class EnrollRequest(BaseModel):
+    course_id: str
 
 # ===================== LESSON =====================
 

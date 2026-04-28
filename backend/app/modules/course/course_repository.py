@@ -29,24 +29,31 @@ class CourseRepository:
     # GET BY ID
     async def get_by_id(self, course_id: str):
         try:
+            # ❌ BEFORE: await find_one (Motor style)
+            # ✅ FIX: PyMongo là sync → bỏ await
             course = self.collection.find_one({"_id": ObjectId(course_id)})
             return self._convert_id(course)
         except InvalidId:
             return None
 
 
-    # CREATE COURSE (bạn đang thiếu cái này)
+    # CREATE COURSE
     async def create(self, data: dict):
         data["created_at"] = datetime.utcnow()
         data["updated_at"] = datetime.utcnow()
 
+        # ❌ BEFORE: await insert_one → gây lỗi InsertOneResult
+        # ✅ FIX: dùng sync insert_one
         result = self.collection.insert_one(data)
+
         return str(result.inserted_id)
 
 
     # UPDATE
     async def update(self, course_id: str, data: dict):
         try:
+            # ❌ BEFORE: await update_one
+            # ✅ FIX: dùng sync
             result = self.collection.update_one(
                 {"_id": ObjectId(course_id)},
                 {
@@ -69,6 +76,9 @@ class CourseRepository:
 
             skip = (page - 1) * limit
 
+            # ✅ FIX Ở ĐÂY
+            filter["is_deleted"] = {"$ne": True}
+
             cursor = (
                 self.collection
                 .find(filter)
@@ -77,6 +87,8 @@ class CourseRepository:
                 .limit(limit)
             )
 
+            # ❌ BEFORE: await cursor.to_list() (Motor)
+            # ✅ FIX: PyMongo → dùng list()
             courses = list(cursor)
 
             return self._convert_list(courses)
@@ -86,15 +98,18 @@ class CourseRepository:
             return []
 
 
-    # FIND BY INSTRUCTOR (FIX CHUẨN)
+    # FIND BY INSTRUCTOR
     async def find_by_instructor(self, instructor_id: str):
         try:
             obj_id = ObjectId(instructor_id)
 
             cursor = self.collection.find({
-                "instructor_id": obj_id
+                "instructor_id": obj_id,
+                "is_deleted": {"$ne": True} 
             })
 
+            # ❌ BEFORE: await cursor.to_list()
+            # ✅ FIX: dùng list()
             courses = list(cursor)
 
             return self._convert_list(courses)
@@ -106,18 +121,26 @@ class CourseRepository:
             print("Find by instructor error:", e)
             return []
 
-    def count(self, filter: dict) -> int:
+
+    # COUNT
+    async def count(self, filter: dict) -> int:
         try:
+            # ❌ BEFORE: await count_documents
+            # ✅ FIX: sync
             return self.collection.count_documents(filter)
         except Exception as e:
             print("Count error:", e)
             return 0
 
-    def find_public(self, filter: dict, page: int = 1, limit: int = 10):
+
+    # FIND PUBLIC
+    async def find_public(self, filter: dict, page: int = 1, limit: int = 10):
         try:
             page = max(page, 1)
             limit = min(max(limit, 1), 100)
             skip = (page - 1) * limit
+
+            filter["is_deleted"] = {"$ne": True}
 
             cursor = (
                 self.collection
@@ -127,17 +150,27 @@ class CourseRepository:
                 .limit(limit)
             )
 
+            # ❌ BEFORE: await to_list
+            # ✅ FIX: list()
             return list(cursor)
+
         except Exception as e:
             print("find_public error:", e)
             return []
 
-    def search(self, filter: dict, page: int = 1, limit: int = 10):
-        # hiện tại dùng chung truy vấn với find_public
-        return self.find_public(filter, page, limit)
 
+    # SEARCH
+    async def search(self, filter: dict, page: int = 1, limit: int = 10):
+        # ❌ BEFORE: await find_public
+        # ✅ FIX: không cần await vì function bên dưới sync
+        return await self.find_public(filter, page, limit)
+
+
+    # GET PUBLIC COURSE DETAIL
     async def get_public_by_id_with_sections(self, course_id: str):
         try:
+            # ❌ BEFORE: await find_one
+            # ✅ FIX: sync
             return self.collection.find_one({
                 "_id": ObjectId(course_id),
                 "status": "APPROVED"

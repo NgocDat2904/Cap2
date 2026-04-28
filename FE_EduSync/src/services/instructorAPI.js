@@ -23,3 +23,13 @@ export const updateInstructorProfileAPI = async (data, token) => {
   });
   return response.data;
 };
+
+// 3. LẤY DANH SÁCH KHÓA HỌC CỦA INSTRUCTOR
+export const getInstructorCoursesAPI = async (token) => {
+  const response = await axios.get(`${API_URL}/courses`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
