@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
@@ -24,86 +24,14 @@ import {
   faTimes,
   faSave,
   faPaperPlane,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";
+
 
 // =========================================================================
-// 1. MOCK DATA
+// 1. MOCK DATA FOR Q&A (Tạm giữ, sau sẽ fetch từ API)
 // =========================================================================
-const courseDetail = {
-  id: 123,
-  title: "Master Python from basics to advanced",
-  category: "Lập trình Python",
-  instructor: "Nguyễn Văn A",
-  students: 30,
-  duration: "8h 30m",
-  lessonCount: 24,
-  price: "$ 10",
-  thumbnail:
-    "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  avatar: "https://i.pravatar.cc/150?img=11",
-};
-
-const lessonsList = [
-  {
-    id: 1,
-    order: 1,
-    title: "What is Python?",
-    description: "Tìm hiểu về ngôn ngữ Python...",
-    duration: "10:30",
-    docs: 2,
-    quizStatus: "published", // Đã duyệt
-    quizStats: { questions: 10, avgScore: "8.5/10", passRate: "92%" },
-    videoStats: { views: 132, completion: "84%", avgTime: "08:15" },
-    studentQuestions: [],
-  },
-  {
-    id: 2,
-    order: 2,
-    title: "Setting up your environment (VS Code)",
-    description: "Cài đặt môi trường...",
-    duration: "15:20",
-    docs: 1,
-    quizStatus: "none", // Không có
-    videoStats: { views: 125, completion: "78%", avgTime: "12:00" },
-    studentQuestions: [],
-  },
-  {
-    id: 3,
-    order: 3,
-    title: "Variables and Data Types",
-    description: "Khám phá cách khai báo biến...",
-    duration: "22:15",
-    docs: 3,
-    quizStatus: "draft", // AI VỪA GEN XONG, ĐANG CHỜ DUYỆT (Bản nháp)
-    quizStats: { questions: 2, avgScore: "-", passRate: "-" },
-    videoStats: { views: 110, completion: "60%", avgTime: "18:30" },
-    studentQuestions: [],
-  },
-];
-
-const initialAiQuestions = [
-  {
-    id: "q1",
-    text: "Trong Python, biến được khai báo như thế nào?",
-    options: [
-      { id: "o1", text: "var x = 10", isCorrect: false },
-      { id: "o2", text: "int x = 10", isCorrect: false },
-      { id: "o3", text: "x = 10", isCorrect: true },
-      { id: "o4", text: "declare x = 10", isCorrect: false },
-    ],
-  },
-  {
-    id: "q2",
-    text: "Hàm nào dùng để in dữ liệu ra màn hình?",
-    options: [
-      { id: "o1", text: "echo()", isCorrect: false },
-      { id: "o2", text: "print()", isCorrect: true },
-      { id: "o3", text: "console.log()", isCorrect: false },
-      { id: "o4", text: "System.out.println()", isCorrect: false },
-    ],
-  },
-];
-
 const qnaList = [
   {
     id: 1,
@@ -136,192 +64,9 @@ const qnaList = [
 ];
 
 // =========================================================================
-// 2. QUIZ REVIEW DRAWER (Khay trượt Kiểm duyệt AI Quiz)
+// 2. COMPONENT BÀI GIẢNG (Lesson Accordion)
 // =========================================================================
-const QuizReviewDrawer = ({ isOpen, onClose, lesson }) => {
-  const [questions, setQuestions] = useState([]);
-
-  useEffect(() => {
-    if (isOpen) setQuestions(initialAiQuestions);
-  }, [isOpen]);
-
-  if (!isOpen) return null;
-
-  const handleSetCorrectOption = (qId, optId) => {
-    setQuestions(
-      questions.map((q) => {
-        if (q.id === qId) {
-          return {
-            ...q,
-            options: q.options.map((opt) => ({
-              ...opt,
-              isCorrect: opt.id === optId,
-            })),
-          };
-        }
-        return q;
-      }),
-    );
-  };
-
-  const handleAddQuestion = () => {
-    const newId = `q_new_${Date.now()}`;
-    const newQuestion = {
-      id: newId,
-      text: "",
-      options: [
-        { id: `o1_${Date.now()}`, text: "", isCorrect: true },
-        { id: `o2_${Date.now()}`, text: "", isCorrect: false },
-        { id: `o3_${Date.now()}`, text: "", isCorrect: false },
-        { id: `o4_${Date.now()}`, text: "", isCorrect: false },
-      ],
-    };
-    setQuestions([...questions, newQuestion]);
-    setTimeout(() => {
-      const drawerContent = document.getElementById("quiz-drawer-content");
-      if (drawerContent) drawerContent.scrollTop = drawerContent.scrollHeight;
-    }, 100);
-  };
-
-  const handleDeleteQuestion = (qId) =>
-    setQuestions(questions.filter((q) => q.id !== qId));
-
-  return (
-    <div className="fixed inset-0 z-50 flex justify-end overflow-hidden">
-      <div
-        className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
-        onClick={onClose}
-      ></div>
-      <div className="relative w-full max-w-3xl bg-slate-50 h-full flex flex-col shadow-2xl animate-fade-slide-up sm:animate-none">
-        <div className="px-6 py-5 bg-white border-b border-slate-200 flex justify-between items-center shrink-0">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="bg-indigo-100 text-indigo-700 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider flex items-center gap-1.5">
-                <FontAwesomeIcon icon={faWandMagicSparkles} /> AI Generated
-              </span>
-              <span className="text-slate-400 text-xs font-bold uppercase tracking-wider">
-                Bản nháp
-              </span>
-            </div>
-            <h2 className="text-xl font-extrabold text-slate-900">
-              Kiểm duyệt Quiz: {lesson?.title}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-10 h-10 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800 transition-colors flex items-center justify-center"
-          >
-            <FontAwesomeIcon icon={faTimes} className="text-xl" />
-          </button>
-        </div>
-
-        <div
-          id="quiz-drawer-content"
-          className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar scroll-smooth"
-        >
-          <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-xl flex gap-4">
-            <FontAwesomeIcon
-              icon={faWandMagicSparkles}
-              className="text-indigo-600 text-xl mt-0.5"
-            />
-            <div>
-              <p className="text-sm font-bold text-indigo-900">
-                Hệ thống AI đã tạo {questions.length} câu hỏi
-              </p>
-              <p className="text-xs text-indigo-700 mt-1 leading-relaxed">
-                Vui lòng kiểm tra lại nội dung và các đáp án đúng trước khi xuất
-                bản.
-              </p>
-            </div>
-          </div>
-
-          {questions.map((q, index) => (
-            <div
-              key={q.id}
-              className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative group"
-            >
-              <button
-                onClick={() => handleDeleteQuestion(q.id)}
-                className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <FontAwesomeIcon icon={faTrashAlt} />
-              </button>
-              <div className="mb-4">
-                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">
-                  Câu hỏi {index + 1}
-                </label>
-                <textarea
-                  defaultValue={q.text}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white resize-none"
-                  rows="2"
-                />
-              </div>
-              <div className="space-y-2">
-                {q.options.map((opt) => (
-                  <div
-                    key={opt.id}
-                    onClick={() => handleSetCorrectOption(q.id, opt.id)}
-                    className={`flex items-center gap-3 p-2 rounded-lg border transition-colors cursor-pointer ${opt.isCorrect ? "bg-emerald-50 border-emerald-200 ring-1 ring-emerald-100" : "bg-white border-slate-200 hover:border-blue-300"}`}
-                  >
-                    <div className="flex items-center justify-center pl-1">
-                      <div
-                        className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${opt.isCorrect ? "border-blue-600" : "border-slate-300"}`}
-                      >
-                        {opt.isCorrect && (
-                          <div className="w-2 h-2 bg-blue-600 rounded-full"></div>
-                        )}
-                      </div>
-                    </div>
-                    <input
-                      type="text"
-                      defaultValue={opt.text}
-                      onClick={(e) => e.stopPropagation()}
-                      className="flex-1 bg-transparent border-transparent focus:border-slate-300 rounded text-sm text-slate-700 py-1 px-2 focus:outline-none"
-                    />
-                    {opt.isCorrect && (
-                      <span className="text-[10px] font-bold text-emerald-600 uppercase pr-2">
-                        Đáp án đúng
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-
-          <button
-            onClick={handleAddQuestion}
-            className="w-full py-4 border-2 border-dashed border-slate-300 text-slate-500 rounded-2xl font-bold text-sm hover:border-indigo-400 hover:text-indigo-600 transition-colors hover:bg-indigo-50/50 flex justify-center items-center gap-2"
-          >
-            <FontAwesomeIcon icon={faPlus} /> Thêm câu hỏi thủ công
-          </button>
-        </div>
-
-        <div className="px-6 py-4 bg-white border-t border-slate-200 flex justify-between items-center shrink-0">
-          <button
-            onClick={onClose}
-            className="px-5 py-2.5 text-slate-600 font-bold hover:bg-slate-100 rounded-xl transition-colors text-sm"
-          >
-            Hủy bỏ
-          </button>
-          <div className="flex gap-3">
-            <button className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-colors text-sm flex items-center gap-2">
-              <FontAwesomeIcon icon={faSave} /> Lưu nháp
-            </button>
-            <button className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-600/30 text-sm flex items-center gap-2">
-              <FontAwesomeIcon icon={faPaperPlane} /> Xuất bản Quiz
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// =========================================================================
-// 3. COMPONENT BÀI GIẢNG (Lesson Accordion)
-// =========================================================================
-const LessonAccordion = ({ lesson, onOpenReview }) => {
+const LessonAccordion = ({ lesson }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -363,7 +108,7 @@ const LessonAccordion = ({ lesson, onOpenReview }) => {
                   }
                 />
                 {lesson.quizStatus === "draft"
-                  ? "AI Quiz (Cần duyệt)"
+                  ? "AI Quiz (Đang xuất bản)"
                   : "Bài tập (Quiz)"}
               </span>
             )}
@@ -423,15 +168,9 @@ const LessonAccordion = ({ lesson, onOpenReview }) => {
                   <p className="text-sm font-bold text-indigo-900 mb-1">
                     AI đã tạo {lesson.quizStats.questions} câu hỏi
                   </p>
-                  <p className="text-xs text-indigo-600/80 mb-4">
-                    Vui lòng duyệt nội dung trước khi xuất bản.
+                  <p className="text-xs text-indigo-600/80">
+                    Sẽ được xuất bản tự động.
                   </p>
-                  <button
-                    onClick={() => onOpenReview(lesson)}
-                    className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-lg transition-colors shadow-md shadow-indigo-600/30"
-                  >
-                    Kiểm duyệt & Xuất bản
-                  </button>
                 </div>
               ) : lesson.quizStatus === "published" ? (
                 <div className="space-y-4">
@@ -451,13 +190,6 @@ const LessonAccordion = ({ lesson, onOpenReview }) => {
                       {lesson.quizStats.avgScore}
                     </span>
                   </div>
-                  <button
-                    onClick={() => onOpenReview(lesson)}
-                    className="w-full mt-2 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg transition-colors border border-slate-200"
-                  >
-                    <FontAwesomeIcon icon={faEdit} className="mr-1" /> Sửa câu
-                    hỏi
-                  </button>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-full opacity-50">
@@ -489,31 +221,83 @@ const LessonAccordion = ({ lesson, onOpenReview }) => {
 };
 
 // =========================================================================
-// 4. MAIN PAGE
+// 3. MAIN PAGE
 // =========================================================================
 const InstructorCourseDetailPage = () => {
   const navigate = useNavigate();
+  const { courseId } = useParams();
+  
   const [activeTab, setActiveTab] = useState("Curriculum");
-  const [isPublished, setIsPublished] = useState(true);
+  const [courseDetail, setCourseDetail] = useState(null);
+  const [lessonsList, setLessonsList] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [isPublished, setIsPublished] = useState(false);
 
-  // State quản lý Modal/Drawer
-  const [isReviewDrawerOpen, setIsReviewDrawerOpen] = useState(false);
-  const [reviewingLesson, setReviewingLesson] = useState(null);
+  // Fetch course detail
+  useEffect(() => {
+    const fetchCourseDetail = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+          setIsLoading(false);
+          return;
+        }
+        
+        const data = await getInstructorCourseDetailAPI(courseId, token);
+        
+        // Map API response to component state
+        setCourseDetail(data.courseDetail);
+        setLessonsList(Array.isArray(data.lessonsList) ? data.lessonsList : []);
+        setIsPublished(data.courseDetail.status === "Published");
+        setIsLoading(false);
+      } catch (err) {
+        setError(err.message || "Lỗi tải chi tiết khóa học");
+        setCourseDetail(null);
+        setLessonsList([]);
+        setIsLoading(false);
+      }
+    };
 
-  const handleOpenReviewDrawer = (lesson) => {
-    setReviewingLesson(lesson);
-    setIsReviewDrawerOpen(true);
-  };
+    if (courseId) {
+      fetchCourseDetail();
+    }
+  }, [courseId]);
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-400">
+        <FontAwesomeIcon
+          icon={faSpinner}
+          className="text-4xl animate-spin text-blue-500 mb-4"
+        />
+        <p className="font-bold">Đang tải thông tin khóa học...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !courseDetail) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
+        <p className="font-bold text-red-600 mb-4">{error || "Không có dữ liệu"}</p>
+        <button
+          type="button"
+          onClick={() => navigate("/instructor/courses")}
+          className="px-4 py-2 bg-slate-200 rounded-xl font-bold hover:bg-slate-300"
+        >
+          Về danh sách khóa học
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 overflow-x-hidden overflow-y-auto bg-slate-50 w-full animate-fade-slide-up p-4 sm:p-6 lg:p-8 relative">
-      {/* Khay trượt Kiểm duyệt (Nằm đè lên trên cùng) */}
-      <QuizReviewDrawer
-        isOpen={isReviewDrawerOpen}
-        onClose={() => setIsReviewDrawerOpen(false)}
-        lesson={reviewingLesson}
-      />
-
       <section className="bg-gradient-to-r from-[#308dff] via-[#5178af] to-[#5176b0] rounded-3xl p-8 sm:p-10 lg:p-12 relative shadow-lg overflow-visible mb-8">
         <div className="flex flex-col lg:flex-row justify-between gap-10">
           <div className="w-full lg:w-2/3 text-white">
@@ -532,7 +316,7 @@ const InstructorCourseDetailPage = () => {
                 ${isPublished ? "bg-emerald-500/20 border-emerald-400/50 text-emerald-200" : "bg-amber-500/20 border-amber-400/50 text-amber-200"}
               `}
               >
-                {isPublished ? "Đang xuất bản" : "Bản nháp (Draft)"}
+                {isPublished ? "Đang xuất bản" : "Chờ duyệt"}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-2 tracking-tight">
@@ -571,7 +355,7 @@ const InstructorCourseDetailPage = () => {
                 Giá bán
               </p>
               <p className="text-2xl font-black text-emerald-600 mb-5">
-                {courseDetail.price}
+                ${Number(courseDetail.price).toFixed(2)}
               </p>
               <Link
                 to={`/instructor/courses/${courseDetail.id}/edit`}
@@ -611,7 +395,7 @@ const InstructorCourseDetailPage = () => {
                     Chương trình giảng dạy
                   </h2>
                   <p className="text-slate-500 text-sm font-medium">
-                    {lessonsList.length} Bài giảng • Tổng thời lượng 8h 30m
+                    {lessonsList.length} Bài giảng • Tổng thời lượng {courseDetail.duration}
                   </p>
                 </div>
               </div>
@@ -620,7 +404,6 @@ const InstructorCourseDetailPage = () => {
                   <LessonAccordion
                     key={lesson.id}
                     lesson={lesson}
-                    onOpenReview={handleOpenReviewDrawer}
                   />
                 ))}
               </div>
