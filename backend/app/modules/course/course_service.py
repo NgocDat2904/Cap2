@@ -427,7 +427,8 @@ class CourseService:
             "lessonCount": lesson_count,
             "price": course.get("price", 0),
             "thumbnail": course.get("image", ""),
-            "avatar": avatar
+            "avatar": avatar,
+            "status": self.map_status(course.get("status", "DRAFT"))
         },
         "lessonsList": lessons_list
     }
