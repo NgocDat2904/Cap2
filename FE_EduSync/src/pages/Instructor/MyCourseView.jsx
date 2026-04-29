@@ -9,11 +9,9 @@ import {
   faVideo,
   faEdit,
   faEye,
-  faTrashAlt,
   faChevronDown,
   faChevronUp,
   faTrophy,
-  faPlus,
   faSearch,
   faFilter,
   faReply,
@@ -21,9 +19,6 @@ import {
   faToggleOff,
   faExclamationTriangle,
   faWandMagicSparkles,
-  faTimes,
-  faSave,
-  faPaperPlane,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";

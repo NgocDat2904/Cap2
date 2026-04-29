@@ -3,8 +3,9 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
 from app.middleware.auth_middleware import require_role
 from app.modules.course.course_service import CourseService
 from app.modules.course.course_model import (
-    CourseDetailResponse,
     CourseResponse,
+    CourseUpdate,
+    CourseDetailResponse,  
     EnrollRequest,
 )
 from app.utils.cloudinary import upload_image
@@ -160,14 +161,14 @@ async def get_instructor_course_detail(
 @router.put("/instructor/courses/{course_id}")
 async def update_course(
     course_id: str,
-    data: dict,
+    data: CourseUpdate,  # ✅ Thay đổi: Dùng Pydantic model thay vì dict
     user=Depends(require_role(["instructor"]))
 ):
     try:
         return await course_service.update_course(
             course_id,
             user["id"],
-            data
+            data.dict()  # Convert model thành dict để truyền vào service
         )
     except Exception as e:
         raise HTTPException(400, str(e))
@@ -271,6 +272,24 @@ async def reject_course(
 ):
     try:
         return await course_service.reject_course(course_id, reason)
+    except Exception as e:
+        raise _http_from_exc(e)
+
+
+@router.put("/admin/courses/{course_id}/resolve-update")
+async def resolve_pending_update(
+    course_id: str,
+    price: float | None = None,   # Optional — Admin điều chỉnh giá, để trống = giữ nguyên
+    user=Depends(require_role(["admin"])),
+):
+    """
+    Admin xác nhận đã review bản cập nhật của khóa học đang PUBLISHED.
+    - Approve tất cả bài giảng đang chờ duyệt (is_approved=False → True)
+    - Tắt cờ has_pending_update
+    - Cập nhật giá bán nếu được truyền vào
+    """
+    try:
+        return await course_service.resolve_pending_update(course_id, price)
     except Exception as e:
         raise _http_from_exc(e)
 

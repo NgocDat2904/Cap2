@@ -5,6 +5,7 @@ import {
   fetchAdminCourseDetailAPI,
   approveCourseAPI,
   rejectCourseAPI,
+  resolveUpdateAPI
 } from "../../services/adminCourseAPI";
 import {
   faArrowLeft,
@@ -35,6 +36,17 @@ function formatUpdatedDate(iso) {
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleDateString("vi-VN");
 }
+
+// ✅ THUẬT TOÁN ĐỔI DUNG LƯỢNG (BYTES SANG MB, GB)
+const formatFileSize = (bytes) => {
+  if (bytes === "—" || !bytes || bytes === 0) return "—";
+  if (typeof bytes === "string" && bytes.includes("B")) return bytes; 
+  
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
 const AdminCourseDetail = () => {
   const navigate = useNavigate();
@@ -159,14 +171,25 @@ const AdminCourseDetail = () => {
     }
   };
 
-  const handleResolveUpdate = (isPriceChanged) => {
+  const handleResolveUpdate = async (isPriceChanged) => {
     const confirmMsg = isPriceChanged
       ? `Lưu mức giá mới là $${adminPrice} và Đánh dấu đã xem cập nhật?`
       : "Giữ nguyên mức giá cũ và Đánh dấu đã xem cập nhật?";
 
     if (window.confirm(confirmMsg)) {
-      setCourse({ ...course, has_new_update: false, price: adminPrice });
-      alert("Đã xử lý bản cập nhật thành công!");
+      const token = localStorage.getItem("access_token");
+      setActionLoading(true);
+      try {
+        const newPrice = isPriceChanged ? parseFloat(adminPrice) : null;
+        await resolveUpdateAPI(id, newPrice, token); 
+        
+        alert("Đã xử lý bản cập nhật thành công!");
+        await loadCourse(); 
+      } catch (e) {
+        alert(e.message || "Xử lý thất bại!");
+      } finally {
+        setActionLoading(false);
+      }
     }
   };
 
@@ -195,7 +218,6 @@ const AdminCourseDetail = () => {
   // HÀM RENDER CỘT PHẢI - 5 GIAO DIỆN TÁCH BIỆT RÕ RÀNG
   // =========================================================================
   const renderAdminActions = () => {
-    // KỊCH BẢN 1: CÓ BẢN CẬP NHẬT MỚI TỪ GIẢNG VIÊN (Ưu tiên số 1)
     if (course.has_new_update) {
       return (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl shadow-sm p-6 relative overflow-hidden">
@@ -243,7 +265,6 @@ const AdminCourseDetail = () => {
       );
     }
 
-    // KỊCH BẢN 2: KHÓA HỌC CHỜ DUYỆT (PENDING)
     if (course.status === "pending") {
       return (
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl shadow-xl p-6 relative overflow-hidden">
@@ -302,7 +323,6 @@ const AdminCourseDetail = () => {
       );
     }
 
-    // KỊCH BẢN 3: BỊ TỪ CHỐI (REJECTED)
     if (course.status === "rejected") {
       return (
         <div className="bg-red-50 border-2 border-red-200 rounded-3xl p-6 text-center">
@@ -325,7 +345,6 @@ const AdminCourseDetail = () => {
       );
     }
 
-    // KỊCH BẢN 4: BẢN NHÁP (DRAFT)
     if (course.status === "draft") {
       return (
         <div className="bg-slate-100 border-2 border-slate-200 border-dashed rounded-3xl p-6 text-center">
@@ -343,7 +362,6 @@ const AdminCourseDetail = () => {
       );
     }
 
-    // KỊCH BẢN 5: ĐÃ XUẤT BẢN HOẶC BỊ ĐÌNH CHỈ (PUBLISHED / SUSPENDED)
     return (
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 overflow-hidden relative">
         <h3 className="text-lg font-black text-slate-900 mb-5">
@@ -486,45 +504,47 @@ const AdminCourseDetail = () => {
               <FontAwesomeIcon icon={faListUl} className="text-blue-600" />
               Giáo trình ({lessons.length} bài)
             </h3>
+            
+            {/* ✅ ĐÃ SỬA: Danh sách bài giảng mới ở đây */}
             <div className="space-y-3">
-              {lessons.map((lesson, index) => (
-                <div
-                  key={lesson.id}
-                  className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${index === lessons.length - 1 && course.has_new_update ? "border-amber-300 bg-amber-50/30" : ""}`}
-                >
-                  {lesson.thumbnail_url ? (
+              {lessons.map((lesson) => {
+                const isNewLesson = !lesson.play_url && !lesson.url;
+
+                return (
+                  <div
+                    key={lesson.id}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${isNewLesson ? "border-amber-300 bg-amber-50/30" : ""}`}
+                  >
                     <img
-                      src={lesson.thumbnail_url}
-                      alt=""
+                      src={lesson.thumbnail_url || course.thumbnail || THUMB_FALLBACK}
+                      alt="Lesson Thumbnail"
                       className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200"
                       onError={(ev) => {
-                        ev.currentTarget.style.display = "none";
+                        ev.currentTarget.src = THUMB_FALLBACK;
                       }}
                     />
-                  ) : (
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-400">
-                      <FontAwesomeIcon icon={faPlayCircle} className="text-lg" />
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
-                      {lesson.title}
-                      {index === lessons.length - 1 &&
-                        course.has_new_update && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase">
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
+                        {lesson.title}
+                        {isNewLesson && (
+                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase shadow-sm">
                             Mới thêm
                           </span>
                         )}
-                    </p>
-                    <p className="text-xs text-slate-500 font-medium mt-1">
-                      Dung lượng: {lesson.size}
-                    </p>
+                      </p>
+                      <p className="text-xs text-slate-500 font-medium mt-1">
+                        Dung lượng: <span className="font-bold">{formatFileSize(lesson.size)}</span>
+                      </p>
+                    </div>
+                    
+                    <div className="shrink-0 text-xs font-bold text-slate-400 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
+                      <FontAwesomeIcon icon={faClock} /> {lesson.duration}
+                    </div>
                   </div>
-                  <div className="shrink-0 text-xs font-bold text-slate-400 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
-                    <FontAwesomeIcon icon={faClock} /> {lesson.duration}
-                  </div>
-                </div>
-              ))}
+                );
+              })}
+              
               {lessons.length === 0 && (
                 <p className="text-sm text-slate-400 text-center py-4">
                   Chưa có bài giảng nào.
@@ -543,7 +563,7 @@ const AdminCourseDetail = () => {
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
             <h3 className="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
               <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />{" "}
-              Thông tin chung
+              Thông hiện chung
             </h3>
             <ul className="space-y-4">
               <li className="flex items-center justify-between">

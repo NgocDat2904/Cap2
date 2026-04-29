@@ -4,6 +4,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
+// ✅ IMPORT THÊM API ĐỂ FETCH SỐ LƯỢNG CHỜ DUYỆT:
+import { fetchPendingCoursesAPI } from "../services/adminCourseAPI"; 
 import {
   faBars,
   faSearch,
@@ -23,7 +25,11 @@ const AdminLayout = () => {
   const location = useLocation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
+  
+  // ✅ STATE CHỨA SỐ LƯỢNG KHÓA HỌC CẦN DUYỆT
+  const [pendingCount, setPendingCount] = useState(0);
 
+  // Xử lý Responsive Sidebar
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 768) {
@@ -37,6 +43,29 @@ const AdminLayout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
+  // ✅ USE EFFECT ĐỂ CALL API LẤY SỐ LƯỢNG CẦN XỬ LÝ (Chỉ lấy limit=1 cho nhẹ)
+  useEffect(() => {
+    const loadPendingCount = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          // Lấy total từ hàm API đã có sẵn
+          const data = await fetchPendingCoursesAPI(token, 1, 1);
+          setPendingCount(data.total || 0);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải số lượng chờ duyệt:", error);
+      }
+    };
+
+    loadPendingCount();
+    
+    // (Tuỳ chọn) Nếu má muốn nó tự động cập nhật mỗi 30s thì dùng setInterval ở đây
+    // const interval = setInterval(loadPendingCount, 30000);
+    // return () => clearInterval(interval);
+  }, [location.pathname]); // Cập nhật lại mỗi khi chuyển trang
+
+  // ✅ ĐÃ THÊM pendingCount VÀO MENU "Duyệt khóa học"
   const sidebarLinks = [
     { name: "Tổng quan", icon: faChartPie, path: "/admin/dashboard" },
     { name: "Quản lý Người dùng", icon: faUsersCog, path: "/admin/users" },
@@ -47,7 +76,12 @@ const AdminLayout = () => {
       path: "/admin/revenue",
     },
     { name: "Danh mục đào tạo", icon: faTags, path: "/admin/categories" },
-    { name: "Duyệt khóa học", icon: faListCheck, path: "/admin/approvals" },
+    { 
+      name: "Duyệt khóa học", 
+      icon: faListCheck, 
+      path: "/admin/approvals",
+      pendingCount: pendingCount // Móc con số ở trên vào đây!
+    },
   ];
 
   const bottomLinks = [
@@ -60,20 +94,19 @@ const AdminLayout = () => {
       setIsSidebarOpen(false);
     }
   };
+
   const handleLogout = async (e) => {
     e.preventDefault();
-    handleLinkClick(); // Đóng sidebar trên mobile nếu đang mở
+    handleLinkClick();
 
     try {
       const token = localStorage.getItem("access_token");
       if (token) {
-        // Gọi API báo Backend vô hiệu hóa token này
         await logoutAPI(token);
       }
     } catch (error) {
       console.error("Lỗi khi đăng xuất API:", error);
     } finally {
-      // Dù API có lỗi hay không, cứ dọn sạch túi và đá văng ra Login
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
       localStorage.removeItem("user_id");
@@ -91,7 +124,7 @@ const AdminLayout = () => {
         ></div>
       )}
 
-      {/* SIDEBAR: Đổi sang màu Slate 950 (Xanh đá cực đậm, gần như đen) */}
+      {/* SIDEBAR */}
       <aside
         className={`fixed md:relative z-30 h-full bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 ease-in-out transform shadow-2xl md:shadow-none border-r border-slate-900
         ${
@@ -100,10 +133,8 @@ const AdminLayout = () => {
             : "-translate-x-full w-64 md:translate-x-0 md:w-20"
         }`}
       >
-        {/* Ánh sáng Gradient phía trên Sidebar */}
         <div className="absolute top-0 left-0 w-full h-48 bg-gradient-to-b from-blue-600/10 to-transparent pointer-events-none"></div>
 
-        {/* LOGO & TOGGLE */}
         <div
           className={`h-20 flex items-center border-b border-slate-800/80 transition-all duration-300 relative z-10
           ${isSidebarOpen ? "px-6" : "px-0 justify-center"}`}
@@ -119,7 +150,6 @@ const AdminLayout = () => {
             className={`font-bold text-xl text-white tracking-tight flex items-center gap-3 overflow-hidden whitespace-nowrap transition-all duration-300
             ${isSidebarOpen ? "ml-4 opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
           >
-            {/* Giữ nguyên invert để logo hiện màu trắng trên nền tối */}
             <img
               src={myLogo}
               alt="Logo"
@@ -170,6 +200,8 @@ const AdminLayout = () => {
                     >
                       {link.name}
                     </span>
+                    
+                    {/* ✅ BADGE THÔNG BÁO MÀU ĐỎ SẼ HIỆN Ở ĐÂY NẾU pendingCount > 0 */}
                     {link.pendingCount > 0 && (
                       <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">
                         {link.pendingCount}
@@ -242,7 +274,7 @@ const AdminLayout = () => {
 
       {/* MAIN CONTENT WRAPPER */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100/50">
-        {/* HEADER: Kính mờ sang trọng */}
+        {/* HEADER */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 transition-all relative z-10 sticky top-0 shadow-sm">
           <div className="flex items-center flex-1">
             <button
@@ -252,7 +284,6 @@ const AdminLayout = () => {
               <FontAwesomeIcon icon={faBars} className="text-xl" />
             </button>
 
-            {/* Khung tìm kiếm Toàn cầu (Global Search) */}
             <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl hidden sm:block">
               <input
                 type="text"
@@ -269,11 +300,15 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
             <button className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center">
               <FontAwesomeIcon icon={faBell} className="text-xl" />
-              <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white"></span>
+              {/* ✅ MÁ CÓ THỂ ĐẤU CHUNG SỐ LƯỢNG VÀO QUẢ CHUÔNG TRÊN NÀY LUÔN CHO XỊN */}
+              {pendingCount > 0 && (
+                <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
+                  {pendingCount}
+                </span>
+              )}
             </button>
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
-            {/* Admin Profile Area */}
             <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
@@ -290,7 +325,6 @@ const AdminLayout = () => {
           </div>
         </header>
 
-        {/* NỘI DUNG CHÍNH (OUTLET) */}
         <main className="flex-1 overflow-x-hidden overflow-y-auto p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
