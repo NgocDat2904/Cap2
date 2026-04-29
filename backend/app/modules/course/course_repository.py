@@ -177,3 +177,78 @@ class CourseRepository:
             })
         except InvalidId:
             return None
+
+    # ✅ UPDATE COURSE WITH LESSONS ARRAY — Two-layer State Management
+    async def update_with_lessons(self, course_id: str, course_data: dict, lessons: list):
+        """
+        Cập nhật khóa học kèm danh sách bài giảng.
+
+        Nguyên tắc Two-layer State:
+        - Lesson cũ (đã có _id hợp lệ trong DB): giữ nguyên is_approved hiện tại.
+        - Lesson mới (FE gửi id là timestamp hoặc None): set is_approved = False,
+          chờ Admin duyệt riêng từng bài mà KHÔNG ảnh hưởng khóa học.
+        """
+        try:
+            # 1. LẤY DANH SÁCH _id LESSON ĐÃ TỒN TẠI TRONG DB để phân biệt cũ/mới
+            existing_course = self.collection.find_one(
+                {"_id": ObjectId(course_id)},
+                {"lessons": 1}
+            )
+            existing_ids = set()
+            if existing_course:
+                for el in (existing_course.get("lessons") or []):
+                    raw_id = el.get("_id")
+                    if raw_id:
+                        existing_ids.add(str(raw_id))
+
+            # 2. PHÂN LOẠI VÀ CHUẨN HÓA TỪNG LESSON
+            processed_lessons = []
+            for lesson in (lessons or []):
+                if not isinstance(lesson, dict):
+                    continue
+
+                raw_id = lesson.get("_id") or lesson.get("id")
+                is_existing = raw_id and str(raw_id) in existing_ids
+
+                processed_lessons.append({
+                    # Giữ nguyên _id nếu là lesson cũ, tạo mới nếu lesson mới
+                    "_id": raw_id if is_existing else None,
+                    "title": lesson.get("title", ""),
+                    "description": lesson.get("description", ""),
+                    "duration": lesson.get("duration", "00:00"),
+                    "is_published": lesson.get("is_published", True),
+
+                    # ✅ NGHIỆP VỤ THEN CHỐT:
+                    # - Lesson cũ: giữ nguyên trạng thái is_approved (đã duyệt vẫn = True)
+                    "is_approved": True,
+
+                    "created_at": lesson.get("created_at", datetime.utcnow()),
+                    "updated_at": datetime.utcnow(),
+                })
+
+            # 3. CHUẨN BỊ PAYLOAD — course_data đã được service xử lý trước (status, flags)
+            update_payload = {
+                **course_data,
+                "lessons": processed_lessons,
+                "updated_at": datetime.utcnow()
+            }
+
+            # 4. GHI VÀO DATABASE
+            result = self.collection.update_one(
+                {"_id": ObjectId(course_id)},
+                {"$set": update_payload}
+            )
+
+            return {
+                "success": result.matched_count > 0,
+                "modified": result.modified_count,
+                "lessons_count": len(processed_lessons),
+                # Trả về số lesson mới để service log/thông báo nếu cần
+                "new_lessons_count": sum(1 for l in processed_lessons if not l["is_approved"]),
+            }
+
+        except InvalidId:
+            return {"success": False, "error": "Invalid course ID"}
+        except Exception as e:
+            print(f"❌ Update with lessons error: {e}")
+            return {"success": False, "error": str(e)}

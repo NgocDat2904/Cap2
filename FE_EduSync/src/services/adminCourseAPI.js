@@ -59,3 +59,23 @@ export async function rejectCourseAPI(courseId, reason, token) {
   }
   return res.json();
 }
+
+/**
+ * Admin xác nhận review xong bản cập nhật của khóa học đang PUBLISHED.
+ * - Approve tất cả lesson đang chờ duyệt
+ * - Tắt cờ has_pending_update
+ * - Cập nhật giá nếu newPrice được truyền vào (null = giữ nguyên)
+ */
+export async function resolveUpdateAPI(courseId, newPrice, token) {
+  const params = newPrice !== null && newPrice !== undefined
+    ? `?price=${encodeURIComponent(newPrice)}`
+    : "";
+  const res = await fetch(
+    `${BASE_URL}/admin/courses/${courseId}/resolve-update${params}`,
+    { method: "PUT", headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Xử lý cập nhật thất bại"));
+  }
+  return res.json();
+}
