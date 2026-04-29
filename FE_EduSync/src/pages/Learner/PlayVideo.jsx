@@ -247,7 +247,7 @@ const CourseLearningWorkspace = () => {
 
           <div className="w-full mt-2">
             <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
-              {["Summary", "Mindmap", "Quiz", "Chatbot", "Discussion"].map(
+              {["Summary", "Mindmap", "Quiz", "Chatbot", "Q&A"].map(
                 (tab) => (
                   <button
                     key={tab}
