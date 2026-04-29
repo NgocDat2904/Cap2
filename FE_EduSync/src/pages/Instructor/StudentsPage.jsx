@@ -12,7 +12,6 @@ import {
   faTrophy,
   faEye,
   faBell,
-  faRotateLeft,
   faBan,
 } from "@fortawesome/free-solid-svg-icons";
 
@@ -408,7 +407,7 @@ const InstructorStudentsPage = () => {
                                 />{" "}
                                 Nhắc nhở học tập
                               </button>
-                              <button
+                              {/* <button
                                 onClick={() =>
                                   handleAction("reset", student.name)
                                 }
@@ -419,7 +418,7 @@ const InstructorStudentsPage = () => {
                                   className="text-slate-400 w-4"
                                 />{" "}
                                 Reset tiến độ (0%)
-                              </button>
+                              </button> */}
                               <button
                                 onClick={() =>
                                   handleAction("ban", student.name)

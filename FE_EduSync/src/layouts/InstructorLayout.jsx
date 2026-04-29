@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
-import { getProfileAPI } from "../services/userAPI";
+import { getInstructorProfileAPI } from "../services/instructorAPI";
 import {
   faBars,
   faSearch,
@@ -26,32 +26,28 @@ const InstructorLayout = () => {
   //  1. STATE LƯU THÔNG TIN PROFILE CỦA GIẢNG VIÊN
   const [instructorProfile, setInstructorProfile] = useState({
     fullName: "",
-    role: "Giảng viên",
+    role: "",
     avatarUrl: "",
   });
 
   // =========================================================================
-  //  2. GỌI API LẤY THÔNG TIN NGƯỜI DÙNG KHI MỞ TRANG
+  //  2. GỌI API LẤY THÔNG TIN GIẢNG VIÊN KHI MỞ TRANG
   // =========================================================================
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchInstructorProfile = async () => {
       const token = localStorage.getItem("access_token");
-      const userId = localStorage.getItem("user_id");
+      if (!token) return; // ✅ Chỉ cần token, backend tự xác định user từ JWT
 
-      if (token && userId) {
-        try {
-          const token = localStorage.getItem("access_token");
-          if (!token) return;
-
-          const data = await getProfileAPI(token);
-          setInstructorProfile(data); // Lưu data vào state
-        } catch (error) {
-          console.error("Lỗi lấy thông tin User trên Layout:", error);
-        }
+      try {
+        const data = await getInstructorProfileAPI(token);
+        setInstructorProfile(data);
+      } catch (error) {
+        console.error("Lỗi lấy thông tin Giảng viên trên Layout:", error);
       }
     };
-    fetchUserProfile();
+    fetchInstructorProfile();
   }, []);
+  
 
   // =========================================================================
   // XỬ LÝ RESIZE WINDOW

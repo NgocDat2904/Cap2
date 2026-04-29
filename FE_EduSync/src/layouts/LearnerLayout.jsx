@@ -5,7 +5,6 @@ import myLogo from "../assets/logo.png";
 import Footer from "../components/LearnerFooter";
 import { logoutAPI } from "../services/authService";
 import NotificationDropdown from "../components/NotificationDropdown";
-// 🚨 MỚI THÊM: Import hàm gọi API lấy thông tin User
 import { getProfileAPI } from "../services/userAPI";
 import {
   faSearch,
