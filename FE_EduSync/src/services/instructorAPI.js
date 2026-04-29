@@ -44,6 +44,26 @@ export const getInstructorCourseDetailAPI = async (courseId, token) => {
   return response.data;
 };
 
+// 5. CẬP NHẬT KHÓA HỌC (Instructor chỉnh sửa)
+export const updateInstructorCourseAPI = async (courseId, data, token) => {
+  const response = await axios.put(`${API_URL}/courses/${courseId}`, data, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+// 6. XÓA KHÓA HỌC (Soft delete - chuyển thành is_deleted)
+export const deleteInstructorCourseAPI = async (courseId, token) => {
+  const response = await axios.delete(`${API_URL}/courses/${courseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
 // 5. Xóa khóa học
 export const deleteCourseAPI = async (courseId, token) => {
   const response = await axios.delete(`${API_URL}/courses/${courseId}`, {
