@@ -1,5 +1,5 @@
-import React, { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
@@ -19,67 +19,109 @@ import {
   faFilm,
   faCloudUploadAlt,
   faSpinner,
+  faClockRotateLeft
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  getInstructorCourseDetailAPI,
+  updateInstructorCourseAPI,
+} from "../../services/instructorAPI";
+import { uploadCourseThumbnailAPI } from "../../services/courseAPI";
 
 const InstructorCourseEditPage = () => {
   const navigate = useNavigate();
+  const { courseId } = useParams();
   const [activeTab, setActiveTab] = useState("basic");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fileInputRef = useRef(null);
 
   // =========================================================================
-  // 1. MOCK DATA
+  // 1. STATE MANAGEMENT
   // =========================================================================
   const [courseData, setCourseData] = useState({
-    title: "Master Python from basics to advanced",
-    category: "Lập trình Python",
-    description:
-      "Khóa học toàn diện giúp bạn làm chủ Python từ con số 0. Cập nhật mới nhất 2026 với các module về AI và Data Science.",
-    thumbnail:
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
-    status: "published",
-    studentsEnrolled: 1250,
+    title: "",
+    category: "",
+    description: "",
+    thumbnail: "",
+    status: "DRAFT",
+    studentsEnrolled: 0,
+    hasNewUpdateForQC: false, // Cờ hiệu: Cần Admin vào Hậu kiểm (Quality Control)
   });
 
-  const [lessons, setLessons] = useState([
-    {
-      id: 1,
-      title: "01 - Welcome to Python!",
-      description: "Cài đặt và làm quen với Python",
-      duration: "05:00",
-      isPublished: true,
-    },
-    {
-      id: 2,
-      title: "02 - Cài đặt môi trường",
-      description: "Cài đặt VS Code và Extensions",
-      duration: "10:25",
-      isPublished: true,
-    },
-    {
-      id: 3,
-      title: "03 - Biến và Kiểu dữ liệu",
-      description: "Các kiểu dữ liệu cơ bản trong Python",
-      duration: "15:30",
-      isPublished: true,
-    },
-  ]);
+  const [lessons, setLessons] = useState([]);
 
   // =========================================================================
-  // STATE & LOGIC CHO MODAL THÊM BÀI GIẢNG
+  // 2. FETCH COURSE DATA ON MOUNT
+  // =========================================================================
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          setError("Không tìm thấy token xác thực");
+          return;
+        }
+
+        if (!courseId) {
+          setError("Không tìm thấy ID khóa học");
+          return;
+        }
+
+        const data = await getInstructorCourseDetailAPI(courseId, token);
+
+        // Extract course detail
+        const courseDetail = data.courseDetail || {};
+        setCourseData({
+          title: courseDetail.title || "",
+          category: courseDetail.category || "",
+          description: courseDetail.description || "",
+          thumbnail: courseDetail.thumbnail || "",
+          status: courseDetail.status || "DRAFT",
+          studentsEnrolled: courseDetail.students_enrolled || 0,
+        });
+
+        // Extract lessons list
+        const lessonsList = data.lessonsList || [];
+        setLessons(
+          lessonsList.map((lesson) => ({
+            id: lesson._id || lesson.id,
+            title: lesson.title || "",
+            description: lesson.description || "",
+            duration: lesson.duration || "00:00",
+            isPublished: lesson.is_published !== false,
+            isApproved: lesson.is_approved !== false,
+          }))
+        );
+
+        setIsLoading(false);
+      } catch (err) {
+        console.error("Lỗi khi tải khóa học:", err);
+        setError(
+          err.response?.data?.detail || "Lỗi khi tải dữ liệu khóa học"
+        );
+        setIsLoading(false);
+      }
+    };
+
+    fetchCourseData();
+  }, [courseId]);
+
+  // =========================================================================
+  // 3. STATE & LOGIC CHO MODAL THÊM BÀI GIẢNG
   // =========================================================================
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
   const [lessonTitle, setLessonTitle] = useState("");
-  // 🚨 THÊM STATE CHO MÔ TẢ
   const [lessonDescription, setLessonDescription] = useState("");
   const [lessonVideoName, setLessonVideoName] = useState("");
   const [isUploadingLesson, setIsUploadingLesson] = useState(false);
   const lessonFileInputRef = useRef(null);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
 
   const openAddLessonModal = () => {
     setLessonTitle("");
-    setLessonDescription(""); // Xóa trắng mô tả khi mở modal thêm mới
+    setLessonDescription("");
     setLessonVideoName("");
     setIsLessonModalOpen(true);
   };
@@ -115,70 +157,156 @@ const InstructorCourseEditPage = () => {
       const newLesson = {
         id: Date.now(),
         title: lessonTitle,
-        description: lessonDescription, // 🚨 Lưu mô tả vào data
+        description: lessonDescription,
         duration: "12:00",
         isPublished: true,
+        isApproved: true,  // TỰ ĐỘNG XANH LÁ TRÊN UI LUÔN 
       };
 
       setLessons([...lessons, newLesson]);
 
+      // NGHIỆP VỤ GIÁO DỤC: Nếu khóa học đã PUBLISHED, bật cờ QC
+      if (courseData.status === "PUBLISHED") {
+        setCourseData((prev) => ({
+          ...prev,
+          hasNewUpdateForQC: true, // 🚩 Bất Admin kiểm duyệt nội dung video mới
+        }));
+      }
+
       setIsUploadingLesson(false);
       setIsLessonModalOpen(false);
       setLessonTitle("");
-      setLessonDescription(""); // Reset mô tả
+      setLessonDescription("");
       setLessonVideoName("");
     }, 1500);
   };
 
   // =========================================================================
-  // 2. CÁC HÀM XỬ LÝ CHÍNH TRANG EDIT
+  // 4. CÁC HÀM XỬ LÝ CHÍNH TRANG EDIT
   // =========================================================================
   const handleChange = (e) => {
     const { name, value } = e.target;
     setCourseData({ ...courseData, [name]: value });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    try {
     setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      alert(
-        "Đã lưu thành công! Hệ thống đã ghi nhận bản cập nhật nội dung của bạn và báo cáo lên Admin.",
-      );
-    }, 1000);
-  };
+    const token = localStorage.getItem("access_token");
 
-  const handleDeleteLesson = (lessonId) => {
-    if (courseData.studentsEnrolled > 0) {
-      const confirmHide = window.confirm(
-        "CẢNH BÁO BẢO VỆ DỮ LIỆU:\nKhóa học này đã có 1,250 học viên. Việc xóa bài giảng sẽ làm hỏng tiến độ học tập của họ.\n\nHệ thống sẽ chuyển bài giảng này sang trạng thái ẨN (Unpublished) thay vì xóa vĩnh viễn. Bạn có đồng ý không?",
-      );
-      if (confirmHide) {
-        setLessons(
-          lessons.map((l) =>
-            l.id === lessonId
-              ? { ...l, isPublished: false, title: l.title + " (Đã ẩn)" }
-              : l,
-          ),
+    if (!token) { setError("Không tìm thấy token"); setIsSaving(false); return; }
+    if (!courseId) { setError("Không tìm thấy ID khóa học"); setIsSaving(false); return; }
+
+    // ✅ Upload ảnh mới nếu có
+    let thumbnailUrl = courseData.thumbnail;
+    if (thumbnailFile) {
+      const uploadResult = await uploadCourseThumbnailAPI(thumbnailFile, token);
+      thumbnailUrl = uploadResult.url; // ✅ Đúng API endpoint, đúng response key
+      setThumbnailFile(null);
+    }
+
+    const updateData = {
+      title: courseData.title,
+      category: courseData.category,
+      description: courseData.description,
+      image: thumbnailUrl, // ✅ backend dùng key "image"
+      lessons: lessons
+    };
+
+    await updateInstructorCourseAPI(courseId, updateData, token);
+
+      // Lưu lại trạng thái cần show alert trước khi bị reset
+      const shouldShowQCAlert = courseData.hasNewUpdateForQC;
+
+      // THÔNG BÁO ADMIN: Nếu có update cần Hậu kiểm (QC)
+      if (courseData.hasNewUpdateForQC) {
+        console.log(
+          "✅ Khóa học có nội dung mới - Admin sẽ được thông báo kiểm duyệt chất lượng"
         );
       }
-    } else {
-      if (window.confirm("Bạn có chắc chắn muốn xóa bài giảng này?")) {
-        setLessons(lessons.filter((l) => l.id !== lessonId));
+
+      setIsSaving(false);
+      
+      // Hiện thông báo thành công
+      alert(
+        "✅ Lưu thành công!\n" +
+          (shouldShowQCAlert
+            ? "💡 Admin sẽ kiểm duyệt chất lượng nội dung mới của khóa học."
+            : "")
+      );
+
+      // Reset cờ hiệu sau khi đã hoàn thành các bước trên
+      if (shouldShowQCAlert) {
+        setCourseData((prev) => ({
+          ...prev,
+          hasNewUpdateForQC: false,
+        }));
+      }
+
+    } catch (err) {
+      console.error("Lỗi khi lưu khóa học:", err);
+      setError(err.response?.data?.detail || "Lỗi khi lưu khóa học");
+      setIsSaving(false);
+      alert("❌ Lỗi: " + (err.response?.data?.detail || "Lỗi khi lưu"));
+    }
+  };
+
+  // =========================================================================
+  // ✅ LOGIC XÓA BÀI GIẢNG - TUÂN THỦ NGHIÊM NGẶT NGHIỆP VỤ GIÁO DỤC
+  // =========================================================================
+  const handleDeleteLesson = (lessonId) => {
+    // 📌 TRƯỜNG HỢP 2: TUYỆT ĐỐI KHÔNG XÓA THẬT
+    // Nếu khóa học đã được PUBLISHED và có học viên đang học
+    if (courseData.status === "PUBLISHED" && courseData.studentsEnrolled > 0) {
+      const confirmHide = window.confirm(
+        `⚠️ CẢNH BÁO BẢO VỆ DỮ LIỆU:\n\n` +
+        `Khóa học này đã có ${courseData.studentsEnrolled} học viên đang học. ` +
+        `Việc xóa bài giảng sẽ làm hỏng tiến độ học tập của họ.\n\n` +
+        `Hệ thống sẽ chuyển bài giảng này sang trạng thái ẨN (Unpublished) ` +
+        `đối với học viên mới thay vì xóa vĩnh viễn.\n\n` +
+        `Bạn có đồng ý?`
+      );
+
+      if (confirmHide) {
+        // Chỉ ẩn bài, không xóa vĩnh viễn
+        setLessons(
+          lessons.map((lesson) =>
+            lesson.id === lessonId
+              ? { ...lesson, isPublished: false }
+              : lesson
+          )
+        );
+
+        // ✅ Bật cờ QC vì việc ẩn bài làm thay đổi chất lượng khóa học hiện tại
+        setCourseData((prev) => ({
+          ...prev,
+          hasNewUpdateForQC: true,
+        }));
+      }
+    }
+    // 📌 TRƯỜNG HỢP 1: AN TOÀN ĐỂ XÓA THẬT
+    // Nếu chưa có ai mua (studentsEnrolled === 0) HOẶC đang nháp (status !== "PUBLISHED")
+    else if (courseData.studentsEnrolled === 0 || courseData.status !== "PUBLISHED") {
+      const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa bài giảng này?");
+
+      if (confirmDelete) {
+        // Xóa vĩnh viễn
+        setLessons(lessons.filter((lesson) => lesson.id !== lessonId));
       }
     }
   };
 
   const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      setCourseData({ ...courseData, thumbnail: imageUrl });
-    }
-  };
+  const file = e.target.files[0];
+  if (file) {
+    setThumbnailFile(file); // ✅ Lưu file thật để upload sau
+    const previewUrl = URL.createObjectURL(file); // Chỉ để preview tạm
+    setCourseData({ ...courseData, thumbnail: previewUrl });
+  }
+};
 
   // =========================================================================
-  // 3. TABS MENU
+  // 5. TABS MENU
   // =========================================================================
   const tabs = [
     { id: "basic", label: "Thông tin cơ bản", icon: faInfoCircle },
@@ -194,39 +322,64 @@ const InstructorCourseEditPage = () => {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20 animate-fade-slide-up relative">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate(-1)}
-              className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
-            >
-              <FontAwesomeIcon icon={faArrowLeft} className="text-lg" />
-            </button>
-            <div>
-              <div className="flex items-center gap-3">
-                <h1 className="text-xl font-extrabold text-slate-900 line-clamp-1">
-                  Chỉnh sửa: {courseData.title}
-                </h1>
-                <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-emerald-200">
-                  Đang xuất bản
-                </span>
-              </div>
-              <p className="text-xs text-slate-500 font-medium mt-0.5">
-                Lần lưu cuối: Vài giây trước
-              </p>
-            </div>
-          </div>
+      {/* 🚨 ERROR DISPLAY */}
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
+          <p className="text-red-700 font-semibold">{error}</p>
           <button
-            onClick={handleSave}
-            disabled={isSaving}
-            className={`px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center gap-2 ${isSaving ? "opacity-70 cursor-not-allowed" : "active:scale-95"}`}
+            onClick={() => setError(null)}
+            className="text-red-600 hover:text-red-800 text-sm mt-2"
           >
-            <FontAwesomeIcon icon={faSave} />{" "}
-            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+            Đóng
           </button>
         </div>
-      </header>
+      )}
+
+      {/* 🚨 LOADING SPINNER */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+            <FontAwesomeIcon icon={faSpinner} className="text-4xl text-blue-600 animate-spin" />
+            <p className="text-slate-700 font-semibold">Đang tải khóa học...</p>
+          </div>
+        </div>
+      )}
+
+      {!isLoading && (
+        <>
+          <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+            <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="w-10 h-10 rounded-full hover:bg-slate-100 flex items-center justify-center text-slate-500 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faArrowLeft} className="text-lg" />
+                </button>
+                <div>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-xl font-extrabold text-slate-900 line-clamp-1">
+                      Chỉnh sửa: {courseData.title}
+                    </h1>
+                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-emerald-200">
+                      Đang xuất bản
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    Lần lưu cuối: Vài giây trước
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className={`px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center gap-2 ${isSaving ? "opacity-70 cursor-not-allowed" : "active:scale-95"}`}
+              >
+                <FontAwesomeIcon icon={faSave} />{" "}
+                {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+              </button>
+            </div>
+          </header>
 
       <div className="max-w-[1200px] mx-auto px-4 sm:px-6 lg:px-8 mt-8 flex flex-col md:flex-row gap-8 relative z-10">
         <aside className="w-full md:w-64 shrink-0">
@@ -280,9 +433,14 @@ const InstructorCourseEditPage = () => {
                     onChange={handleChange}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer"
                   >
-                    <option>Lập trình Python</option>
-                    <option>Lập trình Web</option>
-                    <option>Trí tuệ nhân tạo (AI)</option>
+                    <option>Frontend Web Development</option>
+                    <option>Backend Web Development</option>
+                    <option>Mobile Programming</option>
+                     <option>AI & Machine Learning</option>
+                      <option>Data Analysis</option>
+                       <option>Data Engineering</option>
+                        <option>UI/UX Design</option>
+                         <option>Business Analysis</option>
                   </select>
                 </div>
                 <div>
@@ -392,19 +550,28 @@ const InstructorCourseEditPage = () => {
                         {lesson.title}
                       </h4>
                       <div className="flex items-center gap-3 mt-1">
-                        <span className="text-xs font-medium text-slate-500">
-                          {lesson.duration}
-                        </span>
-                        {lesson.isPublished ? (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded">
-                            <FontAwesomeIcon icon={faCheckCircle} /> Đã xuất bản
-                          </span>
-                        ) : (
-                          <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
-                            <FontAwesomeIcon icon={faEyeSlash} /> Đã ẩn
-                          </span>
-                        )}
-                      </div>
+  <span className="text-xs font-medium text-slate-500">
+    {lesson.duration}
+  </span>
+  
+  {/* LƯỚI LOGIC HIỂN THỊ TRẠNG THÁI */}
+  {!lesson.isPublished ? (
+    // 1. Giảng viên chủ động ẨN
+    <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
+      <FontAwesomeIcon icon={faEyeSlash} /> Đã ẩn
+    </span>
+  ) : !lesson.isApproved ? (
+    // 2. Giảng viên mở, nhưng Admin CHƯA DUYỆT
+    <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
+      <FontAwesomeIcon icon={faClockRotateLeft} /> Đang chờ duyệt
+    </span>
+  ) : (
+    // 3. Giảng viên mở, Admin ĐÃ DUYỆT (An toàn)
+    <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+      <FontAwesomeIcon icon={faCheckCircle} /> Đã xuất bản
+    </span>
+  )}
+</div>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -460,7 +627,7 @@ const InstructorCourseEditPage = () => {
                       Xóa vĩnh viễn khóa học
                     </h4>
                     <p className="text-sm text-red-600/80 mt-1 max-w-lg leading-relaxed font-medium">
-                      Khóa học này đã có 1,250 học viên đăng ký. Hệ thống đã
+                      Khóa học này đã có {courseData.studentsEnrolled} học viên đăng ký. Hệ thống đã
                       KHÓA chức năng xóa vĩnh viễn để bảo vệ dữ liệu người dùng.
                     </p>
                   </div>
@@ -524,7 +691,6 @@ const InstructorCourseEditPage = () => {
                   />
                 </div>
 
-                {/* 🚨 Ô NHẬP MÔ TẢ MỚI ĐƯỢC THÊM VÀO 🚨 */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
                     Mô tả bài giảng (Tùy chọn)
@@ -556,6 +722,7 @@ const InstructorCourseEditPage = () => {
                       ref={lessonFileInputRef}
                       onChange={handleLessonVideoChange}
                       disabled={isUploadingLesson}
+                      onClick={(e) => e.stopPropagation()} // 🚨 Lỗi Infinite Loop đã được khắc phục ở đây
                     />
                     {lessonVideoName ? (
                       <div className="flex flex-col items-center text-blue-600">
@@ -629,6 +796,8 @@ const InstructorCourseEditPage = () => {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

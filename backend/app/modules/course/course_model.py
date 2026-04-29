@@ -116,3 +116,10 @@ class CourseDetailResponse(BaseModel):
     lessonCount: int = 0
 
     sections: List[SectionResponse] = []
+
+class CourseUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    category: Optional[str] = None
+    image: Optional[str] = None  # ✅ có field image để lưu thumbnail
+    lessons: Optional[List[dict]] = None  # ✅ có field lessons để cập nhật danh sách bài học

@@ -9,6 +9,7 @@ import {
   faXmark,
   faInbox,
   faSpinner,
+  faBell, // ✅ Đã import thêm icon quả chuông
 } from "@fortawesome/free-solid-svg-icons";
 import { useNavigate } from "react-router-dom";
 import {
@@ -210,32 +211,45 @@ const AdminApprovalQueue = () => {
                         {course.videoCount}
                       </span>
                     </td>
+                    {/* ✅ ĐÃ THAY THẾ KHÚC RENDER NÚT BẤM THEO NGHIỆP VỤ MỚI Ở ĐÂY */}
                     <td className="p-5 text-right">
                       <div className="flex items-center justify-end gap-2 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => navigate(`/admin/courses/${course.id}/approval`)}
-                          disabled={actionLoading}
-                          className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
-                        >
-                          <FontAwesomeIcon icon={faEye} /> Xem chi tiết
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openApproveModal(course)}
-                          disabled={actionLoading}
-                          className="px-4 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-xl hover:bg-emerald-500 hover:text-white transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
-                        >
-                          <FontAwesomeIcon icon={faCheckCircle} /> Phê duyệt
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleReject(course.id)}
-                          disabled={actionLoading}
-                          className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-500 font-bold rounded-xl hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
-                        >
-                          <FontAwesomeIcon icon={faBan} />
-                        </button>
+                        {course.status === "approved" && course.has_pending_update ? (
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/admin/courses/${course.id}/approval`)}
+                            className="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-xl hover:bg-amber-500 hover:text-white transition-colors text-sm flex items-center gap-2 shadow-sm"
+                          >
+                            <FontAwesomeIcon icon={faBell} className="animate-bounce" /> Xử lý cập nhật & Giá
+                          </button>
+                        ) : (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => navigate(`/admin/courses/${course.id}/approval`)}
+                              disabled={actionLoading}
+                              className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <FontAwesomeIcon icon={faEye} /> Xem chi tiết
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openApproveModal(course)}
+                              disabled={actionLoading}
+                              className="px-4 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-xl hover:bg-emerald-500 hover:text-white transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
+                            >
+                              <FontAwesomeIcon icon={faCheckCircle} /> Phê duyệt
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleReject(course.id)}
+                              disabled={actionLoading}
+                              className="w-9 h-9 flex items-center justify-center bg-red-50 text-red-500 font-bold rounded-xl hover:bg-red-500 hover:text-white transition-colors disabled:opacity-50"
+                            >
+                              <FontAwesomeIcon icon={faBan} />
+                            </button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>
