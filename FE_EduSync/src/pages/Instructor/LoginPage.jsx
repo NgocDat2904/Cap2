@@ -33,6 +33,10 @@ const InstructorLoginPage = () => {
       if (response?.access_token) {
         localStorage.setItem("access_token", response.access_token);
         localStorage.setItem("user_role", "instructor");
+        // ✅ Lưu user_id để layout và các trang có thể dùng
+        if (response.user_id) {
+          localStorage.setItem("user_id", response.user_id);
+        }
       }
       navigate("/instructor/dashboard");
     } catch (err) {

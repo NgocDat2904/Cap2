@@ -25,7 +25,7 @@ def get_instructor_profile(user_id: str):
         "gender": user.get("gender", ""),
         "dob": user.get("dob", ""),
         "address": user.get("address", ""),
-        "avatarUrl": user.get("avatar_url", ""),
+        "avatarUrl": user.get("avatar_url", "") or user.get("avatarUrl", ""),  # ✅ fallback cả 2 field
 
         # 🔥 SOCIAL
         "linkedin": profile.get("linkedin_url", ""),

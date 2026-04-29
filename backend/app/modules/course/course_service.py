@@ -425,7 +425,7 @@ class CourseService:
         # 6. Return đúng format FE
         return {
             "courseDetail": {
-                "id": course["id"],
+                "id": str(course["id"]), 
                 "title": course.get("title", ""),
                 "category": self._category_display(course.get("category")),
                 "instructor": instructor_name,

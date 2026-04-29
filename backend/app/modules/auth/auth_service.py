@@ -30,7 +30,7 @@ def register(user, role=None):
         "email": user.email,
         "password": hashed,  # ✅ dùng chuẩn 1 field duy nhất
         "role": role,
-        "avatarUrl": "",
+        "avatar_url": "",  # ✅ chuẩn snake_case, đồng bộ với update_user_avatar
         "phone": "",
         "dob": "",
         "gender": "",
@@ -78,7 +78,9 @@ def login(user, role=None):
 
     return {
         "access_token": token,
-        "token_type": "bearer"
+        "token_type": "bearer",
+        "user_id": str(db_user["_id"]),
+        "role": db_user["role"]
     }
 
 
