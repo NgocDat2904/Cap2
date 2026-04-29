@@ -440,7 +440,7 @@ const InstructorDashboardPage = () => {
               Khóa học phổ biến nhất
             </h2>
             <Link
-              to="/instructor/my-courses"
+              to="/instructor/courses"
               className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline"
             >
               Xem tất cả
