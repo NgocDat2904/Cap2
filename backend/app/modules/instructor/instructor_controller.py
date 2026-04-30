@@ -1,12 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
-from .instructor_service import (
-    get_instructor_profile,
-    update_instructor_profile,
-    upload_avatar,
-    update_full_profile
-)
 from .instructor_schema import InstructorProfileUpdate
 from app.middleware.auth_middleware import get_current_user
+from app.modules.instructor.instructor_service import instructor_service
 
 router = APIRouter(prefix="/instructor", tags=["Instructor"])
 
@@ -19,7 +14,7 @@ def get_profile(current_user=Depends(get_current_user)):
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return get_instructor_profile(current_user["id"])
+    return instructor_service.get_instructor_profile(current_user["id"])
 
 
 # =========================
@@ -33,7 +28,7 @@ def update_profile(
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return update_instructor_profile(current_user["id"], data)
+    return instructor_service.update_instructor_profile(current_user["id"], data)
 
 
 # =========================
@@ -47,7 +42,7 @@ def upload_avatar_api(
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return upload_avatar(current_user["id"], file)
+    return instructor_service.upload_avatar(current_user["id"], file)
 
 
 # =========================
@@ -55,7 +50,6 @@ def upload_avatar_api(
 # =========================
 @router.post("/update-full-profile")
 def update_full_profile_api(
-    # 🔥 USER
     fullName: str = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
@@ -63,18 +57,15 @@ def update_full_profile_api(
     dob: str = Form(None),
     address: str = Form(None),
 
-    # 🔥 PROFILE
     headline: str = Form(None),
     bio: str = Form(None),
     specializations: str = Form(None),
 
-    # 🔥 SOCIAL
     linkedin: str = Form(None),
     github: str = Form(None),
     youtube: str = Form(None),
     website: str = Form(None),
 
-    # 🔥 FILE
     file: UploadFile = File(None),
 
     current_user=Depends(get_current_user)
@@ -82,20 +73,47 @@ def update_full_profile_api(
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return update_full_profile(
-        user_id=current_user["id"],
-        fullName=fullName,
-        email=email,
-        phone=phone,
-        gender=gender,
-        dob=dob,
-        address=address,
-        headline=headline,
-        bio=bio,
-        specializations=specializations,
-        linkedin=linkedin,
-        github=github,
-        youtube=youtube,
-        website=website,
-        file=file
+    # 🔥 gom data lại
+    data = {
+        "fullName": fullName,
+        "email": email,
+        "phone": phone,
+        "gender": gender,
+        "dob": dob,
+        "address": address,
+        "headline": headline,
+        "bio": bio,
+        "specializations": specializations,
+        "linkedin": linkedin,
+        "github": github,
+        "youtube": youtube,
+        "website": website
+    }
+
+    # update profile
+    result = instructor_service.update_instructor_profile(current_user["id"], data)
+
+    # nếu có file thì upload avatar
+    if file:
+        instructor_service.upload_avatar(current_user["id"], file)
+
+    return result
+
+
+# =========================
+# 📊 GET STUDENTS
+# =========================
+@router.get("/students")
+async def get_students(
+    search: str = None,
+    course_id: str = None,
+    current_user=Depends(get_current_user)
+):
+    if current_user.get("role") != "instructor":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return await instructor_service.get_students(
+        instructor_id=current_user["id"],
+        search=search,
+        course_id=course_id
     )

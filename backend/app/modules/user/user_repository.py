@@ -44,3 +44,7 @@ def update_user_avatar(user_id: str, avatar_url: str):
 # ❌ Delete
 def delete_user(user_id: str):
     return db.users.delete_one({"_id": ObjectId(user_id)})
+
+
+def get_all_users():
+    return list(db.users.find({}))
