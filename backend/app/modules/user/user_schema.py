@@ -16,3 +16,11 @@ class UserProfile(BaseModel):
 # 🔥 Request update profile
 class UpdateUserRequest(BaseModel):
     name: Optional[str] = None
+
+
+class UserUpdate(BaseModel):
+    fullName: Optional[str] = None
+    phone: Optional[str] = None
+    dob: Optional[str] = None
+    gender: Optional[str] = None
+    address: Optional[str] = None
