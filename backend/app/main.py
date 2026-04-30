@@ -7,6 +7,7 @@ from app.modules.course.course_controller import router as course_router
 from app.modules.video.video_controller import router as video_router
 from app.modules.course_content.content_controller import router as content_router
 from app.modules.ai.ai_controller import router as ai_router
+from app.modules.learning.learning_controller import router as learning_router
 
 #  PHẢI tạo app trước
 app = FastAPI()
@@ -35,6 +36,7 @@ app.include_router(course_router)
 app.include_router(video_router)
 app.include_router(content_router)
 app.include_router(ai_router)
+app.include_router(learning_router)
 
 
 @app.get("/")
