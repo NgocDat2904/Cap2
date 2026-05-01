@@ -46,14 +46,14 @@ const [deletingId, setDeletingId] = useState(null);
       setError(null);
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+        setError("Token not found. Please log in again.");
         setIsLoading(false);
         return;
       }
       const data = await getInstructorCoursesAPI(token);
       setAllCourses(data || []);
     } catch (err) {
-      setError(err.message || "Lỗi khi tải danh sách khóa học");
+      setError(err.message || "Error loading course list");
       console.error("Error fetching courses:", err);
     } finally {
       setIsLoading(false);
@@ -83,7 +83,7 @@ const [deletingId, setDeletingId] = useState(null);
     setFilteredCourses(result);
   };
   const handleDeleteCourse = async (courseId) => {
-  if (!window.confirm("Bạn có chắc muốn xóa khóa học này không? Thao tác này không thể hoàn tác.")) return;
+  if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
 
   try {
     setDeletingId(courseId);
@@ -96,7 +96,7 @@ const [deletingId, setDeletingId] = useState(null);
     // Cập nhật UI ngay, không cần fetch lại
     setAllCourses(prev => prev.filter(c => c.id !== courseId));
   } catch (err) {
-    setError(err.message || "Lỗi khi xóa khóa học");
+    setError(err.message || "Error deleting course");
     console.error("Error deleting course:", err);
   } finally {
     setDeletingId(null);

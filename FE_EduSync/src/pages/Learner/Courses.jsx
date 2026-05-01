@@ -45,11 +45,11 @@ const LearnerCoursesPage = () => {
   ];
 
   const priceRanges = [
-    { id: "all", name: "Tất cả giá" },
-    { id: "free", name: "Miễn phí" },
-    { id: "under_1m", name: "Dưới 1.000.000đ" },
-    { id: "1m_to_2m", name: "1.000.000đ - 2.000.000đ" },
-    { id: "over_2m", name: "Trên 2.000.000đ" },
+    { id: "all", name: "All prices" },
+    { id: "free", name: "Free" },
+    { id: "under_25", name: "Under $25" },
+    { id: "25_to_50", name: "$25 - $50" },
+    { id: "over_50", name: "Over $50" },
   ];
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const LearnerCoursesPage = () => {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e.message || "Không tải được khóa học");
+          setError(e.message || "Failed to load courses");
           setCourses([]);
           setTotal(0);
         }
@@ -93,19 +93,19 @@ const LearnerCoursesPage = () => {
     return courses.filter((c) => {
       const p = Number(c.price || 0);
       if (selectedPrice === "free") return p === 0;
-      if (selectedPrice === "under_1m") return p > 0 && p < 1000000;
-      if (selectedPrice === "1m_to_2m") return p >= 1000000 && p <= 2000000;
-      if (selectedPrice === "over_2m") return p > 2000000;
+      if (selectedPrice === "under_25") return p > 0 && p < 25;
+      if (selectedPrice === "25_to_50") return p >= 25 && p <= 50;
+      if (selectedPrice === "over_50") return p > 50;
       return true;
     });
   }, [courses, selectedPrice]);
 
-  // Hàm format tiền tệ VNĐ
+  // Hàm format tiền tệ USD
   const formatCurrency = (amount) => {
-    if (amount === 0) return "Miễn phí";
-    return new Intl.NumberFormat("vi-VN", {
+    if (amount === 0) return "Free";
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -113,13 +113,13 @@ const LearnerCoursesPage = () => {
     <div className="animate-fade-slide-up w-full">
       {/* Nút bật tắt Filter trên Mobile */}
       <div className="lg:hidden mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">Tất cả khóa học</h1>
+        <h1 className="text-2xl font-bold text-slate-800">All Courses</h1>
         <button
           onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold shadow-sm hover:bg-slate-50 transition-all"
         >
           <FontAwesomeIcon icon={faFilter} />
-          {isMobileFilterOpen ? "Đóng bộ lọc" : "Lọc kết quả"}
+          {isMobileFilterOpen ? "Close filters" : "Filter results"}
         </button>
       </div>
 
@@ -138,17 +138,17 @@ const LearnerCoursesPage = () => {
                   icon={faFilter}
                   className="text-blue-600 text-sm"
                 />
-                Bộ lọc
+                Filters
               </h2>
               <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                Xóa lọc
+                Clear filters
               </button>
             </div>
 
             {/* Lọc theo Danh mục */}
             <div className="mb-8">
               <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-wider">
-                Danh mục
+                Category
               </h3>
               <div className="space-y-3">
                 {categories.map((cat) => (
@@ -181,7 +181,7 @@ const LearnerCoursesPage = () => {
             {/* Lọc theo Mức giá */}
             <div>
               <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-wider">
-                Mức giá
+                Price Range
               </h3>
               <div className="space-y-3">
                 {priceRanges.map((price) => (
@@ -221,10 +221,10 @@ const LearnerCoursesPage = () => {
           <div className="hidden lg:flex justify-between items-end mb-6">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-800">
-                {total.toLocaleString()} kết quả khóa học
+                {total.toLocaleString()} courses found
               </h1>
               <p className="text-slate-500 text-sm mt-1 font-medium">
-                Khám phá các kỹ năng mới cùng chuyên gia
+                Discover new skills with our expert instructors
               </p>
             </div>
             <div className="relative w-[360px]">
@@ -238,7 +238,7 @@ const LearnerCoursesPage = () => {
                   setPage(1);
                   setSearchKeyword(e.target.value);
                 }}
-                placeholder="Tìm kiếm khóa học..."
+                placeholder="Search courses..."
                 className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
@@ -249,7 +249,7 @@ const LearnerCoursesPage = () => {
             {loading && (
               <div className="col-span-full text-center text-slate-500 py-12">
                 <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-                Đang tải khóa học...
+                Loading courses...
               </div>
             )}
             {!loading && error && (
@@ -272,7 +272,7 @@ const LearnerCoursesPage = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
-                      <span className="text-slate-600 font-semibold">Không có ảnh</span>
+                      <span className="text-slate-600 font-semibold">No image</span>
                     </div>
                   )}
                   {/* Lớp overlay đen mờ hiện ra khi hover */}
@@ -313,7 +313,7 @@ const LearnerCoursesPage = () => {
                     <FontAwesomeIcon
                       icon={faCheckCircle}
                       className="text-blue-500 text-[10px]"
-                      title="Đã xác minh"
+                      title="Verified"
                     />
                   </div>
 
@@ -330,7 +330,7 @@ const LearnerCoursesPage = () => {
                     </div> */}
                     <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
                       <FontAwesomeIcon icon={faUsers} />
-                      {course.students.toLocaleString()} học viên
+                      {course.students.toLocaleString()} students
                     </div>
                   </div>
 
@@ -354,7 +354,7 @@ const LearnerCoursesPage = () => {
                       to={`/courses/${course.id}`}
                       className="text-sm font-bold text-blue-900 bg-blue-50 hover:bg-blue-900 hover:text-white px-4 py-2 rounded-lg transition-colors"
                     >
-                      Xem chi tiết
+                      View details
                     </Link>
                   </div>
                 </div>

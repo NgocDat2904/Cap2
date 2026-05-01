@@ -15,7 +15,7 @@ import {
 // MOCK DATA: CÀI ĐẶT HỆ THỐNG GIẢ LẬP
 // =========================================================================
 const initialSettings = {
-  siteName: "Hệ thống Quản lý Đào tạo EduSync",
+  siteName: "EduSync Learning Management System",
   contactEmail: "contact@edusync.vn",
   siteLogo: null, // Sẽ lưu File Object
   maintenanceMode: false,
@@ -37,7 +37,7 @@ const AdminSettings = () => {
 
   const handleSaveSettings = () => {
     console.log("Dữ liệu cài đặt mới:", settings);
-    alert("🎉 Đã lưu cài đặt hệ thống thành công!");
+    alert("🎉 System settings saved successfully!");
     // TODO: Bắn API PUT /admin/settings
   };
 
@@ -48,10 +48,10 @@ const AdminSettings = () => {
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <FontAwesomeIcon icon={faCogs} className="text-blue-600" />
-            Cài đặt Hệ thống
+            System Settings
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Cấu hình các tham số cốt lõi và bảo mật của nền tảng EduSync.
+            Configure core parameters and security of the EduSync platform.
           </p>
         </div>
         <button
@@ -59,7 +59,7 @@ const AdminSettings = () => {
           className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-black rounded-xl hover:from-blue-700 hover:to-blue-900 transition-all duration-300 shadow-md shadow-blue-700/20 active:scale-95 flex items-center gap-2"
         >
           <FontAwesomeIcon icon={faSave} />
-          Lưu tất cả cài đặt
+          Save all settings
         </button>
       </div>
 
@@ -68,12 +68,12 @@ const AdminSettings = () => {
         <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/60 shadow-sm space-y-5">
           <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
             <FontAwesomeIcon icon={faBuilding} className="text-blue-500" />{" "}
-            branding & Thông tin
+            Branding & Information
           </h3>
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">
-              Tên hệ thống (Site Name) <span className="text-red-500">*</span>
+              System Name <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -87,7 +87,7 @@ const AdminSettings = () => {
 
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1.5">
-              Email liên hệ chính
+              Primary Contact Email
             </label>
             <input
               type="email"
@@ -101,7 +101,7 @@ const AdminSettings = () => {
 
           <div className="mt-4">
             <label className="block text-sm font-bold text-slate-700 mb-2">
-              Logo hệ thống
+              System Logo
             </label>
             <div
               className="relative group border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
@@ -123,7 +123,7 @@ const AdminSettings = () => {
                   />
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="text-white font-semibold flex items-center gap-2">
-                      <FontAwesomeIcon icon={faImage} /> Thay đổi Logo
+                      <FontAwesomeIcon icon={faImage} /> Change Logo
                     </span>
                   </div>
                 </div>
@@ -139,7 +139,7 @@ const AdminSettings = () => {
                     Upload Site Logo
                   </p>
                   <p className="text-slate-500 text-sm">
-                    Định dạng PNG, JPG, tối đa 5MB.Chuẩn ngang 16:9.
+                    PNG, JPG format, max 5MB. Recommended 16:9 ratio.
                   </p>
                 </div>
               )}
@@ -153,38 +153,38 @@ const AdminSettings = () => {
           <div className="space-y-4">
             <h3 className="text-xl font-extrabold text-slate-800 mb-5 flex items-center gap-3 border-b border-slate-100 pb-4">
               <FontAwesomeIcon icon={faUserShield} className="text-blue-500" />{" "}
-              Tài khoản & Bảo mật
+              Account & Security
             </h3>
 
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
               <div>
                 <h4 className="font-bold text-slate-800 flex items-center gap-2">
                   <FontAwesomeIcon icon={faKey} className="text-blue-400 w-4" />{" "}
-                  Đổi mật khẩu Admin chính
+                  Change Main Admin Password
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Yêu cầu xác minh Email, Mật khẩu tối thiểu 8 ký tự.
+                  Requires email verification. Password must be at least 8 characters.
                 </p>
               </div>
               <button className="px-4 py-2 bg-white text-blue-700 font-bold text-sm rounded-lg border border-slate-200 hover:bg-slate-50 transition active:scale-95">
-                Thiết lập
+                Configure
               </button>
             </div>
 
             <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 disabled">
               <div>
                 <h4 className="font-bold text-slate-400">
-                  Cài đặt 2FA (Bảo mật 2 lớp)
+                  2FA Settings (Two-Factor Authentication)
                 </h4>
                 <p className="text-xs text-slate-400 mt-0.5">
-                  Sử dụng Google Authenticator hoặc SMS. (Cài đặt mặc định tắt)
+                  Use Google Authenticator or SMS. (Disabled by default)
                 </p>
               </div>
               <button
                 disabled
                 className="px-4 py-2 bg-slate-100 text-slate-400 font-bold text-sm rounded-lg border border-slate-200 cursor-not-allowed"
               >
-                Đã tắt
+                Disabled
               </button>
             </div>
           </div>
@@ -195,11 +195,10 @@ const AdminSettings = () => {
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse mt-2 flex-shrink-0"></span>
               <div>
                 <h4 className="font-bold text-slate-800">
-                  Thông báo bảo trì hệ thống
+                  System Maintenance Notification
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Cho phép Admin ghim thông báo bảo trì lên trang chủ cho mọi
-                  người dùng.
+                  Allow Admin to pin a maintenance notice on the homepage for all users.
                 </p>
               </div>
             </div>

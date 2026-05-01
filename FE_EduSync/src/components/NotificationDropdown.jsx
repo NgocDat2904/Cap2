@@ -18,39 +18,39 @@ const initialNotifications = [
   {
     id: 1,
     type: "qa", // Tương tác Q&A
-    title: "Giảng viên đã trả lời bạn",
+    title: "Instructor replied to you",
     content:
-      "Thầy Trần Việt Anh đã trả lời câu hỏi của bạn trong bài 'React Hooks'.",
-    time: "10 phút trước",
+      "Mr. Tran Viet Anh answered your question in lesson 'React Hooks'.",
+    time: "10 minutes ago",
     isRead: false,
     link: "/course/reactjs/lesson-5",
   },
   {
     id: 2,
-    type: "system", // Admin gửi
-    title: "Cấp quyền khóa học mới",
+    type: "system", // Admin gửsi
+    title: "New course access granted",
     content:
-      "Admin Trung tâm vừa cấp cho bạn quyền truy cập khóa 'Kỹ năng mềm 101'.",
-    time: "2 giờ trước",
+      "Admin has granted you access to the course 'Soft Skills 101'.",
+    time: "2 hours ago",
     isRead: false,
     link: "/course/soft-skills",
   },
   {
     id: 3,
     type: "course_update", // Cập nhật khóa học
-    title: "Bài giảng mới được thêm",
-    content: "Khóa học 'Java Backend' vừa cập nhật thêm 2 video thực hành API.",
-    time: "Hôm qua",
+    title: "New lesson added",
+    content: "Course 'Java Backend' just added 2 new API practice videos.",
+    time: "Yesterday",
     isRead: true,
     link: "/course/java-backend",
   },
   {
     id: 4,
     type: "gamification", // Động lực/Nhắc nhở
-    title: "Đừng bỏ cuộc nhé! 🔥",
+    title: "Don't give up! 🔥",
     content:
-      "Đã 3 ngày bạn chưa vào học. Tiếp tục bài học đang dang dở ngay thôi!",
-    time: "3 ngày trước",
+      "You haven't studied for 3 days. Resume your lesson now!",
+    time: "3 days ago",
     isRead: true,
     link: "/dashboard",
   },
@@ -154,14 +154,14 @@ const NotificationDropdown = () => {
         <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white border border-slate-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-fade-slide-up">
           {/* Header của Dropdown */}
           <div className="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-            <h3 className="font-extrabold text-slate-800 text-lg">Thông báo</h3>
+            <h3 className="font-extrabold text-slate-800 text-lg">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
                 className="text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1.5"
-                title="Đánh dấu tất cả đã đọc"
+                title="Mark all as read"
               >
-                <FontAwesomeIcon icon={faCheckDouble} /> Đã đọc tất cả
+                <FontAwesomeIcon icon={faCheckDouble} /> Mark all read
               </button>
             )}
           </div>
@@ -176,7 +176,7 @@ const NotificationDropdown = () => {
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
-              Tất cả
+              All
             </button>
             <button
               onClick={() => setActiveTab("unread")}
@@ -186,7 +186,7 @@ const NotificationDropdown = () => {
                   : "border-transparent text-slate-500 hover:text-slate-800"
               }`}
             >
-              Chưa đọc{" "}
+              Unread{" "}
               {unreadCount > 0 && (
                 <span className="px-1.5 py-0.5 bg-red-100 text-red-600 rounded-md text-[10px]">
                   {unreadCount}
@@ -248,10 +248,10 @@ const NotificationDropdown = () => {
                   <FontAwesomeIcon icon={faBell} />
                 </div>
                 <p className="text-sm font-bold text-slate-600">
-                  Bạn không có thông báo nào!
+                  You have no notifications!
                 </p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Khi có cập nhật mới, chúng sẽ xuất hiện ở đây.
+                  When there are new updates, they will appear here.
                 </p>
               </div>
             )}
@@ -266,7 +266,7 @@ const NotificationDropdown = () => {
               }}
               className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors w-full"
             >
-              Xem tất cả thông báo
+              View all notifications
             </button>
           </div>
         </div>

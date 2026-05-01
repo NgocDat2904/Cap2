@@ -34,7 +34,7 @@ function formatUpdatedDate(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("vi-VN");
+  return d.toLocaleDateString("en-US");
 }
 
 // ✅ THUẬT TOÁN ĐỔI DUNG LƯỢNG (BYTES SANG MB, GB)
@@ -60,7 +60,7 @@ const AdminCourseDetail = () => {
   const loadCourse = useCallback(async () => {
     const token = localStorage.getItem("access_token");
     if (!token || !id) {
-      setLoadState({ loading: false, error: "Thiếu phiên đăng nhập hoặc mã khóa học." });
+      setLoadState({ loading: false, error: "Missing session or course ID." });
       setCourse(null);
       return;
     }
@@ -78,7 +78,7 @@ const AdminCourseDetail = () => {
       setLoadState({ loading: false, error: "" });
     } catch (e) {
       setCourse(null);
-      setLoadState({ loading: false, error: e.message || "Không tải được khóa học" });
+      setLoadState({ loading: false, error: e.message || "Failed to load course" });
     }
   }, [id]);
 
@@ -93,7 +93,7 @@ const AdminCourseDetail = () => {
           icon={faSpinner}
           className="text-4xl animate-spin text-blue-500 mb-4"
         />
-        <p className="font-bold">Đang tải thông tin khóa học...</p>
+        <p className="font-bold">Loading course information...</p>
       </div>
     );
   }
@@ -101,13 +101,13 @@ const AdminCourseDetail = () => {
   if (loadState.error || !course) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
-        <p className="font-bold text-red-600 mb-4">{loadState.error || "Không có dữ liệu"}</p>
+        <p className="font-bold text-red-600 mb-4">{loadState.error || "No data available"}</p>
         <button
           type="button"
           onClick={() => navigate("/admin/approvals")}
           className="px-4 py-2 bg-slate-200 rounded-xl font-bold hover:bg-slate-300"
         >
-          Về hàng đợi duyệt
+          Back to approval queue
         </button>
       </div>
     );
@@ -120,28 +120,20 @@ const AdminCourseDetail = () => {
     if (course.status !== "pending") return;
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Phiên đăng nhập hết hạn.");
+      alert("Session expired. Please log in again.");
       return;
     }
-    const p =
-      adminPrice === "" || adminPrice === null
-        ? 0
-        : parseFloat(String(adminPrice).replace(",", "."));
-    if (Number.isNaN(p) || p < 0) {
-      alert("Giá không hợp lệ (USD, ≥ 0 — 0 = miễn phí).");
-      return;
-    }
-    const label = p === 0 ? "Miễn phí" : `$${p}`;
-    if (!window.confirm(`Xác nhận xuất bản khóa học này với giá ${label}?`)) {
-      return;
-    }
+    const p = adminPrice === "" || adminPrice === null ? 0 : parseFloat(String(adminPrice).replace(",", "."));
+    if (Number.isNaN(p) || p < 0) { alert("Invalid price (USD, ≥ 0 — 0 = free)."); return; }
+    const label = p === 0 ? "Free" : `$${p}`;
+    if (!window.confirm(`Confirm publishing this course at ${label}?`)) return;
     setActionLoading(true);
     try {
       await approveCourseAPI(id, p, token);
-      alert("Đã xuất bản khóa học lên hệ thống.");
+      alert("Course published successfully.");
       navigate("/admin/approvals");
     } catch (e) {
-      alert(e.message || "Phê duyệt thất bại");
+      alert(e.message || "Approval failed");
     } finally {
       setActionLoading(false);
     }
@@ -151,18 +143,15 @@ const AdminCourseDetail = () => {
     if (course.status !== "pending") return;
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Phiên đăng nhập hết hạn.");
+      alert("Session expired. Please log in again.");
       return;
     }
-    const reason = window.prompt(
-      "Nhập lý do từ chối để phản hồi cho Giảng viên:",
-      "",
-    );
+    const reason = window.prompt("Enter rejection reason to send to the Instructor:", "");
     if (reason === null) return;
     setActionLoading(true);
     try {
       await rejectCourseAPI(id, reason, token);
-      alert("Đã từ chối khóa học.");
+      alert("Course rejected.");
       await loadCourse();
     } catch (e) {
       alert(e.message || "Từ chối thất bại");
@@ -173,8 +162,8 @@ const AdminCourseDetail = () => {
 
   const handleResolveUpdate = async (isPriceChanged) => {
     const confirmMsg = isPriceChanged
-      ? `Lưu mức giá mới là $${adminPrice} và Đánh dấu đã xem cập nhật?`
-      : "Giữ nguyên mức giá cũ và Đánh dấu đã xem cập nhật?";
+      ? `Save new price $${adminPrice} and mark update as reviewed?`
+      : "Keep existing price and mark update as reviewed?";
 
     if (window.confirm(confirmMsg)) {
       const token = localStorage.getItem("access_token");
@@ -183,10 +172,10 @@ const AdminCourseDetail = () => {
         const newPrice = isPriceChanged ? parseFloat(adminPrice) : null;
         await resolveUpdateAPI(id, newPrice, token); 
         
-        alert("Đã xử lý bản cập nhật thành công!");
-        await loadCourse(); 
+        alert("Update processed successfully!");
+        await loadCourse();
       } catch (e) {
-        alert(e.message || "Xử lý thất bại!");
+        alert(e.message || "Processing failed!");
       } finally {
         setActionLoading(false);
       }
@@ -205,7 +194,7 @@ const AdminCourseDetail = () => {
   };
 
   const handleDeleteCourse = () => {
-    alert("Chức năng xóa khóa học chưa được kết nối API.");
+    alert("Delete course feature is not yet connected to the API.");
   };
 
   const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
@@ -258,8 +247,8 @@ const AdminCourseDetail = () => {
           >
             <FontAwesomeIcon icon={faSave} />{" "}
             {adminPrice !== course.price
-              ? "Lưu giá mới & Tắt thông báo"
-              : "Giữ nguyên & Tắt thông báo"}
+              ? "Save new price & Dismiss notification"
+              : "Keep price & Dismiss notification"}
           </button>
         </div>
       );
@@ -308,7 +297,7 @@ const AdminCourseDetail = () => {
               ) : (
                 <FontAwesomeIcon icon={faCheckCircle} />
               )}{" "}
-              Phê duyệt & Xuất bản
+              Approve & Publish
             </button>
             <button
               type="button"
@@ -316,7 +305,7 @@ const AdminCourseDetail = () => {
               disabled={actionLoading}
               className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
             >
-              Từ chối duyệt
+              Reject Course
             </button>
           </div>
         </div>
@@ -379,8 +368,8 @@ const AdminCourseDetail = () => {
             icon={course.status === "published" ? faBan : faCheckCircle}
           />
           {course.status === "published"
-            ? "Đình chỉ khóa học này"
-            : "Khôi phục / Bỏ đình chỉ"}
+            ? "Suspend this course"
+            : "Restore / Unsuspend"}
         </button>
       </div>
     );
@@ -429,7 +418,7 @@ const AdminCourseDetail = () => {
           onClick={() => navigate(-1)}
           className="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-2 transition-colors mb-6"
         >
-          <FontAwesomeIcon icon={faArrowLeft} /> Quay lại danh sách
+          <FontAwesomeIcon icon={faArrowLeft} /> Back to list
         </button>
 
         {/* THÔNG BÁO CẬP NHẬT TRÊN CÙNG */}
@@ -547,7 +536,7 @@ const AdminCourseDetail = () => {
               
               {lessons.length === 0 && (
                 <p className="text-sm text-slate-400 text-center py-4">
-                  Chưa có bài giảng nào.
+                  No lessons yet.
                 </p>
               )}
             </div>
@@ -605,7 +594,7 @@ const AdminCourseDetail = () => {
             onClick={handleDeleteCourse}
             className="w-full py-3.5 px-4 bg-white text-red-500 font-bold rounded-2xl border border-red-200 hover:bg-red-50 flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-sm"
           >
-            <FontAwesomeIcon icon={faTrash} /> Xóa vĩnh viễn hệ thống
+            <FontAwesomeIcon icon={faTrash} /> Delete permanently from system
           </button>
         </div>
       </div>
