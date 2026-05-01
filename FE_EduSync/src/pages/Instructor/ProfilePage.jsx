@@ -136,10 +136,10 @@ const InstructorProfilePage = () => {
       // Bắn 1 phát API duy nhất
       await updateInstructorProfileAPI(formData, token);
 
-      alert("Cập nhật hồ sơ thành công!");
+      alert("Profile updated successfully!");
     } catch (error) {
       console.error("Lỗi lưu hồ sơ:", error);
-      alert("Lưu thất bại! Vui lòng kiểm tra lại kết nối mạng.");
+      alert("Save failed! Please check your network connection.");
     } finally {
       setIsSaving(false);
     }
@@ -172,23 +172,19 @@ const InstructorProfilePage = () => {
 
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Đổi ảnh đại diện thành công!");
+        alert("Avatar updated successfully!");
       }
     } catch (error) {
-      alert("Lỗi tải ảnh lên hệ thống!");
+      alert("Failed to upload image!");
     } finally {
       setIsUploadingAvatar(false);
     }
   };
 
   const tabs = [
-    {
-      id: "personal",
-      label: "Thông tin cá nhân & Chuyên môn",
-      icon: faUserEdit,
-    },
-    { id: "social", label: "Liên kết bên ngoài", icon: faLink },
-    { id: "account", label: "Cài đặt tài khoản", icon: faGear },
+    { id: "personal", label: "Personal Info & Expertise", icon: faUserEdit },
+    { id: "social",   label: "External Links",            icon: faLink },
+    { id: "account",  label: "Account Settings",          icon: faGear },
   ];
 
   if (isLoading) {
@@ -198,7 +194,7 @@ const InstructorProfilePage = () => {
           icon={faSpinner}
           className="text-4xl animate-spin text-blue-500 mb-4"
         />
-        <p className="font-bold">Đang tải hào quang giảng viên...</p>
+        <p className="font-bold">Loading instructor profile...</p>
       </div>
     );
   }
@@ -210,11 +206,10 @@ const InstructorProfilePage = () => {
         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-200 pb-8 relative z-20">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Hồ sơ cá nhân
+              Personal Profile
             </h1>
             <p className="text-slate-500 font-medium mt-1">
-              Cập nhật thông tin chuyên môn và xây dựng thương hiệu cá nhân của
-              bạn.
+              Update professional information and build your personal brand.
             </p>
           </div>
           <button
@@ -226,7 +221,7 @@ const InstructorProfilePage = () => {
               icon={isSaving ? faSpinner : faSave}
               className={isSaving ? "animate-spin" : ""}
             />
-            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+            {isSaving ? "Saving..." : "Save changes"}
           </button>
         </div>
 
@@ -270,12 +265,12 @@ const InstructorProfilePage = () => {
                   <FontAwesomeIcon
                     icon={faCheckCircle}
                     className="text-blue-500 text-lg"
-                    title="Đã xác minh"
+                    title="Verified"
                   />
                 )}
               </h2>
               <p className="text-sm font-semibold text-blue-700 mt-2 px-4 py-1.5 bg-blue-50 rounded-full inline-block leading-normal">
-                {profileData.headline || "Chưa có tiêu đề nghề nghiệp"}
+                {profileData.headline || "No professional headline yet"}
               </p>
               <div className="border-t border-slate-100 my-8"></div>
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left">
@@ -285,7 +280,7 @@ const InstructorProfilePage = () => {
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Email công việc
+                    Work Email
                   </p>
                   <p className="text-sm font-semibold text-slate-800 mt-0.5">
                     {profileData.email}
@@ -296,17 +291,17 @@ const InstructorProfilePage = () => {
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="text-lg font-extrabold text-slate-900 mb-5 border-l-4 border-blue-600 pl-3">
-                Tóm tắt hào quang
+                Achievements Overview
               </h3>
               <MetricCard
                 icon={faUsers}
-                label="Học viên"
+                label="Students"
                 value={profileData.totalStudents.toLocaleString()}
                 color="text-blue-600"
               />
               <MetricCard
                 icon={faBook}
-                label="Khóa học"
+                label="Courses"
                 value={profileData.totalCourses}
                 color="text-emerald-600"
               />
@@ -342,7 +337,7 @@ const InstructorProfilePage = () => {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Họ và tên <span className="text-red-500">*</span>
+                          Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
@@ -382,9 +377,9 @@ const InstructorProfilePage = () => {
                           onChange={handleInputChange}
                           className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
                         >
-                          <option>Nam</option>
-                          <option>Nữ</option>
-                          <option>Khác</option>
+                          <option>Male</option>
+                          <option>Female</option>
+                          <option>Other</option>
                         </select>
                       </div>
                       <div>
@@ -433,7 +428,7 @@ const InstructorProfilePage = () => {
                     <div className="space-y-6">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Tiêu đề nghề nghiệp / Chức danh
+                          Job Title / Headline
                         </label>
                         <input
                           type="text"
@@ -450,7 +445,7 @@ const InstructorProfilePage = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Giới thiệu bản thân (Bio)
+                          About Yourself (Bio)
                         </label>
                         <textarea
                           name="bio"
@@ -486,41 +481,17 @@ const InstructorProfilePage = () => {
               {activeTab === "social" && (
                 <form className="space-y-6">
                   <h3 className="text-base font-bold text-slate-800 mb-6">
-                    Liên kết mạng xã hội & Portfolio
+                    Social Links & Portfolio
                   </h3>
                   <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8">
                     Thêm các liên kết để học viên có thể tìm hiểu thêm về kinh
                     nghiệm thực tế và các dự án của bạn.
                   </p>
                   {[
-                    {
-                      name: "linkedin",
-                      icon: faLinkedin,
-                      color: "text-[#0077B5]",
-                      label: "Hồ sơ LinkedIn",
-                      placeholder: "https://linkedin.com/in/yourprofile",
-                    },
-                    {
-                      name: "github",
-                      icon: faGithub,
-                      color: "text-[#181717]",
-                      label: "Tài khoản GitHub",
-                      placeholder: "https://github.com/yourusername",
-                    },
-                    {
-                      name: "youtube",
-                      icon: faYoutube,
-                      color: "text-[#FF0000]",
-                      label: "Kênh YouTube (Nếu có)",
-                      placeholder: "https://youtube.com/@yourchannel",
-                    },
-                    {
-                      name: "website",
-                      icon: faUserCircle,
-                      color: "text-blue-600",
-                      label: "Website cá nhân / Portfolio",
-                      placeholder: "https://yourwebsite.com",
-                    },
+                    { name: "linkedin", icon: faLinkedin, color: "text-[#0077B5]", label: "LinkedIn Profile",          placeholder: "https://linkedin.com/in/yourprofile" },
+                    { name: "github",   icon: faGithub,   color: "text-[#181717]", label: "GitHub Account",             placeholder: "https://github.com/yourusername" },
+                    { name: "youtube",  icon: faYoutube,  color: "text-[#FF0000]", label: "YouTube Channel (Optional)", placeholder: "https://youtube.com/@yourchannel" },
+                    { name: "website",  icon: faUserCircle,color: "text-blue-600", label: "Personal Website / Portfolio",placeholder: "https://yourwebsite.com" },
                   ].map((link) => (
                     <div key={link.name}>
                       <label
@@ -558,7 +529,7 @@ const InstructorProfilePage = () => {
                     <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Mật khẩu hiện tại
+                          Current Password
                         </label>
                         <input
                           type="password"
@@ -568,7 +539,7 @@ const InstructorProfilePage = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Mật khẩu mới
+                          New Password
                         </label>
                         <input
                           type="password"
@@ -578,7 +549,7 @@ const InstructorProfilePage = () => {
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Xác nhận mật khẩu mới
+                          Confirm New Password
                         </label>
                         <input
                           type="password"
@@ -591,7 +562,7 @@ const InstructorProfilePage = () => {
                           type="button"
                           className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5"
                         >
-                          Cập nhật mật khẩu
+                          Update Password
                         </button>
                       </div>
                     </form>

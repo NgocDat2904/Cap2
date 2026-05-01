@@ -30,7 +30,7 @@ const initialNotifications = [
   {
     id: 2,
     type: "system",
-    title: "Cấp quyền khóa học mới thành công",
+    title: "New course access granted successfully",
     content:
       "Admin Trung tâm vừa cấp cho bạn quyền truy cập khóa 'Kỹ năng mềm 101'. Chúc bạn học tập thật tốt!",
     time: "2 giờ trước",
@@ -65,7 +65,7 @@ const initialNotifications = [
     type: "system",
     title: "Thông báo bảo trì hệ thống định kỳ",
     content:
-      "Hệ thống EduSync sẽ tiến hành bảo trì nâng cấp máy chủ từ 23h00 ngày 28/03 đến 02h00 ngày 29/03. Vui lòng sắp xếp thời gian học hợp lý.",
+      "The EduSync system will perform maintenance and server upgrades from 23:00 on 28/03 to 02:00 on 29/03. Please arrange your study time accordingly.",
     time: "1 tuần trước",
     date: "20/03/2026",
     isRead: true,
@@ -278,10 +278,10 @@ const LearnerNotifications = () => {
                 <FontAwesomeIcon icon={faBell} />
               </div>
               <h3 className="text-xl font-extrabold text-slate-800 mb-2">
-                Không có thông báo nào
+                No notifications
               </h3>
               <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">
-                Thật yên tĩnh! Hiện tại bạn không có thông báo nào trong mục
+                It's quiet here! You don't have any notifications in
                 này. Khi có cập nhật mới, chúng sẽ xuất hiện ở đây.
               </p>
             </div>

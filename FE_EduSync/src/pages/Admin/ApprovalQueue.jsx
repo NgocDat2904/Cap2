@@ -59,7 +59,7 @@ const AdminApprovalQueue = () => {
       setTotal(typeof data.total === "number" ? data.total : data.items?.length ?? 0);
     } catch (e) {
       console.error(e);
-      alert(e.message || "Không tải được danh sách chờ duyệt");
+      alert(e.message || "Failed to load approval queue");
       setQueue([]);
       setTotal(0);
     } finally {
@@ -89,19 +89,19 @@ const AdminApprovalQueue = () => {
         ? 0
         : parseFloat(String(priceInput).replace(",", "."));
     if (Number.isNaN(p) || p < 0) {
-      alert("Giá không hợp lệ (USD, ≥ 0 — 0 = miễn phí).");
+      alert("Invalid price (USD, ≥ 0 — 0 = free).");
       return;
     }
     setActionLoading(true);
     try {
       await approveCourseAPI(selectedCourse.id, p, token);
       alert(
-        `Đã xuất bản khóa học "${selectedCourse.title}" với giá ${p === 0 ? "Miễn phí" : `$${p}`}.`,
+        `Published course "${selectedCourse.title}" for ${p === 0 ? "Free" : `$${p}`}.`,
       );
       setIsModalOpen(false);
       await loadQueue();
     } catch (err) {
-      alert(err.message || "Phê duyệt thất bại");
+      alert(err.message || "Approval failed");
     } finally {
       setActionLoading(false);
     }
@@ -109,23 +109,23 @@ const AdminApprovalQueue = () => {
 
   const handleReject = async (courseId) => {
     if (
-      !window.confirm("Từ chối khóa học này? Khóa học sẽ được trả lại cho giảng viên.")
+      !window.confirm("Reject this course? It will be returned to the instructor.")
     ) {
       return;
     }
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Phiên đăng nhập hết hạn.");
+      alert("Session expired.");
       return;
     }
-    const reason = window.prompt("Lý do từ chối (tùy chọn):", "") ?? "";
+    const reason = window.prompt("Reason for rejection (optional):", "") ?? "";
     setActionLoading(true);
     try {
       await rejectCourseAPI(courseId, reason, token);
-      alert("Đã từ chối khóa học.");
+      alert("Course rejected.");
       await loadQueue();
     } catch (err) {
-      alert(err.message || "Từ chối thất bại");
+      alert(err.message || "Rejection failed");
     } finally {
       setActionLoading(false);
     }
@@ -137,14 +137,14 @@ const AdminApprovalQueue = () => {
         <div>
           <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3">
             <FontAwesomeIcon icon={faListCheck} className="text-blue-600" />
-            Hàng đợi Phê duyệt
+            Approval Queue
           </h1>
           <p className="text-slate-500 font-medium mt-2">
-            Giải quyết các yêu cầu xuất bản khóa học từ giảng viên.
+            Handle course publication requests from instructors.
           </p>
         </div>
         <div className="bg-red-100 text-red-700 px-4 py-2 rounded-xl font-bold text-sm border border-red-200 shadow-sm">
-          Cần xử lý: <span className="text-lg">{total}</span>
+          Pending: <span className="text-lg">{total}</span>
         </div>
       </div>
 
@@ -152,7 +152,7 @@ const AdminApprovalQueue = () => {
         {loading ? (
           <div className="flex flex-col items-center justify-center p-20 text-slate-500">
             <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-blue-500 mb-4" />
-            <p className="font-bold">Đang tải danh sách chờ duyệt...</p>
+            <p className="font-bold">Loading approval queue...</p>
           </div>
         ) : queue.length === 0 ? (
           <div className="flex flex-col items-center justify-center p-20 text-center">
@@ -160,10 +160,10 @@ const AdminApprovalQueue = () => {
               <FontAwesomeIcon icon={faInbox} />
             </div>
             <h3 className="text-xl font-bold text-slate-800">
-              Không có khóa học nào đang chờ duyệt.
+              No courses pending approval.
             </h3>
             <p className="text-slate-500 mt-2">
-              Khi giảng viên gửi duyệt, danh sách sẽ hiển thị tại đây.
+              When instructors submit for approval, the list will appear here.
             </p>
           </div>
         ) : (
@@ -171,10 +171,10 @@ const AdminApprovalQueue = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-bold">
-                  <th className="p-5 min-w-[300px]">Khóa học yêu cầu</th>
-                  <th className="p-5">Thời gian gửi</th>
-                  <th className="p-5 text-center">Số bài giảng</th>
-                  <th className="p-5 text-right">Quyết định</th>
+                  <th className="p-5 min-w-[300px]">Course Requested</th>
+                  <th className="p-5">Submission Time</th>
+                  <th className="p-5 text-center">Lesson Count</th>
+                  <th className="p-5 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -195,7 +195,7 @@ const AdminApprovalQueue = () => {
                             {course.title}
                           </p>
                           <p className="text-xs text-slate-500 mt-1">
-                            GV:{" "}
+                            Instructor:{" "}
                             <span className="font-semibold">{course.instructor}</span>
                           </p>
                         </div>
@@ -220,7 +220,7 @@ const AdminApprovalQueue = () => {
                             onClick={() => navigate(`/admin/courses/${course.id}/approval`)}
                             className="px-4 py-2 bg-amber-100 text-amber-700 font-bold rounded-xl hover:bg-amber-500 hover:text-white transition-colors text-sm flex items-center gap-2 shadow-sm"
                           >
-                            <FontAwesomeIcon icon={faBell} className="animate-bounce" /> Xử lý cập nhật & Giá
+                            <FontAwesomeIcon icon={faBell} className="animate-bounce" /> Process Update & Price
                           </button>
                         ) : (
                           <>
@@ -230,7 +230,7 @@ const AdminApprovalQueue = () => {
                               disabled={actionLoading}
                               className="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
                             >
-                              <FontAwesomeIcon icon={faEye} /> Xem chi tiết
+                              <FontAwesomeIcon icon={faEye} /> View Details
                             </button>
                             <button
                               type="button"
@@ -238,7 +238,7 @@ const AdminApprovalQueue = () => {
                               disabled={actionLoading}
                               className="px-4 py-2 bg-emerald-100 text-emerald-700 font-bold rounded-xl hover:bg-emerald-500 hover:text-white transition-colors text-sm flex items-center gap-2 disabled:opacity-50"
                             >
-                              <FontAwesomeIcon icon={faCheckCircle} /> Phê duyệt
+                              <FontAwesomeIcon icon={faCheckCircle} /> Approve
                             </button>
                             <button
                               type="button"
@@ -270,7 +270,7 @@ const AdminApprovalQueue = () => {
           <div className="relative bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden animate-fade-slide-up">
             <div className="bg-emerald-600 p-6 text-white flex justify-between items-start">
               <div>
-                <h3 className="text-xl font-black mb-1">Xác nhận Xuất bản</h3>
+                <h3 className="text-xl font-black mb-1">Confirm Publishing</h3>
                 <p className="text-emerald-100 text-sm font-medium line-clamp-2">
                   {selectedCourse.title}
                 </p>
@@ -286,7 +286,7 @@ const AdminApprovalQueue = () => {
             <form onSubmit={handleConfirmApprove} className="p-6">
               <div className="mb-6">
                 <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faTags} className="text-slate-400" /> Giá bán (USD)
+                  <FontAwesomeIcon icon={faTags} className="text-slate-400" /> Price (USD)
                 </label>
                 <input
                   type="number"
@@ -294,7 +294,7 @@ const AdminApprovalQueue = () => {
                   step="0.01"
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
-                  placeholder="VD: 49.99 — để trống hoặc 0 = miễn phí"
+                  placeholder="E.g.: 49.99 — leave blank or 0 = free"
                   className="w-full text-lg px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:bg-white"
                 />
               </div>
@@ -305,7 +305,7 @@ const AdminApprovalQueue = () => {
                   disabled={actionLoading}
                   className="flex-1 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 disabled:opacity-50"
                 >
-                  Hủy
+                  Cancel
                 </button>
                 <button
                   type="submit"
@@ -315,7 +315,7 @@ const AdminApprovalQueue = () => {
                   {actionLoading ? (
                     <FontAwesomeIcon icon={faSpinner} spin />
                   ) : null}
-                  Lên sóng
+                  Go Live
                 </button>
               </div>
             </form>

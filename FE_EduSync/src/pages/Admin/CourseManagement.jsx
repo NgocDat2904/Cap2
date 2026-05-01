@@ -22,72 +22,72 @@ import {
 const initialCourses = [
   {
     id: "CRS-101",
-    title: "Lập trình ReactJS Thực chiến dự án EduSync",
-    instructor: "Trần Việt Anh",
+    title: "ReactJS Project-Based Programming — EduSync",
+    instructor: "Tran Viet Anh",
     category: "Frontend",
     price: 49.99,
     status: "published",
-    updatedDate: "20/03/2026",
+    updatedDate: "03/20/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
     has_new_update: true,
   },
   {
     id: "CRS-102",
-    title: "Java Backend Toàn tập với Spring Boot 3",
-    instructor: "Nguyễn Văn Chuyên Gia",
+    title: "Java Backend Complete with Spring Boot 3",
+    instructor: "Nguyen Van Expert",
     category: "Backend",
     price: 0,
     status: "pending",
-    updatedDate: "27/03/2026",
+    updatedDate: "03/27/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
     has_new_update: false,
   },
   {
     id: "CRS-103",
-    title: "Khóa học lùa gà làm giàu siêu tốc",
-    instructor: "Kẻ Gian Lận",
+    title: "Get Rich Quick Scam Course",
+    instructor: "Fraudster",
     category: "Business Analysis",
     price: 0,
     status: "rejected",
-    updatedDate: "25/03/2026",
+    updatedDate: "03/25/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80",
     has_new_update: false,
   },
   {
     id: "CRS-104",
-    title: "UI/UX Design Cơ bản",
-    instructor: "Hương Design",
+    title: "UI/UX Design Fundamentals",
+    instructor: "Huong Design",
     category: "UI/UX Design",
     price: 0,
     status: "draft",
-    updatedDate: "10/02/2026",
+    updatedDate: "02/10/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
     has_new_update: false,
   },
   {
     id: "CRS-105",
-    title: "Tuyệt đỉnh C++ cho người mới bắt đầu",
-    instructor: "Trần Việt Anh",
+    title: "Mastering C++ for Beginners",
+    instructor: "Tran Viet Anh",
     category: "Backend",
     price: 19.99,
     status: "published",
-    updatedDate: "20/03/2026",
+    updatedDate: "03/20/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
     has_new_update: false,
   },
   {
     id: "CRS-106",
-    title: "Thiết kế Figma từ A tới Z",
-    instructor: "Hương Design",
+    title: "Figma Design from A to Z",
+    instructor: "Huong Design",
     category: "UI/UX Design",
     price: 0,
     status: "draft",
-    updatedDate: "10/02/2026",
+    updatedDate: "02/10/2026",
     thumbnail:
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
     has_new_update: false,
@@ -95,7 +95,7 @@ const initialCourses = [
 ];
 
 const CATEGORIES = [
-  "Tất cả",
+  "All",
   "Frontend",
   "Backend",
   "UI/UX Design",
@@ -108,7 +108,7 @@ const AdminCourseManagement = () => {
 
   const [courses, setCourses] = useState(initialCourses);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("Tất cả");
+  const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
@@ -126,7 +126,7 @@ const AdminCourseManagement = () => {
       course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesCategory =
-      categoryFilter === "Tất cả" || course.category === categoryFilter;
+      categoryFilter === "All" || course.category === categoryFilter;
 
     let matchesStatus = false;
     if (statusFilter === "all") matchesStatus = true;
@@ -141,8 +141,8 @@ const AdminCourseManagement = () => {
     const newStatus = currentStatus === "suspended" ? "published" : "suspended";
     const confirmMsg =
       newStatus === "suspended"
-        ? "Đình chỉ khóa học này? Nó sẽ bị gỡ khỏi trang chủ ngay lập tức."
-        : "Khôi phục lại khóa học này lên hệ thống?";
+        ? "Suspend this course? It will be removed from the homepage immediately."
+        : "Restore this course to the platform?";
 
     if (window.confirm(confirmMsg)) {
       setCourses(
@@ -157,7 +157,7 @@ const AdminCourseManagement = () => {
   const deleteCourse = (id) => {
     if (
       window.confirm(
-        "Cảnh báo: Bạn có chắc chắn muốn xóa vĩnh viễn khóa học này khỏi hệ thống?",
+        "Warning: Are you sure you want to permanently delete this course from the system?",
       )
     ) {
       setCourses(courses.filter((course) => course.id !== id));
@@ -171,31 +171,31 @@ const AdminCourseManagement = () => {
         return (
           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-emerald-200">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-            Đang hoạt động
+            Active
           </span>
         );
       case "pending":
         return (
           <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-amber-200 animate-pulse shadow-sm shadow-amber-200/50">
-            <FontAwesomeIcon icon={faClockRotateLeft} /> Chờ duyệt
+            <FontAwesomeIcon icon={faClockRotateLeft} /> Pending Review
           </span>
         );
       case "draft":
         return (
           <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-slate-200">
-            <FontAwesomeIcon icon={faPenRuler} /> Bản nháp GV
+            <FontAwesomeIcon icon={faPenRuler} /> Instructor Draft
           </span>
         );
       case "rejected":
         return (
           <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-red-200">
-            <FontAwesomeIcon icon={faTimesCircle} /> Bị từ chối
+            <FontAwesomeIcon icon={faTimesCircle} /> Rejected
           </span>
         );
       case "suspended":
         return (
           <span className="px-2.5 py-1 bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-slate-900">
-            <FontAwesomeIcon icon={faBan} /> Bị đình chỉ
+            <FontAwesomeIcon icon={faBan} /> Suspended
           </span>
         );
       default:
@@ -210,48 +210,24 @@ const AdminCourseManagement = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Quản lý Khóa học
+            Course Management
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Duyệt khóa học mới, định giá và xử lý vi phạm nội dung.
+            Approve new courses, set pricing and handle content violations.
           </p>
         </div>
         <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition shadow-sm flex items-center gap-2">
-          <FontAwesomeIcon icon={faFileExport} /> Xuất báo cáo
+          <FontAwesomeIcon icon={faFileExport} /> Export Report
         </button>
       </div>
 
       {/* WIDGETS THỐNG KÊ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          {
-            label: "Tổng khóa học",
-            value: stats.total,
-            icon: faBookOpen,
-            color: "text-blue-600",
-            bg: "bg-blue-100",
-          },
-          {
-            label: "Chờ duyệt & Định giá",
-            value: stats.pending,
-            icon: faClockRotateLeft,
-            color: "text-amber-600",
-            bg: "bg-amber-100",
-          },
-          {
-            label: "Đang hoạt động",
-            value: stats.published,
-            icon: faCheckCircle,
-            color: "text-emerald-600",
-            bg: "bg-emerald-100",
-          },
-          {
-            label: "Nháp / Từ chối / Bị khóa",
-            value: stats.others,
-            icon: faBan,
-            color: "text-slate-600",
-            bg: "bg-slate-200",
-          },
+          { label: "Total Courses",             value: stats.total,     icon: faBookOpen,         color: "text-blue-600",    bg: "bg-blue-100" },
+          { label: "Pending Review & Pricing",  value: stats.pending,   icon: faClockRotateLeft,  color: "text-amber-600",   bg: "bg-amber-100" },
+          { label: "Active",                    value: stats.published, icon: faCheckCircle,      color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Draft / Rejected / Banned", value: stats.others,    icon: faBan,              color: "text-slate-600",   bg: "bg-slate-200" },
         ].map((stat, idx) => (
           <div
             key={idx}
@@ -286,7 +262,7 @@ const AdminCourseManagement = () => {
             />
             <input
               type="text"
-              placeholder="Tìm tên khóa học, giảng viên..."
+              placeholder="Search course name, instructor..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
@@ -309,12 +285,12 @@ const AdminCourseManagement = () => {
               onChange={(e) => setStatusFilter(e.target.value)}
               className="flex-1 md:w-56 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer"
             >
-              <option value="all">Mọi trạng thái</option>
-              <option value="pending">Chờ duyệt (Mới)</option>
-              <option value="has_update">🔔 Có cập nhật nội dung</option>
-              <option value="published">Đang hoạt động</option>
-              <option value="rejected">Bị từ chối</option>
-              <option value="draft">Bản nháp</option>
+              <option value="all">All statuses</option>
+              <option value="pending">Pending Review (New)</option>
+              <option value="has_update">🔔 Has content update</option>
+              <option value="published">Active</option>
+              <option value="rejected">Rejected</option>
+              <option value="draft">Draft</option>
             </select>
           </div>
         </div>
@@ -325,11 +301,11 @@ const AdminCourseManagement = () => {
             <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
               <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                 <th className="p-5 w-20 text-center">ID</th>
-                <th className="p-5 min-w-[300px]">Thông tin Khóa học</th>
-                <th className="p-5">Chuyên ngành</th>
-                <th className="p-5 text-right">Giá bán</th>
-                <th className="p-5">Trạng thái</th>
-                <th className="p-5 text-center">Hành động</th>
+                <th className="p-5 min-w-[300px]">Course Info</th>
+                <th className="p-5">Category</th>
+                <th className="p-5 text-right">Price</th>
+                <th className="p-5">Status</th>
+                <th className="p-5 text-center">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -361,13 +337,13 @@ const AdminCourseManagement = () => {
 
                           {course.has_new_update && (
                             <span className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md shadow-sm border border-amber-200 animate-pulse">
-                              <FontAwesomeIcon icon={faBell} /> MỚI CẬP NHẬT
+                              <FontAwesomeIcon icon={faBell} /> NEW UPDATE
                             </span>
                           )}
 
                           {!course.has_new_update && (
                             <p className="text-xs font-medium text-slate-500 mt-1">
-                              GV:{" "}
+                              Instructor:{" "}
                               <span className="font-bold text-slate-700">
                                 {course.instructor}
                               </span>
@@ -385,11 +361,11 @@ const AdminCourseManagement = () => {
                       {course.status === "pending" ||
                       course.status === "draft" ? (
                         <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                          Chờ định giá
+                          Awaiting pricing
                         </span>
                       ) : course.price === 0 ? (
                         <span className="text-sm font-black text-emerald-600">
-                          Miễn phí
+                          Free
                         </span>
                       ) : (
                         <span className="text-sm font-black text-slate-700">
@@ -437,10 +413,10 @@ const AdminCourseManagement = () => {
                                 className="w-4"
                               />{" "}
                               {course.has_new_update
-                                ? "Xử lý bản cập nhật"
+                                ? "Process Update"
                                 : course.status === "pending"
-                                  ? "Duyệt & Định giá"
-                                  : "Xem chi tiết"}
+                                  ? "Review & Price"
+                                  : "View Details"}
                             </button>
 
                             {course.status === "published" && (
@@ -454,7 +430,7 @@ const AdminCourseManagement = () => {
                                 className="w-full text-left px-4 py-2.5 text-sm font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2"
                               >
                                 <FontAwesomeIcon icon={faBan} className="w-4" />{" "}
-                                Đình chỉ
+                                Suspend
                               </button>
                             )}
 
@@ -472,7 +448,7 @@ const AdminCourseManagement = () => {
                                   icon={faCheckCircle}
                                   className="w-4"
                                 />{" "}
-                                Khôi phục
+                                Restore
                               </button>
                             )}
 
@@ -481,7 +457,7 @@ const AdminCourseManagement = () => {
                               className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
                             >
                               <FontAwesomeIcon icon={faTrash} className="w-4" />{" "}
-                              Xóa vĩnh viễn
+                              Delete permanently
                             </button>
                           </div>
                         </>
@@ -495,7 +471,7 @@ const AdminCourseManagement = () => {
                     colSpan="6"
                     className="p-10 text-center text-slate-500 font-medium"
                   >
-                    Không tìm thấy khóa học nào.
+                    No courses found.
                   </td>
                 </tr>
               )}

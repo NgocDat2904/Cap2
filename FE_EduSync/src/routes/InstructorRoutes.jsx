@@ -25,7 +25,7 @@ const InstructorRoutes = () => {
           <Route
             path="performance"
             element={
-              <div className="p-4 text-xl">Đây là trang Báo cáo doanh thu</div>
+              <div className="p-4 text-xl">Revenue Report Page</div>
             }
           />
           <Route

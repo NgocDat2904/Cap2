@@ -43,11 +43,11 @@ const InstructorLoginPage = () => {
       console.error("Lỗi đăng nhập Instructor:", err);
       // Xử lý thông báo lỗi rõ ràng nếu thất bại
       if (err.response && err.response.status === 401) {
-        setError("Email hoặc mật khẩu không chính xác!");
+        setError("Incorrect email or password!");
       } else if (err.response && err.response.status === 404) {
-        setError("Tài khoản giảng viên này không tồn tại trên hệ thống!");
+        setError("This instructor account does not exist on the system!");
       } else {
-        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+        setError("Login failed. Please check your credentials!");
       }
     } finally {
       setIsLoading(false);
@@ -80,10 +80,10 @@ const InstructorLoginPage = () => {
         {/* TIÊU ĐỀ */}
         <div className="w-full text-center mb-8">
           <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
-            Chào mừng trở lại!
+            Welcome back!
           </h2>
           <p className="text-slate-500 font-medium">
-            Đăng nhập để quản lý khóa học và kết nối với học viên
+            Sign in to manage your courses and connect with learners
           </p>
         </div>
 
@@ -123,13 +123,13 @@ const InstructorLoginPage = () => {
             <div>
               <div className="flex justify-between items-center mb-2.5">
                 <label className="block text-sm font-bold text-slate-700">
-                  Mật khẩu
+                  Password
                 </label>
                 <a
                   href="#"
                   className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
                 >
-                  Quên mật khẩu?
+                  Forgot password?
                 </a>
               </div>
               <div className="relative group">
@@ -170,7 +170,7 @@ const InstructorLoginPage = () => {
                 htmlFor="remember"
                 className="text-sm font-semibold text-slate-600 cursor-pointer select-none"
               >
-                Ghi nhớ thiết bị này
+                Remember this device
               </label>
             </div>
 
@@ -191,22 +191,22 @@ const InstructorLoginPage = () => {
                     icon={faCircleNotch}
                     className="animate-spin text-lg"
                   />
-                  Đang xác thực...
+                  Authenticating...
                 </>
               ) : (
-                <>Đăng nhập</>
+                <>Sign in</>
               )}
             </button>
           </form>
 
           {/* Đăng ký Link */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm font-medium text-slate-500">
-            Chưa có tài khoản giảng viên?{" "}
+            Don't have an instructor account?{" "}
             <Link
               to="/instructor/register"
               className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
             >
-              Đăng ký ngay
+              Register now
             </Link>
           </div>
         </div>
@@ -217,19 +217,19 @@ const InstructorLoginPage = () => {
             <div>
               <h3 className="text-2xl font-black text-slate-900">500+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Giảng viên
+                Instructors
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-900">10K+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Học viên
+                Learners
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-900">1K+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Khóa học
+                Courses
               </p>
             </div>
           </div>

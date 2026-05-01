@@ -25,7 +25,7 @@ export async function aiChatAPI(token, context, messages) {
     },
     body: JSON.stringify({ context, messages }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không gọi được AI chat"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to call AI chat"));
   return res.json();
 }
 
@@ -38,7 +38,7 @@ export async function aiSummaryAPI(token, context, language = "vi") {
     },
     body: JSON.stringify({ context, language }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được tóm tắt"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create summary"));
   return res.json();
 }
 
@@ -55,7 +55,7 @@ export async function aiQuizAPI(token, context, numQuestions = 5, language = "vi
       language,
     }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được quiz"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create quiz"));
   return res.json();
 }
 
@@ -68,7 +68,7 @@ export async function aiChatByVideoAPI(token, videoId, messages) {
     },
     body: JSON.stringify({ video_id: videoId, messages }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không gọi được AI chat"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to call AI chat"));
   return res.json();
 }
 
@@ -81,7 +81,7 @@ export async function aiSummaryByVideoAPI(token, videoId, language = "vi") {
     },
     body: JSON.stringify({ video_id: videoId, language }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được tóm tắt"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create summary"));
   return res.json();
 }
 
@@ -98,7 +98,7 @@ export async function aiQuizByVideoAPI(token, videoId, numQuestions = 5, languag
       language,
     }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được quiz"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create quiz"));
   return res.json();
 }
 
@@ -111,7 +111,7 @@ export async function aiMindmapAPI(token, context, language = "vi") {
     },
     body: JSON.stringify({ context, language }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được mindmap"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create mindmap"));
   return res.json();
 }
 
@@ -124,7 +124,7 @@ export async function aiMindmapByVideoAPI(token, videoId, language = "vi") {
     },
     body: JSON.stringify({ video_id: videoId, language }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được mindmap"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create mindmap"));
   return res.json();
 }
 
@@ -141,6 +141,6 @@ export async function generateVideoTranscriptAPI(
     },
     body: JSON.stringify({ language, force }),
   });
-  if (!res.ok) throw new Error(await parseError(res, "Không tạo được transcript"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create transcript"));
   return res.json();
 }
