@@ -13,7 +13,7 @@ const favoriteVideos = [
   {
     id: 1,
     title:
-      "Chương 2: Lập trình Python cơ bản - Bài giảng 15: Biến và kiểu dữ liệu",
+      "Chapter 2: Basic Python Programming - Lesson 15: Variables and Data Types",
     courseTitle: "Master Python from basics to advanced",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80",
@@ -23,7 +23,7 @@ const favoriteVideos = [
   },
   {
     id: 2,
-    title: "Chương 4: Xử lý dữ liệu nâng cao - Bài giảng 24: Pandas cơ bản",
+    title: "Chapter 4: Advanced Data Processing - Lesson 24: Basic Pandas",
     courseTitle: "Python for Data Analysis",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&q=80",
@@ -34,7 +34,7 @@ const favoriteVideos = [
   {
     id: 3,
     title:
-      "Chương 3: UI/UX Design Thực chiến với Figma - Bài giảng 32: Auto Layout",
+      "Chapter 3: Practical UI/UX Design with Figma - Lesson 32: Auto Layout",
     courseTitle: "Figma UI/UX Masterclass",
     thumbnailUrl:
       "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=300&q=80",
@@ -51,7 +51,7 @@ const LearnerFavoritesPage = () => {
 
   // Xử lý bỏ yêu thích (tạm thời mockup)
   const handleUnfavorite = (videoId) => {
-    alert(`Đã bỏ yêu thích video có ID: ${videoId}`);
+    alert(`Unfavorited video with ID: ${videoId}`);
   };
 
   return (
@@ -61,10 +61,10 @@ const LearnerFavoritesPage = () => {
         {/* TIÊU ĐỀ TRANG */}
         <div className="mb-8">
           <h1 className="text-3xl font-extrabold text-blue-900 tracking-tight">
-            Video yêu thích của tôi
+            My Favorite Videos
           </h1>
           <p className="text-slate-500 font-medium mt-1">
-            Xem lại những bài giảng video bạn đã lưu.
+            Review the video lessons you have saved.
           </p>
         </div>
 
@@ -77,7 +77,7 @@ const LearnerFavoritesPage = () => {
             />
             <input
               type="text"
-              placeholder="Tìm kiếm video yêu thích..."
+              placeholder="Search favorite videos..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-900 transition-colors"
@@ -95,7 +95,7 @@ const LearnerFavoritesPage = () => {
                 onChange={(e) => setFilterCourse(e.target.value)}
                 className="w-full pl-11 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-900 transition-colors appearance-none cursor-pointer"
               >
-                <option value="all">Tất cả khóa học</option>
+                <option value="all">All courses</option>
                 <option value="python">Python for Data Analysis</option>
                 <option value="figma">Figma UI/UX Masterclass</option>
               </select>
@@ -106,9 +106,9 @@ const LearnerFavoritesPage = () => {
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-1 focus:ring-blue-900 transition-colors appearance-none cursor-pointer"
               >
-                <option value="recentlyAdded">Mới thêm</option>
-                <option value="nameAZ">Tên A-Z</option>
-                <option value="durationShortLong">Thời lượng</option>
+                <option value="recentlyAdded">Recently added</option>
+                <option value="nameAZ">Name A-Z</option>
+                <option value="durationShortLong">Duration</option>
               </select>
             </div>
           </div>
@@ -148,10 +148,10 @@ const LearnerFavoritesPage = () => {
                     {video.title}
                   </h3>
                   <p className="text-sm font-semibold text-slate-500 line-clamp-1 mb-2">
-                    Khóa học: {video.courseTitle}
+                    Course: {video.courseTitle}
                   </p>
                   <p className="text-xs font-medium text-slate-400 mt-auto pt-2">
-                    Giảng viên: {video.instructorName} • {video.rating} ★
+                    Instructor: {video.instructorName} • {video.rating} ★
                   </p>
                 </div>
 
@@ -160,14 +160,13 @@ const LearnerFavoritesPage = () => {
                   <button
                     onClick={() => handleUnfavorite(video.id)}
                     className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-800 transition-colors"
-                    title="Bỏ yêu thích"
+                    title="Unfavorite"
                   >
-                    <FontAwesomeIcon icon={faHeart} className="text-sm" /> Bỏ
-                    yêu thích
+                    <FontAwesomeIcon icon={faHeart} className="text-sm" /> Unfavorite
                   </button>
                   <div className="flex gap-2">
                     <button className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg transition-colors">
-                      Xem ngay
+                      Watch now
                     </button>
                   </div>
                 </div>
@@ -181,16 +180,16 @@ const LearnerFavoritesPage = () => {
               <FontAwesomeIcon icon={faHeart} />
             </div>
             <h2 className="text-3xl font-extrabold text-blue-900 mb-2">
-              Bạn chưa có video yêu thích nào
+              You don't have any favorite videos yet
             </h2>
             <p className="text-slate-500 font-medium max-w-lg mb-8">
-              Hãy khám phá các khóa học và lưu lại những bài giảng hay!
+              Explore courses and save great lessons!
             </p>
             <Link
               to="/courses"
               className="px-6 py-3 bg-blue-600 text-white font-bold rounded-full hover:bg-blue-700 transition duration-300"
             >
-              Khám phá khóa học
+              Explore courses
             </Link>
           </div>
         )}
@@ -199,16 +198,16 @@ const LearnerFavoritesPage = () => {
         {favoriteVideos.length > 0 && (
           <div className="mt-12 flex flex-col sm:flex-row items-center justify-between text-sm gap-4">
             <p className="text-slate-500 font-medium">
-              Hiển thị{" "}
+              Showing{" "}
               <span className="font-bold text-slate-700">
                 {favoriteVideos.length}
               </span>{" "}
-              trên tổng số <span className="font-bold text-slate-700">12</span>{" "}
-              video
+              out of <span className="font-bold text-slate-700">12</span>{" "}
+              videos
             </p>
             <div className="flex gap-1">
               <button className="px-3 py-1.5 border border-slate-200 rounded-md bg-white text-slate-400 cursor-not-allowed">
-                Trước
+                Previous
               </button>
               <button className="px-3 py-1.5 border border-slate-200 rounded-md bg-white text-blue-700 font-bold bg-blue-50 transition-colors">
                 1
@@ -217,7 +216,7 @@ const LearnerFavoritesPage = () => {
                 2
               </button>
               <button className="px-3 py-1.5 border border-slate-200 rounded-md bg-white text-slate-700 font-bold hover:bg-slate-100 transition-colors">
-                Sau
+                Next
               </button>
             </div>
           </div>

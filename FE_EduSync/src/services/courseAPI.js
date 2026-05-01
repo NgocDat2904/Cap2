@@ -13,7 +13,7 @@ export const uploadCourseThumbnailAPI = async (file, token) => {
     body: fd,
   });
   if (!response.ok) {
-    let detail = "Không tải được ảnh bìa lên Cloudinary";
+    let detail = "Failed to upload thumbnail to Cloudinary";
     try {
       const err = await response.json();
       if (typeof err.detail === "string") detail = err.detail;
@@ -35,7 +35,7 @@ export const createCourseAPI = async (courseData, token) => {
     },
     body: JSON.stringify(courseData),
   });
-  if (!response.ok) throw new Error("Lỗi khi tạo khóa học");
+  if (!response.ok) throw new Error("Failed to create course");
   return await response.json(); // Backend trả về { id: "..." }
 };
 
@@ -61,7 +61,7 @@ export const getPresignedUrlAPI = async (courseId, fileName, contentType, token)
     }),
   });
 
-  if (!response.ok) throw new Error("Không lấy được vé thông hành Google Cloud");
+  if (!response.ok) throw new Error("Failed to get Google Cloud upload token");
   return await response.json(); 
 };
 // 3. Đẩy Video thẳng lên Google Cloud (KHÔNG GỌI BACKEND MÀ GỌI THẲNG GOOGLE)
@@ -73,7 +73,7 @@ export const uploadVideoToGCS = async (presignedUrl, file) => {
     },
     body: file, // Bơm trực tiếp file, không dùng FormData
   });
-  if (!response.ok) throw new Error("Lỗi khi up video lên mây Google");
+  if (!response.ok) throw new Error("Failed to upload video to Google Cloud");
   return true;
 };
 
@@ -89,7 +89,7 @@ export const saveVideoToDBAPI = async (courseId, videoData, token) => {
   });
   
   if (!response.ok) {
-    let detail = "Lỗi khi lưu thông tin video vào CSDL";
+    let detail = "Failed to save video info to database";
     try {
       const err = await response.json();
       if (Array.isArray(err.detail)) {
@@ -116,7 +116,7 @@ export const createSectionAPI = async (sectionData, token) => {
   });
 
   if (!response.ok) {
-    let detail = "Lỗi khi tạo section";
+    let detail = "Failed to create section";
     try {
       const err = await response.json();
       if (typeof err.detail === "string") detail = err.detail;
@@ -140,7 +140,7 @@ export const createLessonAPI = async (lessonData, token) => {
   });
 
   if (!response.ok) {
-    let detail = "Lỗi khi tạo bài giảng";
+    let detail = "Failed to create lesson";
     try {
       const err = await response.json();
       if (typeof err.detail === "string") detail = err.detail;

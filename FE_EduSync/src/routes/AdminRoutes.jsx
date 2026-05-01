@@ -19,7 +19,7 @@ const AdminRoutes = () => {
             path="dashboard"
             element={
               <div className="p-4 text-xl">
-                Đây là trang Dashboard tổng quan
+                Admin Dashboard Overview
               </div>
             }
           />

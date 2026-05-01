@@ -23,12 +23,12 @@ const revenueStats = {
 
 // Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
 const chartData = [
-  { month: "Tháng 10", revenue: 15000 },
-  { month: "Tháng 11", revenue: 18500 },
-  { month: "Tháng 12", revenue: 14200 },
-  { month: "Tháng 1", revenue: 22000 },
-  { month: "Tháng 2", revenue: 28400 },
-  { month: "Tháng 3", revenue: 27330 },
+  { month: "Oct", revenue: 15000 },
+  { month: "Nov", revenue: 18500 },
+  { month: "Dec", revenue: 14200 },
+  { month: "Jan", revenue: 22000 },
+  { month: "Feb", revenue: 28400 },
+  { month: "Mar", revenue: 27330 },
 ];
 const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
 
@@ -36,43 +36,39 @@ const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
 const topCourses = [
   {
     id: "CRS-101",
-    title: "Lập trình ReactJS Thực chiến dự án EduSync",
-    instructor: "Trần Việt Anh",
+    title: "ReactJS in Practice – EduSync Project",
+    instructor: "Tran Viet Anh",
     price: 49.99,
     sales: 845,
-    totalEarned: 42241.55, // 100% của Trung tâm
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
+    totalEarned: 42241.55,
+    thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
   },
   {
     id: "CRS-089",
-    title: "Khóa học IELTS 7.0 Cấp tốc",
-    instructor: "Cô Mai English",
+    title: "IELTS 7.0 Intensive Course",
+    instructor: "Ms. Mai English",
     price: 99.0,
     sales: 512,
     totalEarned: 50688.0,
-    thumbnail:
-      "https://images.unsplash.com/photo-1546410531-bea4edad81eb?w=800&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1546410531-bea4edad81eb?w=800&q=80",
   },
   {
     id: "CRS-055",
     title: "Mastering Python for Data Science",
-    instructor: "David Phạm",
+    instructor: "David Pham",
     price: 65.5,
     sales: 320,
     totalEarned: 20960.0,
-    thumbnail:
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
   },
   {
     id: "CRS-112",
-    title: "Thiết kế UI/UX với Figma 2026",
-    instructor: "Hương Design",
+    title: "UI/UX Design with Figma 2026",
+    instructor: "Huong Design",
     price: 35.0,
     sales: 215,
     totalEarned: 7525.0,
-    thumbnail:
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
+    thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
   },
 ];
 
@@ -92,10 +88,10 @@ const AdminRevenueReport = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Báo cáo Doanh thu
+            Revenue Report
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Theo dõi tổng doanh thu của Trung tâm và hiệu suất các khóa học.
+            Track total platform revenue and course performance.
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -109,13 +105,13 @@ const AdminRevenueReport = () => {
               onChange={(e) => setTimeRange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="thisMonth">Tháng này</option>
-              <option value="6months">6 tháng gần nhất</option>
-              <option value="thisYear">Năm nay</option>
+              <option value="thisMonth">This month</option>
+              <option value="6months">Last 6 months</option>
+              <option value="thisYear">This year</option>
             </select>
           </div>
           <button className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-600/20 flex items-center gap-2 shrink-0 active:scale-95">
-            <FontAwesomeIcon icon={faDownload} /> Xuất Excel
+            <FontAwesomeIcon icon={faDownload} /> Export Excel
           </button>
         </div>
       </div>
@@ -135,7 +131,7 @@ const AdminRevenueReport = () => {
           </div>
           <div className="relative z-10">
             <p className="text-sm font-bold text-emerald-100 mb-1">
-              Tổng Doanh Thu Trung Tâm
+              Total Platform Revenue
             </p>
             <h3 className="text-3xl sm:text-4xl font-black text-white">
               {formatMoney(revenueStats.totalRevenue)}
@@ -152,11 +148,11 @@ const AdminRevenueReport = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-slate-500 mb-1">
-              Tổng lượt bán khóa học
+              Total Course Sales
             </p>
             <h3 className="text-3xl font-black text-slate-800">
               {revenueStats.totalSales.toLocaleString()}{" "}
-              <span className="text-lg text-slate-500 font-bold">lượt</span>
+              <span className="text-lg text-slate-500 font-bold">sales</span>
             </h3>
           </div>
         </div>
@@ -170,11 +166,11 @@ const AdminRevenueReport = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-slate-500 mb-1">
-              Học viên đang hoạt động
+              Active Learners
             </p>
             <h3 className="text-3xl font-black text-slate-800">
               {revenueStats.activeLearners.toLocaleString()}{" "}
-              <span className="text-lg text-slate-500 font-bold">người</span>
+              <span className="text-lg text-slate-500 font-bold">users</span>
             </h3>
           </div>
         </div>
@@ -187,10 +183,10 @@ const AdminRevenueReport = () => {
           <div className="flex justify-between items-end mb-8">
             <div>
               <h2 className="text-xl font-extrabold text-slate-800">
-                Biểu đồ Doanh thu
+                Revenue Chart
               </h2>
               <p className="text-sm text-slate-500 font-medium mt-1">
-                Biến động doanh thu 6 tháng gần nhất
+                Revenue trend over the last 6 months
               </p>
             </div>
           </div>
@@ -219,7 +215,7 @@ const AdminRevenueReport = () => {
                 className="flex-1 flex flex-col justify-end items-center group relative z-10 h-full pb-0.5"
               >
                 <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
-                  Doanh thu:{" "}
+                  Revenue:{" "}
                   <span className="text-emerald-400">
                     {formatMoney(data.revenue)}
                   </span>
@@ -246,7 +242,7 @@ const AdminRevenueReport = () => {
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
               <FontAwesomeIcon icon={faTrophy} className="text-amber-500" />{" "}
-              Khóa học Doanh thu cao
+              Top Revenue Courses
             </h2>
           </div>
 
@@ -279,11 +275,11 @@ const AdminRevenueReport = () => {
                   </p>
                   <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
                     <FontAwesomeIcon icon={faGraduationCap} className="w-3" />{" "}
-                    GV: {course.instructor}
+                    Instructor: {course.instructor}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-bold text-slate-500">
-                      {course.sales} lượt bán
+                      {course.sales} sales
                     </span>
                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                     {/* Hiển thị 100% doanh thu của khóa học đó */}

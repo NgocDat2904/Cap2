@@ -126,11 +126,11 @@ const InstructorCreateCourse = () => {
 
     try {
       const token = localStorage.getItem("access_token");
-      if (!token) throw new Error("Phiên đăng nhập hết hạn, vui lòng đăng nhập lại!");
+      if (!token) throw new Error("Session expired, please log in again!");
 
       let courseImageUrl = "";
       if (thumbnailFile) {
-        setUploadProgressText("Đang tải ảnh bìa lên Cloudinary...");
+        setUploadProgressText("Uploading course cover image to Cloudinary...");
         const thumbRes = await uploadCourseThumbnailAPI(thumbnailFile, token);
         courseImageUrl = thumbRes.url || "";
       }
@@ -160,7 +160,7 @@ const InstructorCreateCourse = () => {
         );
         defaultSectionId = sectionRes?.id;
         if (!defaultSectionId) {
-          throw new Error("Không tạo được section cho khóa học");
+          throw new Error("Failed to create section for course");
         }
       }
 
@@ -173,7 +173,7 @@ const InstructorCreateCourse = () => {
           // 2. Xin vé thông hành GCS
           const urlData = await getPresignedUrlAPI(newCourseId, video.file.name, video.file.type, token);
           if (!urlData?.upload_url || !urlData?.file_url) {
-            throw new Error("Backend không trả upload_url / file_url — kiểm tra API presign.");
+            throw new Error("Backend did not return upload_url / file_url — check API presign.");
           }
 
           // 3. Up thẳng lên mây Google
@@ -191,7 +191,7 @@ const InstructorCreateCourse = () => {
           );
           const lessonId = lessonRes?.id;
           if (!lessonId) {
-            throw new Error(`Không tạo được lesson cho video ${i + 1}`);
+            throw new Error(`Failed to create lesson for video ${i + 1}`);
           }
 
           // 4. Báo Backend lưu Video vào Database (url = link công khai file trên GCS)
@@ -210,11 +210,11 @@ const InstructorCreateCourse = () => {
 
       // BƯỚC 5: XỬ LÝ NÚT BẤM KẾT THÚC
       if (actionType === "draft") {
-        alert(`Đã lưu bản nháp thành công! (Mã khóa: ${newCourseId})`);
+        alert(`Draft saved successfully! (Course ID: ${newCourseId})`);
       } else if (actionType === "pending") {
-        setUploadProgressText("Đang gửi yêu cầu duyệt khóa học...");
+        setUploadProgressText("Sending course approval request...");
         await submitCourseAPI(newCourseId, token);
-        alert("Đã gửi khóa học lên Trung tâm! Vui lòng chờ Admin định giá và xuất bản.");
+        alert("Course submitted to Admin! Please wait for pricing and publishing.");
         
         // Reset form cho sạch sẽ
         setCourseInfo({ title: "", description: "", category: "", prerequisites: "", enableQA: true, visibility: "public" });
@@ -267,7 +267,7 @@ const InstructorCreateCourse = () => {
           <FontAwesomeIcon icon={faSpinner} spin className="text-5xl text-blue-400 mb-4" />
           <h2 className="text-xl font-bold mb-2">Hệ thống đang làm việc</h2>
           <p className="text-blue-200 animate-pulse">{uploadProgressText}</p>
-          <p className="text-xs text-slate-400 mt-4 max-w-sm text-center">Vui lòng không đóng trình duyệt hoặc làm mới trang trong lúc này để tránh lỗi dữ liệu nhé!</p>
+          <p className="text-xs text-slate-400 mt-4 max-w-sm text-center">Please do not close the browser or refresh the page to avoid data loss!</p>
         </div>
       )}
 
@@ -335,7 +335,7 @@ const InstructorCreateCourse = () => {
                             <div key={cat.id} onClick={() => { setCourseInfo({ ...courseInfo, category: cat.id }); setIsCategoryOpen(false); setCategorySearch(""); }} className={`px-3 py-2.5 mb-1 rounded-lg cursor-pointer text-sm font-medium transition-colors ${courseInfo.category === cat.id ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-700 hover:bg-slate-100"}`}>
                               {cat.name}
                             </div>
-                          )) : <div className="p-4 text-center text-sm text-slate-500 font-medium">Không tìm thấy chuyên ngành nào.</div>}
+                          )) : <div className="p-4 text-center text-sm text-slate-500 font-medium">No majors found.</div>}
                         </div>
                       </div>
                     )}
@@ -359,7 +359,7 @@ const InstructorCreateCourse = () => {
                           <FontAwesomeIcon icon={faImage} className="text-2xl" />
                         </div>
                         <p className="text-slate-700 font-bold mb-1">Kéo thả ảnh hoặc click để duyệt</p>
-                        <p className="text-slate-500 text-sm">Định dạng PNG, JPG. Tỉ lệ chuẩn 16:9.</p>
+                        <p className="text-slate-500 text-sm">Supported formats: PNG, JPG. Standard aspect ratio 16:9.</p>
                       </div>
                     )}
                   </div>
@@ -419,7 +419,7 @@ const InstructorCreateCourse = () => {
           <div className="space-y-6 animate-fade-slide-up">
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b border-slate-100 pb-4">
-                <FontAwesomeIcon icon={faGraduationCap} className="text-blue-600" /> Yêu cầu đầu vào
+                <FontAwesomeIcon icon={faGraduationCap} className="text-blue-600" /> Prerequisites
               </h2>
               <div>
                 <textarea name="prerequisites" rows="3" value={courseInfo.prerequisites} onChange={handleCourseInfoChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 outline-none transition-colors text-slate-700 font-medium resize-y"></textarea>
