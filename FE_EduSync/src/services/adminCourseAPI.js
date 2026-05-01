@@ -18,7 +18,7 @@ export async function fetchPendingCoursesAPI(token, page = 1, limit = 50) {
     { headers: { Authorization: `Bearer ${token}` } },
   );
   if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Không tải được danh sách chờ duyệt"));
+    throw new Error(await parseErrorMessage(res, "Failed to load approval queue"));
   }
   return res.json();
 }
@@ -28,10 +28,10 @@ export async function fetchAdminCourseDetailAPI(courseId, token) {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (res.status === 404) {
-    throw new Error("Không tìm thấy khóa học");
+    throw new Error("Course not found");
   }
   if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Lỗi tải chi tiết khóa học"));
+    throw new Error(await parseErrorMessage(res, "Error loading course details"));
   }
   return res.json();
 }
@@ -43,7 +43,7 @@ export async function approveCourseAPI(courseId, price, token) {
     { method: "PUT", headers: { Authorization: `Bearer ${token}` } },
   );
   if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Phê duyệt thất bại"));
+    throw new Error(await parseErrorMessage(res, "Approval failed"));
   }
   return res.json();
 }

@@ -97,12 +97,12 @@ const LearnerAuthPage = () => {
           String(
             toErrorMessage(
               error,
-              "Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!",
+              "Login failed. Please check your credentials!",
             ),
           ),
         );
       } else {
-        setLoginError("Không thể kết nối đến máy chủ. Vui lòng kiểm tra mạng!");
+        setLoginError("Cannot connect to server. Please check your network!");
       }
     } finally {
       setIsLoading(false);
@@ -117,7 +117,7 @@ const LearnerAuthPage = () => {
     setRegError("");
 
     if (regPassword !== regConfirmPassword) {
-      setRegError("Mật khẩu xác nhận không khớp!");
+      setRegError("Passwords do not match!");
       return;
     }
 
@@ -141,7 +141,7 @@ const LearnerAuthPage = () => {
 
       localStorage.setItem(
         "register_success",
-        "Đăng ký thành công! Vui lòng đăng nhập để bắt đầu.",
+        "Registration successful! Please sign in to get started.",
         // alert("Đăng ký thành công! Vui lòng đăng nhập để bắt đầu."),
       );
 
@@ -153,12 +153,12 @@ const LearnerAuthPage = () => {
           String(
             toErrorMessage(
               error,
-              "Đăng ký thất bại. Vui lòng kiểm tra lại dữ liệu.",
+              "Registration failed. Please check your data.",
             ),
           ),
         );
       } else {
-        setRegError("Không thể kết nối đến máy chủ.");
+        setRegError("Cannot connect to server.");
       }
     } finally {
       setIsRegLoading(false);
@@ -175,7 +175,7 @@ const LearnerAuthPage = () => {
           icon={faArrowLeft}
           className="transform group-hover:-translate-x-1 transition-transform"
         />
-        <span>Quay lại</span>
+        <span>Back</span>
       </button>
 
       <div className="relative w-full max-w-5xl h-[750px] bg-white rounded-2xl shadow-2xl overflow-hidden flex">
@@ -187,7 +187,7 @@ const LearnerAuthPage = () => {
         >
           <div className="max-w-md w-full mx-auto">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h2>
-            <p className="text-gray-500 mb-8">Chào mừng trở lại EduSync!</p>
+            <p className="text-gray-500 mb-8">Welcome back to EduSync!</p>
 
             {loginError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
@@ -210,7 +210,7 @@ const LearnerAuthPage = () => {
                 <input
                   type="email"
                   required
-                  placeholder="Nhập email đã đăng ký của bạn"
+                  placeholder="Enter your registered email"
                   value={loginEmail}
                   onChange={(e) => {
                     setLoginEmail(e.target.value);
@@ -259,7 +259,7 @@ const LearnerAuthPage = () => {
                 disabled={isLoading}
                 className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-6 ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                {isLoading ? "Đang đăng nhập..." : "Đăng Nhập"}
+                {isLoading ? "Signing in..." : "Sign In"}
               </button>
 
               <div className="mt-6 relative">
@@ -295,8 +295,8 @@ const LearnerAuthPage = () => {
           <div className="max-w-md w-full mx-auto">
             <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h2>
             <p className="text-gray-500 mb-6">
-              Tạo tài khoản của bạn để học tập với lộ trình được cá nhân hóa do
-              AI định hướng.
+              Create your account to learn with an AI-driven personalized
+              curriculum.
             </p>
 
             {regError && (
@@ -310,12 +310,12 @@ const LearnerAuthPage = () => {
             <form className="space-y-4" onSubmit={handleRegister}>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Họ Tên
+                  Full Name
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Nhập họ tên của bạn"
+                  placeholder="Enter your full name"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
@@ -329,7 +329,7 @@ const LearnerAuthPage = () => {
                 <input
                   type="email"
                   required
-                  placeholder="Nhập email của bạn"
+                  placeholder="Enter your email"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
@@ -389,7 +389,7 @@ const LearnerAuthPage = () => {
                 disabled={isRegLoading}
                 className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-4 ${isRegLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                {isRegLoading ? "Đang xử lý..." : "Sign Up"}
+                {isRegLoading ? "Processing..." : "Sign Up"}
               </button>
 
               <div className="mt-4 relative">
@@ -441,13 +441,13 @@ const LearnerAuthPage = () => {
             <div>
               <h1 className="text-4xl lg:text-[42px] font-bold leading-tight mb-6">
                 {isLogin
-                  ? "Chào mừng trở lại EduSync!"
-                  : "Khai Phóng Tiềm Năng Trí Tuệ."}
+                  ? "Welcome back to EduSync!"
+                  : "Unlock Your Intellectual Potential."}
               </h1>
               <p className="text-blue-100 text-base mb-10 leading-relaxed max-w-sm">
                 {isLogin
                   ? "Sign in to continue your personalized learning journey and track your progress."
-                  : "Tham gia cộng đồng gồm hơn 50.000 người học thành thạo các lĩnh vực phức tạp bằng tính năng vẽ đồ thị do AI điều khiển của chúng tôi."}
+                  : "Join a community of 50,000+ learners mastering complex fields with our AI-powered knowledge mapping."}
               </p>
 
               <div
@@ -458,7 +458,7 @@ const LearnerAuthPage = () => {
                     <FontAwesomeIcon icon={faWandMagicSparkles} />
                   </div>
                   <span className="font-medium text-blue-50 text-sm">
-                    Lộ trình học tập AI được cá nhân hóa
+                    AI-personalized learning roadmap
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -466,7 +466,7 @@ const LearnerAuthPage = () => {
                     <FontAwesomeIcon icon={faNetworkWired} />
                   </div>
                   <span className="font-medium text-blue-50 text-sm">
-                    Mạng lưới kiến thức liên kết
+                    Connected knowledge network
                   </span>
                 </div>
               </div>

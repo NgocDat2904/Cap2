@@ -12,7 +12,7 @@ async function parseError(res, fallback) {
 
 export async function getPublicCoursesAPI({ page = 1, limit = 12 } = {}) {
   const res = await fetch(`${BASE_URL}/courses?page=${page}&limit=${limit}`);
-  if (!res.ok) throw new Error(await parseError(res, "Không tải được khóa học"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load courses"));
   return res.json();
 }
 
@@ -27,13 +27,27 @@ export async function searchPublicCoursesAPI({
   const res = await fetch(
     `${BASE_URL}/courses/search?keyword=${k}&category=${c}&page=${page}&limit=${limit}`,
   );
-  if (!res.ok) throw new Error(await parseError(res, "Không tìm kiếm được khóa học"));
+  if (!res.ok) throw new Error(await parseError(res, "Failed to search courses"));
   return res.json();
 }
 
 export async function getCourseDetailAPI(courseId) {
   const res = await fetch(`${BASE_URL}/courses/detail/${courseId}`);
-  if (res.status === 404) throw new Error("Không tìm thấy khóa học");
-  if (!res.ok) throw new Error(await parseError(res, "Không tải được chi tiết khóa học"));
+  if (res.status === 404) throw new Error("Course not found");
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load course details"));
   return res.json();
+}
+
+/**
+ * Lấy danh sách khóa học của learner đang đăng nhập
+ * Endpoint: GET /learning/my-courses
+ */
+export async function getMyCoursesAPI() {
+  const token = localStorage.getItem("access_token");
+  const res = await fetch(`${BASE_URL}/learning/my-courses`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) throw new Error("Session expired. Please sign in again.");
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load your courses."));
+  return res.json(); // Trả về mảng courses
 }

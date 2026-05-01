@@ -60,12 +60,12 @@ const InstructorCourseEditPage = () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          setError("Không tìm thấy token xác thực");
+          setError("Authentication token not found");
           return;
         }
 
         if (!courseId) {
-          setError("Không tìm thấy ID khóa học");
+          setError("Course ID not found");
           return;
         }
 
@@ -99,7 +99,7 @@ const InstructorCourseEditPage = () => {
       } catch (err) {
         console.error("Lỗi khi tải khóa học:", err);
         setError(
-          err.response?.data?.detail || "Lỗi khi tải dữ liệu khóa học"
+          err.response?.data?.detail || "Error loading course data"
         );
         setIsLoading(false);
       }
@@ -142,11 +142,11 @@ const InstructorCourseEditPage = () => {
   const handleSubmitLesson = (e) => {
     e.preventDefault();
     if (!lessonTitle.trim()) {
-      alert("Vui lòng nhập tiêu đề bài giảng!");
+      alert("Please enter lesson title!");
       return;
     }
     if (!lessonVideoName) {
-      alert("Vui lòng chọn video bài giảng!");
+      alert("Please select lesson video!");
       return;
     }
 
@@ -194,8 +194,8 @@ const InstructorCourseEditPage = () => {
     setIsSaving(true);
     const token = localStorage.getItem("access_token");
 
-    if (!token) { setError("Không tìm thấy token"); setIsSaving(false); return; }
-    if (!courseId) { setError("Không tìm thấy ID khóa học"); setIsSaving(false); return; }
+    if (!token) { setError("Token not found"); setIsSaving(false); return; }
+    if (!courseId) { setError("Course ID not found"); setIsSaving(false); return; }
 
     // ✅ Upload ảnh mới nếu có
     let thumbnailUrl = courseData.thumbnail;
@@ -221,7 +221,7 @@ const InstructorCourseEditPage = () => {
       // THÔNG BÁO ADMIN: Nếu có update cần Hậu kiểm (QC)
       if (courseData.hasNewUpdateForQC) {
         console.log(
-          "✅ Khóa học có nội dung mới - Admin sẽ được thông báo kiểm duyệt chất lượng"
+          "✅ Course has new content - Admin will be notified for quality review"
         );
       }
 
@@ -229,9 +229,9 @@ const InstructorCourseEditPage = () => {
       
       // Hiện thông báo thành công
       alert(
-        "✅ Lưu thành công!\n" +
+        "✅ Save successful!\n" +
           (shouldShowQCAlert
-            ? "💡 Admin sẽ kiểm duyệt chất lượng nội dung mới của khóa học."
+            ? "💡 Admin will review the quality of new course content."
             : "")
       );
 
@@ -245,9 +245,9 @@ const InstructorCourseEditPage = () => {
 
     } catch (err) {
       console.error("Lỗi khi lưu khóa học:", err);
-      setError(err.response?.data?.detail || "Lỗi khi lưu khóa học");
+      setError(err.response?.data?.detail || "Error saving course");
       setIsSaving(false);
-      alert("❌ Lỗi: " + (err.response?.data?.detail || "Lỗi khi lưu"));
+      alert("❌ Error: " + (err.response?.data?.detail || "Error saving"));
     }
   };
 
@@ -259,12 +259,12 @@ const InstructorCourseEditPage = () => {
     // Nếu khóa học đã được PUBLISHED và có học viên đang học
     if (courseData.status === "PUBLISHED" && courseData.studentsEnrolled > 0) {
       const confirmHide = window.confirm(
-        `⚠️ CẢNH BÁO BẢO VỆ DỮ LIỆU:\n\n` +
-        `Khóa học này đã có ${courseData.studentsEnrolled} học viên đang học. ` +
-        `Việc xóa bài giảng sẽ làm hỏng tiến độ học tập của họ.\n\n` +
-        `Hệ thống sẽ chuyển bài giảng này sang trạng thái ẨN (Unpublished) ` +
-        `đối với học viên mới thay vì xóa vĩnh viễn.\n\n` +
-        `Bạn có đồng ý?`
+        `⚠️ DATA PROTECTION WARNING:\n\n` +
+        `This course already has ${courseData.studentsEnrolled} students learning. ` +
+        `Deleting the lesson will disrupt their learning progress.\n\n` +
+        `The system will hide this lesson (Unpublished) ` +
+        `for new students instead of permanent deletion.\n\n` +
+        `Do you agree?`
       );
 
       if (confirmHide) {
@@ -287,7 +287,7 @@ const InstructorCourseEditPage = () => {
     // 📌 TRƯỜNG HỢP 1: AN TOÀN ĐỂ XÓA THẬT
     // Nếu chưa có ai mua (studentsEnrolled === 0) HOẶC đang nháp (status !== "PUBLISHED")
     else if (courseData.studentsEnrolled === 0 || courseData.status !== "PUBLISHED") {
-      const confirmDelete = window.confirm("Bạn có chắc chắn muốn xóa bài giảng này?");
+      const confirmDelete = window.confirm("Are you sure you want to delete this lesson?");
 
       if (confirmDelete) {
         // Xóa vĩnh viễn
@@ -309,12 +309,12 @@ const InstructorCourseEditPage = () => {
   // 5. TABS MENU
   // =========================================================================
   const tabs = [
-    { id: "basic", label: "Thông tin cơ bản", icon: faInfoCircle },
-    { id: "media", label: "Hình ảnh & Video", icon: faImage },
-    { id: "curriculum", label: "Chương trình học", icon: faList },
+    { id: "basic", label: "Basic Information", icon: faInfoCircle },
+    { id: "media", label: "Images & Video", icon: faImage },
+    { id: "curriculum", label: "Course Curriculum", icon: faList },
     {
       id: "danger",
-      label: "Vùng nguy hiểm",
+      label: "Danger Zone",
       icon: faExclamationTriangle,
       isDanger: true,
     },
@@ -330,7 +330,7 @@ const InstructorCourseEditPage = () => {
             onClick={() => setError(null)}
             className="text-red-600 hover:text-red-800 text-sm mt-2"
           >
-            Đóng
+            Close
           </button>
         </div>
       )}
@@ -340,7 +340,7 @@ const InstructorCourseEditPage = () => {
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
             <FontAwesomeIcon icon={faSpinner} className="text-4xl text-blue-600 animate-spin" />
-            <p className="text-slate-700 font-semibold">Đang tải khóa học...</p>
+            <p className="text-slate-700 font-semibold">Loading course...</p>
           </div>
         </div>
       )}
@@ -359,14 +359,14 @@ const InstructorCourseEditPage = () => {
                 <div>
                   <div className="flex items-center gap-3">
                     <h1 className="text-xl font-extrabold text-slate-900 line-clamp-1">
-                      Chỉnh sửa: {courseData.title}
+                      Edit: {courseData.title}
                     </h1>
                     <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider rounded-md border border-emerald-200">
-                      Đang xuất bản
+                      Publishing
                     </span>
                   </div>
                   <p className="text-xs text-slate-500 font-medium mt-0.5">
-                    Lần lưu cuối: Vài giây trước
+                    Last save: A few seconds ago
                   </p>
                 </div>
               </div>
@@ -376,7 +376,7 @@ const InstructorCourseEditPage = () => {
                 className={`px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center gap-2 ${isSaving ? "opacity-70 cursor-not-allowed" : "active:scale-95"}`}
               >
                 <FontAwesomeIcon icon={faSave} />{" "}
-                {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+                {isSaving ? "Saving..." : "Save Changes"}
               </button>
             </div>
           </header>
@@ -404,16 +404,16 @@ const InstructorCourseEditPage = () => {
         </aside>
 
         <main className="flex-1 min-w-0">
-          {/* TAB 1: THÔNG TIN CƠ BẢN */}
+          {/* TAB 1: BASIC INFORMATION */}
           {activeTab === "basic" && (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <h2 className="text-2xl font-extrabold text-slate-900 mb-6">
-                Thông tin cơ bản
+                Basic Information
               </h2>
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Tiêu đề khóa học
+                    Course Title
                   </label>
                   <input
                     type="text"
@@ -425,7 +425,7 @@ const InstructorCourseEditPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Danh mục
+                    Category
                   </label>
                   <select
                     name="category"
@@ -445,7 +445,7 @@ const InstructorCourseEditPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Mô tả chi tiết
+                    Detailed Description
                   </label>
                   <textarea
                     name="description"
@@ -459,20 +459,20 @@ const InstructorCourseEditPage = () => {
             </div>
           )}
 
-          {/* TAB 2: HÌNH ẢNH & VIDEO */}
+          {/* TAB 2: IMAGES & VIDEO */}
           {activeTab === "media" && (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <h2 className="text-2xl font-extrabold text-slate-900 mb-2">
-                Hình ảnh & Video
+                Images & Video
               </h2>
               <p className="text-slate-500 text-sm mb-6">
-                Hình ảnh hấp dẫn sẽ giúp khóa học của bạn nổi bật hơn trên
+                Attractive images will help your course stand out more on
                 EduSync.
               </p>
               <div className="space-y-8">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-3">
-                    Ảnh bìa khóa học (Thumbnail)
+                    Course Cover Image (Thumbnail)
                   </label>
                   <div className="flex flex-col sm:flex-row gap-6 items-start">
                     <div className="w-full sm:w-1/2 aspect-video rounded-xl overflow-hidden border border-slate-200 shadow-sm bg-slate-100 relative group">
@@ -490,8 +490,8 @@ const InstructorCourseEditPage = () => {
                     </div>
                     <div className="flex-1 w-full flex flex-col justify-center">
                       <p className="text-sm text-slate-600 mb-4 leading-relaxed">
-                        Định dạng hỗ trợ: JPG, PNG. Tỉ lệ khuyên dùng: 16:9.
-                        Kích thước tối thiểu 1280x720px.
+                        Supported formats: JPG, PNG. Recommended aspect ratio: 16:9.
+                        Minimum size 1280x720px.
                       </p>
                       <input
                         type="file"
@@ -504,7 +504,7 @@ const InstructorCourseEditPage = () => {
                         onClick={() => fileInputRef.current.click()}
                         className="w-full py-3 bg-white border-2 border-dashed border-blue-400 text-blue-600 font-bold rounded-xl hover:bg-blue-50 transition-colors flex items-center justify-center gap-2 active:scale-95"
                       >
-                        <FontAwesomeIcon icon={faUpload} /> Tải ảnh mới lên
+                        <FontAwesomeIcon icon={faUpload} /> Upload New Image
                       </button>
                     </div>
                   </div>
@@ -513,23 +513,23 @@ const InstructorCourseEditPage = () => {
             </div>
           )}
 
-          {/* TAB 3: CHƯƠNG TRÌNH HỌC */}
+          {/* TAB 3: COURSE CURRICULUM */}
           {activeTab === "curriculum" && (
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-2xl font-extrabold text-slate-900 mb-1">
-                    Chương trình học
+                    Course Curriculum
                   </h2>
                   <p className="text-slate-500 text-sm">
-                    Kéo thả để sắp xếp lại vị trí các bài giảng.
+                    Drag and drop to reorder lessons.
                   </p>
                 </div>
                 <button
                   onClick={openAddLessonModal}
                   className="px-5 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm flex items-center gap-2 text-sm active:scale-95"
                 >
-                  <FontAwesomeIcon icon={faPlus} /> Thêm bài giảng
+                  <FontAwesomeIcon icon={faPlus} /> Add Lesson
                 </button>
               </div>
 
@@ -558,17 +558,17 @@ const InstructorCourseEditPage = () => {
   {!lesson.isPublished ? (
     // 1. Giảng viên chủ động ẨN
     <span className="flex items-center gap-1 text-[10px] font-bold text-slate-500 bg-slate-200 px-2 py-0.5 rounded">
-      <FontAwesomeIcon icon={faEyeSlash} /> Đã ẩn
+      <FontAwesomeIcon icon={faEyeSlash} /> Hidden
     </span>
   ) : !lesson.isApproved ? (
     // 2. Giảng viên mở, nhưng Admin CHƯA DUYỆT
     <span className="flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded border border-amber-200">
-      <FontAwesomeIcon icon={faClockRotateLeft} /> Đang chờ duyệt
+      <FontAwesomeIcon icon={faClockRotateLeft} /> Pending Review
     </span>
   ) : (
     // 3. Giảng viên mở, Admin ĐÃ DUYỆT (An toàn)
     <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
-      <FontAwesomeIcon icon={faCheckCircle} /> Đã xuất bản
+      <FontAwesomeIcon icon={faCheckCircle} /> Published
     </span>
   )}
 </div>
@@ -576,14 +576,14 @@ const InstructorCourseEditPage = () => {
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
                         className="w-8 h-8 rounded-lg text-slate-400 hover:bg-blue-50 hover:text-blue-600 transition-colors"
-                        title="Sửa tên"
+                        title="Edit name"
                       >
                         <FontAwesomeIcon icon={faEdit} />
                       </button>
                       <button
                         onClick={() => handleDeleteLesson(lesson.id)}
                         className="w-8 h-8 rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                        title="Xóa / Ẩn bài giảng"
+                        title="Delete / Hide lesson"
                       >
                         <FontAwesomeIcon icon={faTrashAlt} />
                       </button>
@@ -594,7 +594,7 @@ const InstructorCourseEditPage = () => {
             </div>
           )}
 
-          {/* TAB 4: VÙNG NGUY HIỂM */}
+          {/* TAB 4: DANGER ZONE */}
           {activeTab === "danger" && (
             <div className="bg-white rounded-3xl border border-red-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <div className="flex items-center gap-3 mb-6">
@@ -602,40 +602,40 @@ const InstructorCourseEditPage = () => {
                   <FontAwesomeIcon icon={faExclamationTriangle} />
                 </div>
                 <h2 className="text-2xl font-extrabold text-red-700">
-                  Vùng nguy hiểm
+                  Danger Zone
                 </h2>
               </div>
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50/50 border border-red-100 rounded-2xl">
                   <div>
                     <h4 className="font-bold text-slate-900 text-base">
-                      Hủy xuất bản khóa học (Unpublish)
+                      Unpublish Course
                     </h4>
                     <p className="text-sm text-slate-600 mt-1 max-w-lg leading-relaxed">
-                      Khóa học sẽ bị ẩn khỏi danh mục tìm kiếm. Học viên mới
-                      không thể mua, nhưng học viên cũ vẫn có thể tiếp tục học
-                      bình thường.
+                      The course will be hidden from search. New students
+                      cannot purchase, but existing students can continue learning
+                      normally.
                     </p>
                   </div>
                   <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm shrink-0">
-                    Hủy xuất bản
+                    Unpublish
                   </button>
                 </div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 bg-red-50/50 border border-red-100 rounded-2xl">
                   <div>
                     <h4 className="font-bold text-slate-900 text-base">
-                      Xóa vĩnh viễn khóa học
+                      Delete Course Permanently
                     </h4>
                     <p className="text-sm text-red-600/80 mt-1 max-w-lg leading-relaxed font-medium">
-                      Khóa học này đã có {courseData.studentsEnrolled} học viên đăng ký. Hệ thống đã
-                      KHÓA chức năng xóa vĩnh viễn để bảo vệ dữ liệu người dùng.
+                      This course has {courseData.studentsEnrolled} enrolled students. The system has
+                      LOCKED permanent deletion to protect user data.
                     </p>
                   </div>
                   <button
                     disabled
                     className="px-5 py-2.5 bg-slate-200 text-slate-400 font-bold rounded-xl cursor-not-allowed shrink-0"
                   >
-                    Xóa khóa học
+                    Delete Course
                   </button>
                 </div>
               </div>
@@ -645,7 +645,7 @@ const InstructorCourseEditPage = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL THÊM BÀI GIẢNG (Hiển thị nổi lơ lửng trên cùng) */}
+      {/* MODAL ADD LESSON (Modal displayed floating on top) */}
       {/* ========================================================================= */}
       {isLessonModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -660,7 +660,7 @@ const InstructorCourseEditPage = () => {
                 <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-sm">
                   <FontAwesomeIcon icon={faFilm} />
                 </div>
-                Thêm bài giảng mới
+                Add New Lesson
               </h3>
               <button
                 onClick={closeLessonModal}
@@ -679,13 +679,13 @@ const InstructorCourseEditPage = () => {
               >
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Tiêu đề bài giảng <span className="text-red-500">*</span>
+                    Lesson Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
                     value={lessonTitle}
                     onChange={(e) => setLessonTitle(e.target.value)}
-                    placeholder="VD: Bài 1 - Biến và kiểu dữ liệu..."
+                    placeholder="E.g.: Lesson 1 - Variables and Data Types..."
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors"
                     disabled={isUploadingLesson}
                   />
@@ -693,12 +693,12 @@ const InstructorCourseEditPage = () => {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Mô tả bài giảng (Tùy chọn)
+                    Lesson Description (Optional)
                   </label>
                   <textarea
                     value={lessonDescription}
                     onChange={(e) => setLessonDescription(e.target.value)}
-                    placeholder="Nhập mô tả ngắn gọn về nội dung bài giảng..."
+                    placeholder="Enter a brief description of the lesson content..."
                     rows="3"
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors resize-none"
                     disabled={isUploadingLesson}
@@ -707,7 +707,7 @@ const InstructorCourseEditPage = () => {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2">
-                    Video bài giảng <span className="text-red-500">*</span>
+                    Lesson Video <span className="text-red-500">*</span>
                   </label>
                   <div
                     onClick={() =>
@@ -742,7 +742,7 @@ const InstructorCourseEditPage = () => {
                           className="mt-2 text-xs text-red-500 hover:text-red-700 font-semibold underline"
                           disabled={isUploadingLesson}
                         >
-                          Thay video khác
+                          Choose Different Video
                         </button>
                       </div>
                     ) : (
@@ -754,10 +754,10 @@ const InstructorCourseEditPage = () => {
                           />
                         </div>
                         <p className="font-bold text-sm text-slate-700">
-                          Bấm để tải video lên
+                          Click to upload video
                         </p>
                         <p className="text-xs mt-1">
-                          Hỗ trợ định dạng MP4, tối đa 2GB
+                          Supported format: MP4, up to 2GB
                         </p>
                       </div>
                     )}
@@ -773,7 +773,7 @@ const InstructorCourseEditPage = () => {
                 disabled={isUploadingLesson}
                 className="px-6 py-3 font-bold text-slate-600 hover:bg-slate-200 rounded-xl transition-colors disabled:opacity-50"
               >
-                Hủy bỏ
+                Cancel
               </button>
               <button
                 type="submit"
@@ -787,10 +787,10 @@ const InstructorCourseEditPage = () => {
                       icon={faSpinner}
                       className="animate-spin"
                     />{" "}
-                    Đang tải lên...
+                    Uploading...
                   </>
                 ) : (
-                  "Lưu bài giảng"
+                  "Save Lesson"
                 )}
               </button>
             </div>

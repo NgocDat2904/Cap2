@@ -193,7 +193,7 @@ const LessonAccordion = ({ lesson }) => {
                     className="text-3xl text-slate-300 mb-2"
                   />
                   <p className="text-xs font-bold text-slate-400">
-                    Không có bài tập
+                    No exercises
                   </p>
                 </div>
               )}
@@ -237,7 +237,7 @@ const InstructorCourseDetailPage = () => {
         setError(null);
         const token = localStorage.getItem("access_token");
         if (!token) {
-          setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+          setError("Token not found. Please log in again.");
           setIsLoading(false);
           return;
         }
@@ -250,7 +250,7 @@ const InstructorCourseDetailPage = () => {
         setIsPublished(data.courseDetail.status === "Published");
         setIsLoading(false);
       } catch (err) {
-        setError(err.message || "Lỗi tải chi tiết khóa học");
+        setError(err.message || "Error loading course details");
         setCourseDetail(null);
         setLessonsList([]);
         setIsLoading(false);
@@ -270,7 +270,7 @@ const InstructorCourseDetailPage = () => {
           icon={faSpinner}
           className="text-4xl animate-spin text-blue-500 mb-4"
         />
-        <p className="font-bold">Đang tải thông tin khóa học...</p>
+        <p className="font-bold">Loading course information...</p>
       </div>
     );
   }
@@ -279,7 +279,7 @@ const InstructorCourseDetailPage = () => {
   if (error || !courseDetail) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
-        <p className="font-bold text-red-600 mb-4">{error || "Không có dữ liệu"}</p>
+        <p className="font-bold text-red-600 mb-4">{error || "No data available"}</p>
         <button
           type="button"
           onClick={() => navigate("/instructor/courses")}
@@ -541,7 +541,7 @@ const InstructorCourseDetailPage = () => {
                     Cài đặt Giá khóa học
                   </h3>
                   <p className="text-slate-500 text-sm mt-1">
-                    EduSync thu phí nền tảng 20% cho mỗi lượt bán thành công.
+                    EduSync charges a 20% platform fee on each successful sale.
                   </p>
                 </div>
                 <div className="p-6 space-y-4">
@@ -583,7 +583,7 @@ const InstructorCourseDetailPage = () => {
                         Xóa khóa học vĩnh viễn
                       </h4>
                       <p className="text-slate-500 text-sm mt-1 max-w-lg">
-                        Thao tác này không thể hoàn tác.
+                        This action cannot be undone.
                       </p>
                     </div>
                     <button className="px-6 py-2.5 bg-white border-2 border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-600 transition-colors shadow-sm text-sm shrink-0">

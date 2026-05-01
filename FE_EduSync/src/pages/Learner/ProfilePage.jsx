@@ -43,7 +43,7 @@ const LearnerProfilePage = () => {
         const data = await getProfileAPI(token);
         setProfileData((prev) => ({ ...prev, ...data }));
       } catch (error) {
-        console.error("Lỗi lấy hồ sơ:", error);
+        console.error("Error fetching profile:", error);
       } finally {
         setIsLoading(false);
       }
@@ -57,10 +57,10 @@ const LearnerProfilePage = () => {
     try {
       const token = localStorage.getItem("access_token");
       await updateProfileAPI(profileData, token);
-      alert("Hồ sơ của bạn đã được cập nhật thành công!");
+      alert("Your profile has been updated successfully!");
     } catch (error) {
-      console.error("Lỗi lưu hồ sơ:", error);
-      alert("Lưu thất bại.");
+      console.error("Error saving profile:", error);
+      alert("Failed to save.");
     } finally {
       setIsSaving(false);
     }
@@ -94,11 +94,11 @@ const LearnerProfilePage = () => {
       // 3. Nhận kết quả và cập nhật lại Avatar thật
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Tải ảnh đại diện lên Cloudinary thành công!");
+        alert("Avatar uploaded successfully!");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Tải ảnh thất bại! Vui lòng thử lại.");
+      alert("Failed to upload avatar! Please try again.");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -111,10 +111,10 @@ const LearnerProfilePage = () => {
         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-200 pb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Hồ sơ của tôi
+              My Profile
             </h1>
             <p className="text-slate-500 font-medium mt-1">
-              Quản lý thông tin cá nhân và theo dõi lộ trình phát triển của bạn.
+              Manage your personal information and track your development progress.
             </p>
           </div>
           <button
@@ -127,7 +127,7 @@ const LearnerProfilePage = () => {
             ) : (
               <FontAwesomeIcon icon={faSave} />
             )}
-            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
+            {isSaving ? "Saving..." : "Save Changes"}
           </button>
         </div>
 
@@ -157,7 +157,7 @@ const LearnerProfilePage = () => {
                   onClick={handleAvatarClick}
                   disabled={isUploadingAvatar}
                   className={`absolute -bottom-2 -right-2 w-10 h-10 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors border-2 border-white ${isUploadingAvatar ? "bg-slate-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"}`}
-                  title="Thay đổi ảnh đại diện"
+                  title="Change avatar"
                 >
                   <FontAwesomeIcon icon={faCamera} />
                 </button>
@@ -171,7 +171,7 @@ const LearnerProfilePage = () => {
               </div>
 
               <h2 className="text-2xl font-black text-slate-900">
-                {profileData.fullName || "Học viên EduSync"}
+                {profileData.fullName || "EduSync Learner"}
               </h2>
 
               <div className="border-t border-slate-100 my-8"></div>
@@ -183,7 +183,7 @@ const LearnerProfilePage = () => {
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Email tài khoản
+                    Account Email
                   </p>
                   <p className="text-sm font-semibold text-slate-800 mt-0.5">
                     {profileData.email}
@@ -201,10 +201,10 @@ const LearnerProfilePage = () => {
                 {[
                   {
                     id: "personal",
-                    label: "Thông tin cá nhân",
+                    label: "Personal Information",
                     icon: faUserCircle,
                   },
-                  { id: "security", label: "Cài đặt tài khoản", icon: faLock },
+                  { id: "security", label: "Account Settings", icon: faLock },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -227,7 +227,7 @@ const LearnerProfilePage = () => {
                           icon={faUserCircle}
                           className="text-slate-400"
                         />{" "}
-                        Họ và tên
+                        Full Name
                       </label>
                       <input
                         type="text"
@@ -243,7 +243,7 @@ const LearnerProfilePage = () => {
                           icon={faBirthdayCake}
                           className="text-slate-400"
                         />{" "}
-                        Ngày sinh
+                        Date of Birth
                       </label>
                       <input
                         type="date"
@@ -259,7 +259,7 @@ const LearnerProfilePage = () => {
                           icon={faVenusMars}
                           className="text-slate-400"
                         />{" "}
-                        Giới tính
+                        Gender
                       </label>
                       <select
                         name="gender"
@@ -267,10 +267,10 @@ const LearnerProfilePage = () => {
                         onChange={handleInputChange}
                         className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors appearance-none cursor-pointer"
                       >
-                        <option value="">Chọn giới tính</option>
-                        <option value="male">Nam</option>
-                        <option value="female">Nữ</option>
-                        <option value="other">Khác</option>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                        <option value="other">Other</option>
                       </select>
                     </div>
                     <div>
@@ -279,7 +279,7 @@ const LearnerProfilePage = () => {
                           icon={faPhone}
                           className="text-slate-400"
                         />{" "}
-                        Số điện thoại
+                        Phone Number
                       </label>
                       <input
                         type="tel"
@@ -296,7 +296,7 @@ const LearnerProfilePage = () => {
                           icon={faMapMarkerAlt}
                           className="text-slate-400"
                         />{" "}
-                        Địa chỉ
+                        Address
                       </label>
                       <input
                         type="text"
@@ -317,12 +317,12 @@ const LearnerProfilePage = () => {
                           icon={faLock}
                           className="text-amber-500"
                         />{" "}
-                        Thay đổi mật khẩu
+                        Change Password
                       </h3>
                       <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                         <div className="sm:col-span-2 relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Mật khẩu hiện tại
+                            Current Password
                           </label>
                           <input
                             type="password"
@@ -332,7 +332,7 @@ const LearnerProfilePage = () => {
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Mật khẩu mới
+                            New Password
                           </label>
                           <input
                             type="password"
@@ -342,7 +342,7 @@ const LearnerProfilePage = () => {
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Xác nhận mật khẩu
+                            Confirm Password
                           </label>
                           <input
                             type="password"
@@ -355,7 +355,7 @@ const LearnerProfilePage = () => {
                             type="button"
                             className="px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 transition-all active:scale-95 flex items-center gap-2.5"
                           >
-                            Cập nhật mật khẩu an toàn
+                            Update Secure Password
                           </button>
                         </div>
                       </form>

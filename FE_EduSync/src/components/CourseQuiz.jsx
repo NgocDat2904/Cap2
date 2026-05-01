@@ -16,7 +16,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
     const run = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Vui lòng đăng nhập để làm quiz AI.");
+        setError("Please sign in to take the AI quiz.");
         setLoading(false);
         return;
       }
@@ -32,7 +32,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
           : await aiQuizAPI(token, lessonContext, 5, "vi");
         if (!cancelled) setQuestions(data.questions || []);
       } catch (e) {
-        if (!cancelled) setError(e.message || "Không tạo được quiz.");
+        if (!cancelled) setError(e.message || "Failed to generate quiz.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -66,7 +66,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
   if (loading) {
     return (
       <div className="animate-fade-slide-up py-8 text-center text-slate-500 text-sm">
-        Đang sinh câu hỏi từ nội dung bài học...
+        Generating questions from lesson content...
       </div>
     );
   }
@@ -82,14 +82,14 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
   return (
     <div className="animate-fade-slide-up">
       <div className="mb-6 flex justify-between items-center flex-wrap gap-2">
-        <h3 className="text-lg font-bold text-slate-800">Kiểm tra kiến thức (AI)</h3>
+        <h3 className="text-lg font-bold text-slate-800">Knowledge Check (AI)</h3>
         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-          {questions.length} Câu hỏi
+          {questions.length} Questions
         </span>
       </div>
       {submitted && score !== null && (
         <p className="mb-4 text-sm font-bold text-blue-700">
-          Kết quả: {score} / {questions.length} câu đúng
+          Result: {score} / {questions.length} correct
         </p>
       )}
       <div className="space-y-6">
@@ -133,7 +133,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
                 onClick={onSwitchToDiscussion}
                 className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5"
               >
-                <FontAwesomeIcon icon={faCommentDots} /> Thắc mắc về câu này?
+                <FontAwesomeIcon icon={faCommentDots} /> Have a question about this?
               </button>
             </div>
           </div>
@@ -145,7 +145,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
             disabled={submitted}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-md"
           >
-            {submitted ? "Đã nộp bài" : "Nộp bài"}
+            {submitted ? "Submitted" : "Submit"}
           </button>
         )}
       </div>

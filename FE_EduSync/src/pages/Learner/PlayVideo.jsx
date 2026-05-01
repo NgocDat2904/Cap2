@@ -50,7 +50,7 @@ const CourseLearningWorkspace = () => {
         const data = await getCourseDetailAPI(courseId);
         if (!cancelled) setCourseDetail(data);
       } catch (error) {
-        if (!cancelled) setCourseError(error.message || "Không tải được dữ liệu khóa học");
+        if (!cancelled) setCourseError(error.message || "Failed to load course data");
       } finally {
         if (!cancelled) setLoadingCourse(false);
       }
@@ -124,7 +124,7 @@ const CourseLearningWorkspace = () => {
     return (
       <div className="w-full py-24 text-center text-slate-500">
         <FontAwesomeIcon icon={faClockRotateLeft} className="mr-2" />
-        Đang tải nội dung khóa học...
+        Loading course content...
       </div>
     );
   }

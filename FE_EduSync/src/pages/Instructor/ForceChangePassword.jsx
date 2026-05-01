@@ -25,12 +25,12 @@ const ForceChangePassword = () => {
       return;
     }
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp.");
+      setError("Confirmation password does not match.");
       return;
     }
     setError("");
     // Giả lập gọi API thành công và chuyển hướng
-    alert("Đổi mật khẩu thành công! Chào mừng bạn đến với EduSync Dashboard.");
+    alert("Password changed successfully! Welcome to EduSync Dashboard.");
     // Điều hướng sang trang Dashboard ở đây
   };
 
@@ -55,11 +55,11 @@ const ForceChangePassword = () => {
               <FontAwesomeIcon icon={faShieldHalved} />
             </div>
             <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Cập nhật bảo mật
+              Security Update
             </h2>
             <p className="text-sm text-slate-500 mt-2 leading-relaxed">
-              Vì lý do an toàn, vui lòng thay đổi mật khẩu mặc định trước khi
-              truy cập vào hệ thống lần đầu tiên.
+              For security reasons, please change your default password before
+              accessing the system for the first time.
             </p>
           </div>
 
@@ -94,7 +94,7 @@ const ForceChangePassword = () => {
             {/* Input Xác nhận mật khẩu */}
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                Xác nhận mật khẩu
+                Confirm Password
               </label>
               <div className="relative">
                 <FontAwesomeIcon

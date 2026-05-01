@@ -332,7 +332,7 @@ const InstructorPublicProfile = () => {
                         <span
                           className={`text-[22px] font-black ${course.price === 0 ? "text-emerald-600" : "text-slate-900"}`}
                         >
-                          {course.price === 0 ? "Miễn phí" : `$${course.price}`}
+                          {course.price === 0 ? "Free" : `$${course.price}`}
                         </span>
                         <span className="text-[13px] font-bold text-blue-800 bg-blue-50 px-4 py-2.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
                           Xem chi tiết
