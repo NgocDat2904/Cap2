@@ -185,7 +185,8 @@ class CourseService:
                     "id": str(iid),
                     "name": user.get("fullName") or user.get("email"),
                     "title": "Senior Software Engineer",
-                    "avatar": user.get("avatar") or "https://i.pravatar.cc/150?img=11"
+                    # ✅ FIX: DB lưu là avatar_url (snake_case), thử cả 2 field để tương thích
+                    "avatar": user.get("avatar_url") or user.get("avatar") or "https://i.pravatar.cc/150?img=11"
                 }
 
         # ===================== LESSONS — ƯU TIÊN EMBEDDED =====================
@@ -197,17 +198,70 @@ class CourseService:
                 l for l in embedded_lessons
                 if l.get("is_published", l.get("isPublished", True)) is True 
             ]
+
+            # ✅ FIX VIDEO PLAYBACK: Cross-reference với collection `videos` để lấy play_url.
+            # Embedded lessons chỉ lưu metadata (title, duration...), URL video thật nằm trong
+            # collection `videos` được link qua lesson_id hoặc title matching.
+            # Build lookup map: lesson_id (str) -> video doc
+            course_obj_id = course.get("_id")
+            raw_videos_for_course = video_repository.get_by_course(str(course_obj_id)) if course_obj_id else []
+            video_by_lesson_id = {}
+            video_by_title = {}
+            for v in raw_videos_for_course:
+                lid = v.get("lesson_id")
+                if lid:
+                    video_by_lesson_id[str(lid)] = v
+                t = (v.get("title") or "").strip()
+                if t:
+                    video_by_title[t] = v
+
+            def _resolve_play_url(lesson_doc, idx):
+                """Tìm video tương ứng và trả về signed URL."""
+                lesson_id_str = str(lesson_doc.get("_id") or lesson_doc.get("id") or "")
+                # 1. Match theo lesson_id
+                matched_video = video_by_lesson_id.get(lesson_id_str)
+                # 2. Fallback: match theo title
+                if not matched_video:
+                    t = (lesson_doc.get("title") or "").strip()
+                    matched_video = video_by_title.get(t)
+                if not matched_video:
+                    print(f"⚠️ Embedded lesson {idx+1} ('{lesson_doc.get('title')}') — no matching video found")
+                    return ""
+                raw_url = matched_video.get("video_url") or matched_video.get("url") or ""
+                path = matched_video.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
+                if path:
+                    try:
+                        url = _gcs.generate_read_signed_url(path)
+                        print(f"✅ Signed URL generated for embedded lesson {idx+1}: {path[:50]}...")
+                        return url
+                    except Exception as e:
+                        print(f"❌ Failed to generate signed URL for embedded lesson {idx+1}: {e}")
+                        return raw_url or ""
+                if raw_url:
+                    print(f"⚠️ No storage_path for embedded lesson {idx+1}, using raw_url")
+                    return raw_url
+                return ""
+
             lessons = []
-            
             # ✅ FIX LỖI SẬP SERVER: Đã đổi chữ approved_lessons thành public_lessons ở vòng lặp for
             for i, l in enumerate(public_lessons):
+                # Tìm video doc tương ứng để lấy video_id thật (dùng cho AI features)
+                lesson_id_str = str(l.get("_id") or l.get("id") or "")
+                matched_v = video_by_lesson_id.get(lesson_id_str)
+                if not matched_v:
+                    t = (l.get("title") or "").strip()
+                    matched_v = video_by_title.get(t)
+                real_video_id = str(matched_v.get("_id")) if matched_v else ""
+
                 lessons.append({
-                    "id": str(l.get("_id") or l.get("id") or f"emb{i+1}"),
+                    "id": real_video_id or str(l.get("_id") or l.get("id") or f"emb{i+1}"),
                     "title": l.get("title") or f"Bài {i+1}",
                     "duration": l.get("duration") or "10:00",
                     "views": 0,
                     "image": (l.get("thumbnail_url") or "").strip() or course_thumb,
-                    "play_url": "",
+                    "play_url": _resolve_play_url(l, i),
+                    "transcript": matched_v.get("transcript") if matched_v else None,
+                    "description": l.get("description") or (matched_v.get("description") if matched_v else ""),
                 })
         else:
             # Fallback: đọc từ collection videos riêng
