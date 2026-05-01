@@ -4,12 +4,10 @@ from app.modules.user.user_repository import (
     update_user_avatar
 )
 from fastapi import HTTPException
-from passlib.context import CryptContext
 from datetime import datetime
 from app.database.mongodb import db 
+from app.utils.password import hash_password, verify_password
 
-
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 class UserService:
@@ -91,10 +89,10 @@ class UserService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if not pwd_context.verify(old_password, user.get("password")):
+        if not verify_password(old_password, user.get("password")):
             raise HTTPException(status_code=400, detail="Sai mật khẩu cũ")
 
-        hashed_password = pwd_context.hash(new_password)
+        hashed_password = hash_password(new_password)
 
         update_user(user_id, {"password": hashed_password})
 
