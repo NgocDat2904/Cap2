@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
+import { getProfileAPI } from "../services/userAPI";
 // ✅ IMPORT THÊM API ĐỂ FETCH SỐ LƯỢNG CHỜ DUYỆT:
 import { fetchPendingCoursesAPI } from "../services/adminCourseAPI"; 
 import {
@@ -28,6 +29,28 @@ const AdminLayout = () => {
   
   // ✅ STATE CHỨA SỐ LƯỢNG KHÓA HỌC CẦN DUYỆT
   const [pendingCount, setPendingCount] = useState(0);
+
+  // ✅ STATE PROFILE ADMIN (tên + avatar)
+  const [adminProfile, setAdminProfile] = useState({ fullName: "", avatarUrl: null });
+
+  // Fetch profile 1 lần khi mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          const data = await getProfileAPI(token);
+          setAdminProfile({
+            fullName: data.fullName || "Admin",
+            avatarUrl: data.avatarUrl || null,
+          });
+        }
+      } catch (err) {
+        console.error("Error loading admin profile:", err);
+      }
+    };
+    loadProfile();
+  }, []); // chỉ chạy 1 lần
 
   // Xử lý Responsive Sidebar
   useEffect(() => {
@@ -54,7 +77,7 @@ const AdminLayout = () => {
           setPendingCount(data.total || 0);
         }
       } catch (error) {
-        console.error("Lỗi khi tải số lượng chờ duyệt:", error);
+        console.error("Error loading pending courses count:", error);
       }
     };
 
@@ -67,17 +90,17 @@ const AdminLayout = () => {
 
   // ✅ ĐÃ THÊM pendingCount VÀO MENU "Duyệt khóa học"
   const sidebarLinks = [
-    { name: "Tổng quan", icon: faChartPie, path: "/admin/dashboard" },
-    { name: "Quản lý Người dùng", icon: faUsersCog, path: "/admin/users" },
-    { name: "Quản lý Khóa học", icon: faBook, path: "/admin/courses" },
+    { name: "Overview", icon: faChartPie, path: "/admin/dashboard" },
+    { name: "User Management", icon: faUsersCog, path: "/admin/users" },
+    { name: "Course Management", icon: faBook, path: "/admin/courses" },
     {
-      name: "Báo cáo Doanh thu",
+      name: "Revenue Report",
       icon: faMoneyBillWave,
       path: "/admin/revenue",
     },
-    { name: "Danh mục đào tạo", icon: faTags, path: "/admin/categories" },
+    { name: "Course Categories", icon: faTags, path: "/admin/categories" },
     { 
-      name: "Duyệt khóa học", 
+      name: "Course Approvals", 
       icon: faListCheck, 
       path: "/admin/approvals",
       pendingCount: pendingCount // Móc con số ở trên vào đây!
@@ -85,8 +108,8 @@ const AdminLayout = () => {
   ];
 
   const bottomLinks = [
-    { name: "Hồ sơ Admin", icon: faUserShield, path: "/admin/profile" },
-    { name: "Cài đặt hệ thống", icon: faGears, path: "/admin/settings" },
+    { name: "Admin Profile", icon: faUserShield, path: "/admin/profile" },
+    { name: "System Settings", icon: faGears, path: "/admin/settings" },
   ];
 
   const handleLinkClick = () => {
@@ -105,7 +128,7 @@ const AdminLayout = () => {
         await logoutAPI(token);
       }
     } catch (error) {
-      console.error("Lỗi khi đăng xuất API:", error);
+      console.error("Error during logout API:", error);
     } finally {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
@@ -252,7 +275,7 @@ const AdminLayout = () => {
               className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
                         ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
                       `}
-              title={!isSidebarOpen ? "Đăng xuất" : ""}
+              title={!isSidebarOpen ? "Sign out" : ""}
             >
               <div
                 className={`group-hover:text-red-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
@@ -265,7 +288,7 @@ const AdminLayout = () => {
               <span
                 className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
               >
-                Đăng xuất
+                Sign out
               </span>
             </button>
           </div>
@@ -287,7 +310,7 @@ const AdminLayout = () => {
             <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl hidden sm:block">
               <input
                 type="text"
-                placeholder="Tìm kiếm người dùng, ID thanh toán, khóa học..."
+                placeholder="Search users, payment IDs, courses..."
                 className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm font-medium transition-all shadow-sm"
               />
               <FontAwesomeIcon
@@ -309,18 +332,30 @@ const AdminLayout = () => {
             </button>
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
-            <button className="flex items-center gap-3 hover:opacity-80 transition-opacity">
+            <button
+              onClick={() => navigate("/admin/profile")}
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
-                  Trần Văn Sếp
+                  {adminProfile.fullName || "Admin"}
                 </p>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">
                   Super Admin
                 </p>
               </div>
-              <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md">
-                <FontAwesomeIcon icon={faUserShield} className="text-lg" />
-              </div>
+              {adminProfile.avatarUrl ? (
+                <img
+                  src={adminProfile.avatarUrl}
+                  alt="Avatar"
+                  className="w-10 h-10 rounded-xl object-cover shadow-md border-2 border-white"
+                  onError={(e) => { e.target.style.display = "none"; }}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center shadow-md">
+                  <FontAwesomeIcon icon={faUserShield} className="text-lg" />
+                </div>
+              )}
             </button>
           </div>
         </header>

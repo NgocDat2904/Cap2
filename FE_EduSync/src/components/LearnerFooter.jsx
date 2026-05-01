@@ -23,8 +23,8 @@ const Footer = () => {
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
-              Nền tảng học tập trực tuyến thế hệ mới, ứng dụng AI để biến đổi
-              video thành các khóa học tương tác thông minh.
+              A next-generation online learning platform using AI to transform
+              videos into smart, interactive courses.
             </p>
             <div className="flex gap-4 text-gray-400">
               <a href="#" className="hover:text-blue-900 transition-colors">
@@ -42,7 +42,7 @@ const Footer = () => {
           {/* Cột 2: Đường dẫn nhanh */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Khám phá
+              Explore
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li>
@@ -50,7 +50,7 @@ const Footer = () => {
                   to="/courses"
                   className="hover:text-white transition-colors"
                 >
-                  Danh sách khóa học
+                  Course Catalog
                 </Link>
               </li>
               <li>
@@ -58,7 +58,7 @@ const Footer = () => {
                   to="/instructors"
                   className="hover:text-white transition-colors"
                 >
-                  Giảng viên tiêu biểu
+                  Featured Instructors
                 </Link>
               </li>
               <li>
@@ -66,12 +66,12 @@ const Footer = () => {
                   to="/about"
                   className="hover:text-white transition-colors"
                 >
-                  Về chúng tôi
+                  About Us
                 </Link>
               </li>
               <li>
                 <Link to="/blog" className="hover:text-white transition-colors">
-                  Blog chia sẻ
+                  Blog
                 </Link>
               </li>
             </ul>
@@ -80,12 +80,12 @@ const Footer = () => {
           {/* Cột 3: Hỗ trợ */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Hỗ trợ
+              Support
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li>
                 <Link to="/faq" className="hover:text-white transition-colors">
-                  Câu hỏi thường gặp (FAQ)
+                  FAQ
                 </Link>
               </li>
               <li>
@@ -93,7 +93,7 @@ const Footer = () => {
                   to="/terms"
                   className="hover:text-white transition-colors"
                 >
-                  Điều khoản sử dụng
+                  Terms of Service
                 </Link>
               </li>
               <li>
@@ -101,7 +101,7 @@ const Footer = () => {
                   to="/privacy"
                   className="hover:text-white transition-colors"
                 >
-                  Chính sách bảo mật
+                  Privacy Policy
                 </Link>
               </li>
               <li>
@@ -109,7 +109,7 @@ const Footer = () => {
                   to="/guide"
                   className="hover:text-white transition-colors"
                 >
-                  Hướng dẫn sử dụng
+                  User Guide
                 </Link>
               </li>
             </ul>
@@ -118,7 +118,7 @@ const Footer = () => {
           {/* Cột 4: Liên hệ */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Liên hệ
+              Contact
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">

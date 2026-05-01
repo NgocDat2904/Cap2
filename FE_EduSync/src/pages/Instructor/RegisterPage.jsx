@@ -44,20 +44,20 @@ const InstructorRegisterPage = () => {
     // 1. Validate kiểm tra đuôi Email nội bộ
     if (!formData.email.trim().toLowerCase().endsWith("@edusync.edu.vn")) {
       setError(
-        "Vui lòng sử dụng email nội bộ có đuôi @edusync.edu.vn để đăng ký!",
+        "Please use an internal email ending with @edusync.edu.vn to register!",
       );
       return;
     }
 
     // 2. Validate mật khẩu khớp nhau
     if (formData.password !== formData.confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp!");
+      setError("Passwords do not match!");
       return;
     }
 
     // 3. Validate đồng ý điều khoản
     if (!formData.agreeTerms) {
-      setError("Bạn cần đồng ý với Điều khoản dịch vụ để tiếp tục.");
+      setError("You must agree to the Terms of Service to continue.");
       return;
     }
 
@@ -74,14 +74,14 @@ const InstructorRegisterPage = () => {
 
       // Nếu API trả về thành công
       if (response && response.message) {
-        alert("Đăng ký thành công! Vui lòng đăng nhập.");
+        alert("Registration successful! Please sign in.");
         navigate("/instructor/login");
       }
     } catch (err) {
       console.error("Lỗi đăng ký:", err);
       // Bắt lỗi từ Backend trả về
       if (err.response && err.response.status === 400) {
-        setError("Email này đã được đăng ký. Vui lòng sử dụng email khác!");
+        setError("This email is already registered. Please use a different email!");
       } else if (
         err.response &&
         err.response.data &&
@@ -89,7 +89,7 @@ const InstructorRegisterPage = () => {
       ) {
         setError(err.response.data.detail);
       } else {
-        setError("Đăng ký thất bại. Vui lòng kiểm tra lại kết nối mạng!");
+        setError("Registration failed. Please check your network connection!");
       }
     } finally {
       setIsLoading(false);
@@ -124,10 +124,10 @@ const InstructorRegisterPage = () => {
         <div className="w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-blue-900/10 p-8 sm:p-12 border border-white">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
-              Tạo tài khoản giảng viên
+              Create Instructor Account
             </h2>
             <p className="text-slate-500 font-medium">
-              Điền thông tin của bạn để bắt đầu hành trình giảng dạy
+              Fill in your information to start your teaching journey
             </p>
           </div>
 
@@ -141,7 +141,7 @@ const InstructorRegisterPage = () => {
             {/* Họ và tên */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2.5">
-                Họ và tên
+                Full Name
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -154,7 +154,7 @@ const InstructorRegisterPage = () => {
                   type="text"
                   name="fullName"
                   required
-                  placeholder="Nguyễn Văn A"
+                  placeholder="John Doe"
                   value={formData.fullName}
                   onChange={handleChange}
                   className="block w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium placeholder-slate-400"
@@ -165,7 +165,7 @@ const InstructorRegisterPage = () => {
             {/* Email */}
             <div>
               <label className="block text-sm font-bold text-slate-700 mb-2.5">
-                Email nội bộ
+                Internal Email
               </label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -190,7 +190,7 @@ const InstructorRegisterPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2.5">
-                  Mật khẩu
+                  Password
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -221,7 +221,7 @@ const InstructorRegisterPage = () => {
               {/* Ô Xác nhận mật khẩu */}
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2.5">
-                  Xác nhận mật khẩu
+                  Confirm Password
                 </label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -266,19 +266,19 @@ const InstructorRegisterPage = () => {
                 htmlFor="terms"
                 className="text-sm text-slate-600 leading-relaxed cursor-pointer select-none"
               >
-                Tôi đồng ý với{" "}
+                I agree to the{" "}
                 <a
                   href="#"
                   className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
                 >
-                  Điều khoản dịch vụ
+                  Terms of Service
                 </a>{" "}
-                và{" "}
+                and{" "}
                 <a
                   href="#"
                   className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
                 >
-                  Chính sách bảo mật
+                  Privacy Policy
                 </a>
               </label>
             </div>
@@ -300,22 +300,22 @@ const InstructorRegisterPage = () => {
                     icon={faCircleNotch}
                     className="animate-spin text-lg"
                   />
-                  Đang thiết lập...
+                  Setting up...
                 </>
               ) : (
-                <>Đăng ký</>
+                <>Register</>
               )}
             </button>
           </form>
 
           {/* Link Đăng nhập */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm font-medium text-slate-500">
-            Đã có tài khoản?{" "}
+            Already have an account?{" "}
             <Link
               to="/instructor/login"
               className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
             >
-              Đăng nhập tại đây
+              Sign in here
             </Link>
           </div>
         </div>

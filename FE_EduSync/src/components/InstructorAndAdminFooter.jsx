@@ -14,13 +14,13 @@ const DashboardFooter = () => {
         {/* Các đường link hỗ trợ */}
         <div className="flex items-center gap-4 sm:gap-6 text-sm font-medium text-slate-400">
           <Link to="/support" className="hover:text-blue-600 transition-colors">
-            Trung tâm hỗ trợ
+            Support Center
           </Link>
           <Link to="/terms" className="hover:text-blue-600 transition-colors">
-            Điều khoản
+            Terms of Service
           </Link>
           <Link to="/privacy" className="hover:text-blue-600 transition-colors">
-            Bảo mật
+            Privacy Policy
           </Link>
         </div>
       </div>

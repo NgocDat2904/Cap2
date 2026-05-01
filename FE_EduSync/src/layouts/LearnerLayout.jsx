@@ -38,7 +38,7 @@ const LearnerLayout = () => {
         const data = await getProfileAPI(token);
         setUserProfile(data); // Lưu data vào state
       } catch (error) {
-        console.error("Lỗi lấy thông tin User trên Layout:", error);
+        console.error("Error loading user profile on Layout:", error);
       }
     };
     fetchUserData();
@@ -59,10 +59,10 @@ const LearnerLayout = () => {
   }, []);
 
   const navLinks = [
-    { name: "Trang chủ", icon: faHouse, path: "/home" },
-    { name: "Khóa học", icon: faBook, path: "/courses" },
-    { name: "Khóa học của tôi", icon: faBookOpen, path: "/my-courses" },
-    { name: "Video yêu thích", icon: faHeart, path: "/favorites" },
+    { name: "Home", icon: faHouse, path: "/home" },
+    { name: "Courses", icon: faBook, path: "/courses" },
+    { name: "My Courses", icon: faBookOpen, path: "/my-courses" },
+    { name: "Favorites", icon: faHeart, path: "/favorites" },
   ];
 
   const handleLogout = async (e) => {
@@ -75,7 +75,7 @@ const LearnerLayout = () => {
         await logoutAPI(token);
       }
     } catch (error) {
-      console.error("Lỗi khi đăng xuất API:", error);
+      console.error("Error during logout API:", error);
     } finally {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
@@ -109,7 +109,7 @@ const LearnerLayout = () => {
             <div className="relative">
               <input
                 type="text"
-                placeholder="Tìm kiếm ..."
+                placeholder="Search..."
                 className="w-full pl-4 sm:pl-6 pr-10 py-2 rounded-full border border-blue-900 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 text-sm text-gray-700"
               />
               <button className="absolute right-3 sm:right-4 top-2 text-gray-500 hover:text-blue-900 transition-colors">
@@ -162,7 +162,7 @@ const LearnerLayout = () => {
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 mx-2 mb-2 rounded-xl border border-blue-100/50 shadow-sm">
                     <div className="flex justify-between items-end mb-2">
                       <h4 className="font-bold text-gray-800 text-sm line-clamp-1">
-                        Chào, {userProfile?.fullName || "Học viên"}!
+                        Hello, {userProfile?.fullName || "Learner"}!
                       </h4>
                       <span className="text-blue-600 font-black text-sm">
                         60%
@@ -175,9 +175,9 @@ const LearnerLayout = () => {
                       ></div>
                     </div>
                     <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                      Hoàn thiện{" "}
-                      <span className="font-bold text-gray-800">Hồ sơ</span> để
-                      EduSync cá nhân hóa lộ trình học tập cho riêng bạn nhé!
+                      Complete your{" "}
+                      <span className="font-bold text-gray-800">Profile</span>{" "}
+                      so EduSync can personalize your learning journey!
                       <FontAwesomeIcon
                         icon={faRobot}
                         className="text-blue-600 ml-0.5"
@@ -188,7 +188,7 @@ const LearnerLayout = () => {
                       onClick={() => setIsDropdownOpen(false)}
                       className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
                     >
-                      Cập nhật ngay{" "}
+                      Update now{" "}
                       <FontAwesomeIcon
                         icon={faChevronRight}
                         className="text-[10px]"
@@ -205,7 +205,7 @@ const LearnerLayout = () => {
                       icon={faUser}
                       className="w-4 h-4 text-slate-400"
                     />{" "}
-                    Hồ sơ cá nhân
+                    My Profile
                   </Link>
 
                   <Link
@@ -217,7 +217,7 @@ const LearnerLayout = () => {
                       icon={faGear}
                       className="w-4 h-4 text-slate-400"
                     />{" "}
-                    Cài đặt
+                    Settings
                   </Link>
 
                   <div className="border-t border-gray-100 my-1"></div>
@@ -230,7 +230,7 @@ const LearnerLayout = () => {
                       icon={faArrowRightFromBracket}
                       className="w-4 h-4"
                     />{" "}
-                    Đăng xuất
+                    Sign out
                   </button>
                 </div>
               )}

@@ -24,7 +24,7 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
 
     const token = localStorage.getItem("access_token");
     if (!token) {
-      setError("Vui lòng đăng nhập để chat với AI.");
+      setError("Please log in to chat with AI.");
       return;
     }
     setError("");
@@ -50,7 +50,7 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
           isAi: true,
           text:
             err.message ||
-            "Có lỗi khi gọi AI. Kiểm tra backend và GEMINI_API_KEY.",
+            "Error calling AI. Check backend and GEMINI_API_KEY.",
         },
       ]);
     } finally {

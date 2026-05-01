@@ -42,7 +42,7 @@ const InstructorLayout = () => {
         const data = await getInstructorProfileAPI(token);
         setInstructorProfile(data);
       } catch (error) {
-        console.error("Lỗi lấy thông tin Giảng viên trên Layout:", error);
+        console.error("Error loading instructor profile from Layout:", error);
       }
     };
     fetchInstructorProfile();
@@ -72,8 +72,8 @@ const InstructorLayout = () => {
   ];
 
   const bottomLinks = [
-    { name: "Tài khoản", icon: faUser, path: "/instructor/account" },
-    { name: "Cài đặt", icon: faGear, path: "/instructor/settings" },
+    { name: "Account", icon: faUser, path: "/instructor/account" },
+    { name: "Settings", icon: faGear, path: "/instructor/settings" },
   ];
 
   const handleLinkClick = () => {
@@ -95,7 +95,7 @@ const InstructorLayout = () => {
         await logoutAPI(token);
       }
     } catch (error) {
-      console.error("Lỗi khi đăng xuất API:", error);
+      console.error("Error during logout API:", error);
     } finally {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
@@ -235,7 +235,7 @@ const InstructorLayout = () => {
               className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
               ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
             `}
-              title={!isSidebarOpen ? "Đăng xuất" : ""}
+              title={!isSidebarOpen ? "Sign out" : ""}
             >
               <div
                 className={`group-hover:text-red-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
@@ -248,7 +248,7 @@ const InstructorLayout = () => {
               <span
                 className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
               >
-                Đăng xuất
+                Sign out
               </span>
             </button>
           </div>
@@ -271,7 +271,7 @@ const InstructorLayout = () => {
             <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl">
               <input
                 type="text"
-                placeholder="Tìm kiếm khóa học, học viên..."
+                placeholder="Search courses, learners..."
                 className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-slate-100 border-transparent focus:bg-white focus:outline-none focus:border-blue-400 focus:ring-4 focus:ring-blue-500/10 text-sm font-medium transition-all text-slate-700"
               />
               <FontAwesomeIcon
@@ -300,10 +300,10 @@ const InstructorLayout = () => {
                   {instructorProfile.fullName ||
                     instructorProfile.full_name ||
                     instructorProfile.name ||
-                    "Giảng viên"}
+                    "Instructor"}
                 </p>
                 <p className="text-xs text-slate-500 font-medium mt-1">
-                  {instructorProfile.role || "Giảng viên"}
+                  {instructorProfile.role || "Instructor"}
                 </p>
               </div>
 

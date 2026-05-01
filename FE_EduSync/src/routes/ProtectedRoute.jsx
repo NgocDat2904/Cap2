@@ -37,7 +37,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
       : normalize(allowedRoles) === userRole);
 
   if (!allowed) {
-    alert("Bạn không có quyền truy cập vào khu vực này!");
+    alert("You do not have permission to access this area!");
     if (userRole === "admin") return <Navigate to="/admin/dashboard" replace />;
     if (userRole === "instructor")
       return <Navigate to="/instructor/dashboard" replace />;
