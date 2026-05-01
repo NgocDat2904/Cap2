@@ -22,7 +22,7 @@ const EduSyncHome = () => {
   const featuredCourses = [
     {
       id: 1,
-      title: "Lập trình Python cơ bản đến nâng cao",
+      title: "Python Programming from Basic to Advanced",
       instructor: "Nguyễn Văn A",
       avatar: "https://i.pravatar.cc/150?img=11",
       videoCount: 15,
@@ -35,7 +35,7 @@ const EduSyncHome = () => {
     },
     {
       id: 2,
-      title: "UI/UX Design Thực chiến với Figma",
+      title: "Practical UI/UX Design with Figma",
       instructor: "Trần Thị B.",
       avatar: "https://i.pravatar.cc/150?img=5",
       videoCount: 24,
@@ -48,7 +48,7 @@ const EduSyncHome = () => {
     },
     {
       id: 3,
-      title: "Kiến trúc Hệ thống (Architecture Design)",
+      title: "System Architecture Design",
       instructor: "Lê Văn C.",
       avatar: "https://i.pravatar.cc/150?img=8",
       videoCount: 32,
@@ -61,7 +61,7 @@ const EduSyncHome = () => {
     },
     {
       id: 4,
-      title: "Data Analysis Cơ bản đến Nâng cao",
+      title: "Data Analysis from Basic to Advanced",
       instructor: "Phạm D.",
       avatar: "https://i.pravatar.cc/150?img=12",
       videoCount: 18,
@@ -79,7 +79,7 @@ const EduSyncHome = () => {
   // =========================================================================
   const categories = [
     {
-      name: "Lập trình Web Frontend",
+      name: "Frontend Web Development",
       icon: (
         <FontAwesomeIcon
           icon={faLaptopCode}
@@ -89,14 +89,14 @@ const EduSyncHome = () => {
       courses: "120+",
     },
     {
-      name: "Lập trình Web Backend",
+      name: "Backend Web Development",
       icon: (
         <FontAwesomeIcon icon={faServer} className="text-slate-700 text-2xl" />
       ),
       courses: "95+",
     },
     {
-      name: "Lập trình Di động (Mobile)",
+      name: "Mobile Development",
       icon: (
         <FontAwesomeIcon
           icon={faMobileScreen}
@@ -106,14 +106,14 @@ const EduSyncHome = () => {
       courses: "60+",
     },
     {
-      name: "Trí tuệ Nhân tạo (AI)",
+      name: "Artificial Intelligence (AI)",
       icon: (
         <FontAwesomeIcon icon={faRobot} className="text-purple-600 text-2xl" />
       ),
       courses: "85+",
     },
     {
-      name: "Phân tích Dữ liệu (DA)",
+      name: "Data Analysis (DA)",
       icon: (
         <FontAwesomeIcon
           icon={faChartPie}
@@ -123,7 +123,7 @@ const EduSyncHome = () => {
       courses: "110+",
     },
     {
-      name: "Kỹ thuật Dữ liệu (DE)",
+      name: "Data Engineering (DE)",
       icon: (
         <FontAwesomeIcon
           icon={faDatabase}
@@ -133,14 +133,14 @@ const EduSyncHome = () => {
       courses: "70+",
     },
     {
-      name: "Thiết kế UI/UX",
+      name: "UI/UX Design",
       icon: (
         <FontAwesomeIcon icon={faPalette} className="text-pink-500 text-2xl" />
       ),
       courses: "150+",
     },
     {
-      name: "Phân tích Nghiệp vụ (BA)",
+      name: "Business Analysis (BA)",
       icon: (
         <FontAwesomeIcon
           icon={faChartLine}
@@ -151,12 +151,11 @@ const EduSyncHome = () => {
     },
   ];
 
-  // Hàm format tiền tệ VNĐ
+  // Hàm format tiền tệ USD
   const formatCurrency = (amount) => {
-    if (amount === 0) return "Miễn phí";
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -166,16 +165,15 @@ const EduSyncHome = () => {
       <section className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 sm:p-10 shadow-sm border border-blue-100 flex flex-col md:flex-row items-center justify-between gap-8">
         <div className="flex-1 space-y-4 text-center md:text-left">
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">
-            Khám phá tiềm năng của bạn <br className="hidden sm:block" /> với lộ
-            trình cá nhân hóa
+            Unlock your potential <br className="hidden sm:block" /> with a
+            personalized roadmap
           </h1>
           <p className="text-slate-600 max-w-lg mx-auto md:mx-0">
-            Dựa trên sở thích và mục tiêu nghề nghiệp của bạn, hệ thống AI của
-            EduSync đã thiết kế một lộ trình học tập tối ưu nhất dành riêng cho
-            bạn.
+            Based on your interests and career goals, EduSync's AI system has
+            designed an optimal learning roadmap just for you.
           </p>
           <button className="mt-4 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-md hover:shadow-lg active:scale-95">
-            Xem lộ trình đề xuất
+            View suggested roadmap
           </button>
         </div>
         <div className="hidden lg:block w-1/3">
@@ -190,7 +188,7 @@ const EduSyncHome = () => {
       <section>
         <div className="flex justify-between items-end mb-6">
           <h2 className="text-2xl font-bold text-slate-900">
-            Chuyên ngành đào tạo
+            Training Categories
           </h2>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
@@ -207,7 +205,7 @@ const EduSyncHome = () => {
                   {cat.name}
                 </h3>
                 <p className="text-sm text-slate-500 font-medium">
-                  {cat.courses} khóa học
+                  {cat.courses} courses
                 </p>
               </div>
             </div>
@@ -220,17 +218,17 @@ const EduSyncHome = () => {
         <div className="flex justify-between items-end mb-6">
           <div>
             <h2 className="text-2xl font-bold text-slate-900">
-              Khóa học nổi bật
+              Featured Courses
             </h2>
             <p className="text-slate-500 text-sm mt-1 font-medium">
-              Những khóa học được đăng ký nhiều nhất tuần qua
+              Most enrolled courses this week
             </p>
           </div>
           <Link
             to="/courses"
             className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors hidden sm:block"
           >
-            Khám phá thêm
+            Explore more
           </Link>
         </div>
 
@@ -255,7 +253,7 @@ const EduSyncHome = () => {
                 </div>
                 <span className="absolute bottom-3 right-3 px-2 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded flex items-center gap-1.5">
                   <FontAwesomeIcon icon={faPlayCircle} /> {course.videoCount}{" "}
-                  video
+                  videos
                 </span>
               </div>
 
@@ -273,7 +271,7 @@ const EduSyncHome = () => {
                   <FontAwesomeIcon
                     icon={faCheckCircle}
                     className="text-blue-500 text-[10px]"
-                    title="Đã xác minh"
+                    title="Verified"
                   />
                 </div>
 
@@ -284,7 +282,7 @@ const EduSyncHome = () => {
                 <div className="flex items-center gap-4 text-sm mt-auto pt-4">
                   <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
                     <FontAwesomeIcon icon={faUsers} />
-                    {course.students.toLocaleString()} học viên
+                    {course.students.toLocaleString()} students
                   </div>
                 </div>
 
@@ -306,7 +304,7 @@ const EduSyncHome = () => {
                     to={`/courses/${course.id}`}
                     className="text-sm font-bold text-blue-600 bg-blue-50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-lg transition-colors"
                   >
-                    Xem chi tiết
+                    View details
                   </Link>
                 </div>
               </div>

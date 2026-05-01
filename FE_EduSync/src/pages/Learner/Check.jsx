@@ -20,21 +20,21 @@ const LearnerCheckoutPage = () => {
 
   // Mock dữ liệu đơn hàng
   const orderData = {
-    courseTitle: "Lập trình Python cơ bản đến nâng cao cho người mới bắt đầu",
-    instructor: "Nguyễn Văn A",
+    courseTitle: "Python Programming: From Basics to Advanced for Beginners",
+    instructor: "John Smith",
     thumbnail:
       "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80",
-    originalPrice: 1500000,
-    price: 1222000,
+    originalPrice: 59.99,
+    price: 49.99,
   };
 
-  const discountAmount = isCouponApplied ? 222000 : 0;
+  const discountAmount = isCouponApplied ? 8.99 : 0;
   const totalAmount = orderData.price - discountAmount;
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("vi-VN", {
+    return new Intl.NumberFormat("en-US", {
       style: "currency",
-      currency: "VND",
+      currency: "USD",
     }).format(amount);
   };
 
@@ -43,7 +43,7 @@ const LearnerCheckoutPage = () => {
     if (coupon.trim().toUpperCase() === "EDUSYNC2026") {
       setIsCouponApplied(true);
     } else {
-      alert("Mã giảm giá không hợp lệ hoặc đã hết hạn!");
+      alert("Invalid or expired coupon code!");
       setIsCouponApplied(false);
     }
   };
@@ -51,7 +51,7 @@ const LearnerCheckoutPage = () => {
   const handleCheckout = (e) => {
     e.preventDefault();
     // Giả lập loading và chuyển hướng sang trang Thành công
-    alert("Thanh toán thành công! Chuẩn bị chuyển hướng vào khóa học...");
+    alert("Payment successful! Redirecting to your course...");
   };
 
   return (
@@ -62,11 +62,11 @@ const LearnerCheckoutPage = () => {
           to="/courses/1"
           className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors mb-6"
         >
-          <FontAwesomeIcon icon={faChevronLeft} /> Quay lại khóa học
+          <FontAwesomeIcon icon={faChevronLeft} /> Back to course
         </Link>
 
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-8">
-          Thanh toán an toàn
+          Secure Checkout
         </h1>
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
@@ -75,7 +75,7 @@ const LearnerCheckoutPage = () => {
             {/* Box Chọn Phương thức */}
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
               <h2 className="text-xl font-bold text-slate-900 mb-6">
-                Phương thức thanh toán
+                Payment Method
               </h2>
 
               <div className="space-y-4">
@@ -96,7 +96,7 @@ const LearnerCheckoutPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-bold text-slate-800">
-                        Thẻ Tín dụng / Ghi nợ
+                        Credit / Debit Card
                       </span>
                       <div className="flex gap-2 text-slate-400 text-xl">
                         <FontAwesomeIcon
@@ -106,7 +106,7 @@ const LearnerCheckoutPage = () => {
                       </div>
                     </div>
                     <p className="text-xs text-slate-500">
-                      Hỗ trợ Visa, Mastercard, JCB, Amex
+                      Supports Visa, Mastercard, JCB, Amex
                     </p>
 
                     {/* Form nhập thẻ (Chỉ hiện khi chọn Thẻ) */}
@@ -114,7 +114,7 @@ const LearnerCheckoutPage = () => {
                       <div className="mt-6 space-y-4 animate-fade-slide-up">
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                            Tên in trên thẻ
+                            Cardholder Name
                           </label>
                           <input
                             type="text"
@@ -124,7 +124,7 @@ const LearnerCheckoutPage = () => {
                         </div>
                         <div>
                           <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                            Số thẻ
+                            Card Number
                           </label>
                           <div className="relative">
                             <input
@@ -141,7 +141,7 @@ const LearnerCheckoutPage = () => {
                         <div className="grid grid-cols-2 gap-4">
                           <div>
                             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                              Ngày hết hạn
+                              Expiry Date
                             </label>
                             <input
                               type="text"
@@ -151,7 +151,7 @@ const LearnerCheckoutPage = () => {
                           </div>
                           <div>
                             <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                              Mã bảo mật (CVC)
+                              Security Code (CVC)
                             </label>
                             <input
                               type="text"
@@ -182,7 +182,7 @@ const LearnerCheckoutPage = () => {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-1">
                       <span className="font-bold text-slate-800">
-                        Ví điện tử Momo / VNPay
+                        Digital Wallet / PayPal
                       </span>
                       <FontAwesomeIcon
                         icon={faWallet}
@@ -190,13 +190,13 @@ const LearnerCheckoutPage = () => {
                       />
                     </div>
                     <p className="text-xs text-slate-500">
-                      Thanh toán nhanh chóng qua mã QR
+                      Fast payment via QR code
                     </p>
 
                     {paymentMethod === "momo" && (
                       <div className="mt-4 p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 text-center animate-fade-slide-up">
-                        Bạn sẽ được chuyển hướng tới cổng thanh toán an toàn để
-                        quét mã QR.
+                        You will be redirected to a secure payment gateway to
+                        scan the QR code.
                       </div>
                     )}
                   </div>
@@ -211,11 +211,10 @@ const LearnerCheckoutPage = () => {
                 className="text-xl mt-0.5"
               />
               <div>
-                <h4 className="text-sm font-bold">Thanh toán bảo mật 100%</h4>
+                <h4 className="text-sm font-bold">100% Secure Payment</h4>
                 <p className="text-xs mt-1 leading-relaxed opacity-90">
-                  EduSync sử dụng mã hóa SSL 256-bit chuẩn quốc tế. Thông tin
-                  thẻ của bạn tuyệt đối không được lưu trữ trên máy chủ của
-                  chúng tôi.
+                  EduSync uses industry-standard 256-bit SSL encryption. Your
+                  card information is never stored on our servers.
                 </p>
               </div>
             </div>
@@ -225,7 +224,7 @@ const LearnerCheckoutPage = () => {
           <div className="w-full lg:w-2/5">
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
               <h2 className="text-xl font-bold text-slate-900 mb-6">
-                Tóm tắt đơn hàng
+                Order Summary
               </h2>
 
               {/* Card khóa học mini */}
@@ -240,7 +239,7 @@ const LearnerCheckoutPage = () => {
                     {orderData.courseTitle}
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Giảng viên: {orderData.instructor}
+                    Instructor: {orderData.instructor}
                   </p>
                 </div>
               </div>
@@ -248,13 +247,13 @@ const LearnerCheckoutPage = () => {
               {/* Chi tiết giá */}
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Giá gốc:</span>
+                  <span className="text-slate-500 font-medium">Original price:</span>
                   <span className="text-slate-500 line-through">
                     {formatCurrency(orderData.originalPrice)}
                   </span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-700 font-bold">Giá bán:</span>
+                  <span className="text-slate-700 font-bold">Sale price:</span>
                   <span className="text-slate-800 font-bold">
                     {formatCurrency(orderData.price)}
                   </span>
@@ -262,7 +261,7 @@ const LearnerCheckoutPage = () => {
                 {isCouponApplied && (
                   <div className="flex justify-between items-center text-sm text-emerald-600 font-bold animate-fade-slide-up">
                     <span className="flex items-center gap-1.5">
-                      <FontAwesomeIcon icon={faCheckCircle} /> Giảm giá coupon:
+                      <FontAwesomeIcon icon={faCheckCircle} /> Coupon discount:
                     </span>
                     <span>-{formatCurrency(discountAmount)}</span>
                   </div>
@@ -275,7 +274,7 @@ const LearnerCheckoutPage = () => {
                 className="mb-6 pb-6 border-b border-slate-100"
               >
                 <label className="block text-xs font-bold text-slate-700 mb-2">
-                  Mã giảm giá (Nhập: EDUSYNC2026)
+                  Discount Code (Enter: EDUSYNC2026)
                 </label>
                 <div className="flex gap-2">
                   <div className="relative flex-1">
@@ -287,7 +286,7 @@ const LearnerCheckoutPage = () => {
                       type="text"
                       value={coupon}
                       onChange={(e) => setCoupon(e.target.value)}
-                      placeholder="Nhập mã tại đây..."
+                      placeholder="Enter code here..."
                       className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors uppercase"
                       disabled={isCouponApplied}
                     />
@@ -297,7 +296,7 @@ const LearnerCheckoutPage = () => {
                     className={`px-4 py-2 font-bold text-sm rounded-xl transition-colors ${isCouponApplied ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-800 text-white hover:bg-slate-900 active:scale-95"}`}
                     disabled={isCouponApplied}
                   >
-                    Áp dụng
+                    Apply
                   </button>
                 </div>
               </form>
@@ -306,7 +305,7 @@ const LearnerCheckoutPage = () => {
               <div>
                 <div className="flex justify-between items-end mb-6">
                   <span className="text-base font-bold text-slate-700">
-                    Tổng cộng:
+                    Total:
                   </span>
                   <span className="text-3xl font-black text-blue-700">
                     {formatCurrency(totalAmount)}
@@ -317,12 +316,12 @@ const LearnerCheckoutPage = () => {
                   onClick={handleCheckout}
                   className="w-full py-4 bg-blue-600 text-white font-black text-lg rounded-2xl shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-3"
                 >
-                  <FontAwesomeIcon icon={faLock} /> Hoàn tất thanh toán
+                  <FontAwesomeIcon icon={faLock} /> Complete Payment
                 </button>
 
                 <p className="text-center text-[10px] text-slate-400 mt-4 px-4 leading-relaxed">
-                  Bằng việc bấm hoàn tất, bạn đồng ý với Điều khoản Dịch vụ và
-                  Chính sách Bảo mật của EduSync.
+                  By clicking Complete, you agree to EduSync's Terms of Service
+                  and Privacy Policy.
                 </p>
               </div>
             </div>

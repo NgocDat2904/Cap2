@@ -38,11 +38,11 @@ const AdminLoginPage = () => {
       console.error("Lỗi đăng nhập :", err);
       // Xử lý thông báo lỗi rõ ràng nếu thất bại
       if (err.response && err.response.status === 401) {
-        setError("Email hoặc mật khẩu không chính xác!");
+        setError("Incorrect email or password!");
       } else if (err.response && err.response.status === 404) {
-        setError("Tài khoản quản trị này không tồn tại trên hệ thống!");
+        setError("This admin account does not exist on the system!");
       } else {
-        setError("Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin!");
+        setError("Login failed. Please check your credentials!");
       }
     } finally {
       setIsLoading(false);
@@ -86,7 +86,7 @@ const AdminLoginPage = () => {
           {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Email quản trị
+              Admin Email
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -107,7 +107,7 @@ const AdminLoginPage = () => {
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-semibold text-slate-300">
-                Mật khẩu
+                Password
               </label>
             </div>
             <div className="relative">
@@ -143,16 +143,16 @@ const AdminLoginPage = () => {
                   : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-[0.98]"
               }`}
           >
-            {isLoading ? "Đang xác thực..." : <>Đăng nhập hệ thống</>}
+            {isLoading ? "Authenticating..." : <>Sign in</>}
           </button>
         </form>
 
         {/* Footer Cảnh báo bảo mật */}
         <div className="mt-8 pt-6 border-t border-slate-800 text-center">
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Khu vực hạn chế. Mọi hành vi truy cập trái phép{" "}
+            Restricted area. Any unauthorized access{" "}
             <br className="hidden sm:block" />
-            sẽ bị ghi log và xử lý theo quy định.
+            will be logged and handled according to regulations.
           </p>
         </div>
       </div>
