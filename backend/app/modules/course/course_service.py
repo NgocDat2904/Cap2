@@ -242,6 +242,7 @@ class CourseService:
                     return raw_url
                 return ""
 
+
             lessons = []
             # ✅ FIX LỖI SẬP SERVER: Đã đổi chữ approved_lessons thành public_lessons ở vòng lặp for
             for i, l in enumerate(public_lessons):
