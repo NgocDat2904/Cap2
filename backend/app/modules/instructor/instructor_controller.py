@@ -3,7 +3,7 @@ from .instructor_schema import InstructorProfileUpdate
 from app.middleware.auth_middleware import get_current_user
 from app.modules.instructor.instructor_service import instructor_service
 
-router = APIRouter(prefix="/instructor", tags=["Instructor"])
+router = APIRouter(prefix="", tags=["Instructor"])
 
 
 # =========================
