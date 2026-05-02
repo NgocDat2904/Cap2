@@ -1,4 +1,6 @@
 from bson import ObjectId
+from datetime import datetime
+
 from app.database.mongodb import db
 from .learning_repository import LearningRepository
 from app.modules.user.user_repository import get_user_by_id
@@ -28,7 +30,7 @@ class LearningService:
         course_ids = [e["course_id"] for e in enrollments]
 
         courses = list(db.courses.find({
-        "_id": {"$in": course_ids}
+            "_id": {"$in": course_ids}
         }))
 
         result = []
@@ -43,31 +45,31 @@ class LearningService:
 
             last = repo.get_last_access(cid, user_id)
 
-        # ✅ FIX instructor ở đây
+            # instructor
             instructor_name = "Giảng viên EduSync"
             iid = c.get("instructor_id")
 
             if iid:
-               user = get_user_by_id(str(iid))
-            if user:
-                instructor_name = user.get("fullName") or user.get("email")
+                user = get_user_by_id(str(iid))
+                if user:
+                    instructor_name = user.get("fullName") or user.get("email")
 
             result.append({
-            "id": cid,
-            "title": c.get("title"),
-            "image": c.get("image"),
-            "instructor": instructor_name,  # ✅ FIX
-            "progress": progress,
-            "completedLessons": completed,
-            "totalLessons": total,
-            "lastAccessed": str(last.get("updated_at")) if last else None,
-            "status": "completed" if progress == 100 else "learning"
-        })
+                "id": cid,
+                "title": c.get("title"),
+                "image": c.get("image"),
+                "instructor": instructor_name,
+                "progress": progress,
+                "completedLessons": completed,
+                "totalLessons": total,
+                "lastAccessed": str(last.get("updated_at")) if last else None,
+                "status": "completed" if progress == 100 else "learning"
+            })
 
         return result
 
     # ======================
-    # COMPLETE LESSON
+    # COMPLETE LESSON (OPTIONAL)
     # ======================
     async def complete_lesson(self, lesson_id: str, user_id: str):
 
@@ -78,12 +80,49 @@ class LearningService:
         if not lesson:
             raise Exception("Lesson not found")
 
-        section = db.sections.find_one({
-            "_id": lesson["section_id"]
-        })
-
-        course_id = section["course_id"]
-
-        repo.complete_lesson(lesson_id, course_id, user_id)
+        # 🔥 FIX: bỏ course_id
+        repo.complete_lesson(lesson_id, user_id)
 
         return {"message": "Lesson completed"}
+
+    # ======================
+    # 🔥 UPDATE PROGRESS (QUAN TRỌNG NHẤT)
+    # ======================
+    async def update_progress(
+        self,
+        lesson_id: str,
+        user_id: str,
+        progress_seconds: int,
+        duration: int
+    ):
+
+        lesson = db.lessons.find_one({
+            "_id": ObjectId(lesson_id)
+        })
+
+        if not lesson:
+            raise Exception("Lesson not found")
+
+        # 🔥 LOGIC QUAN TRỌNG
+        is_completed = progress_seconds >= duration * 0.9
+
+        db.lesson_progress.update_one(
+            {
+                "lesson_id": ObjectId(lesson_id),
+                "learner_id": ObjectId(user_id)
+            },
+            {
+                "$set": {
+                    "progress_seconds": progress_seconds,
+                    "duration": duration,
+                    "is_completed": is_completed,
+                    "updated_at": datetime.utcnow()
+                }
+            },
+            upsert=True
+        )
+
+        return {
+            "message": "Progress updated",
+            "is_completed": is_completed
+        }
