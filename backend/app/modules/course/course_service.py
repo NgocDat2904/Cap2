@@ -319,24 +319,53 @@ class CourseService:
 
     # ===================== SEARCH =====================
 
-    async def search_courses(self, keyword="", category="", page=1, limit=10):
+    async def search_courses(
+        self,
+        category="all",
+        price="all",
+        page=1,
+        limit=10
+):
         filter = {"status": "APPROVED"}
 
-        if keyword:
-            filter["title"] = {"$regex": keyword, "$options": "i"}
+    # =========================
+    # CATEGORY
+    # =========================
+        if category and category != "all":
+            mapped = self._category_display(category)
+            filter["category"] = mapped
 
-        if category:
-            filter["category"] = category
+    # =========================
+    # PRICE FILTER (CHUẨN UI)
+    # =========================
+        if price == "free":
+            filter["price"] = 0
 
+        elif price == "under_1m":
+            filter["price"] = {"$lt": 1_000_000}
+
+        elif price == "1m_2m":
+            filter["price"] = {
+                "$gte": 1_000_000,
+                "$lte": 2_000_000
+        }
+
+        elif price == "over_2m":
+            filter["price"] = {"$gt": 2_000_000}
+
+    # =========================
+    # QUERY
+    # =========================
         courses = await course_repository.search(filter, page, limit)
         total = await course_repository.count(filter)
 
         return {
-            "items": [self._serialize_public_card(c) for c in courses],
-            "total": total,
-            "page": page,
-            "limit": limit,
-        }
+        "items": [self._serialize_public_card(c) for c in courses],
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "totalPages": (total + limit - 1) // limit,
+    }
 
     # ===================== INSTRUCTOR =====================
 
@@ -837,6 +866,72 @@ class CourseService:
             "lessons": lessons,
             "sections": []
         }
+    
+    def get_admin_courses(self, q=None, category=None, status=None, page=1, limit=10):
+        filter_query = {}
+
+        # 🔍 SEARCH
+        if q:
+            filter_query["title"] = {"$regex": q, "$options": "i"}
+
+        # 🟦 FILTER CATEGORY
+        if category and category != "all":
+            filter_query["category"] = category
+
+        # 🟨 FILTER STATUS
+        if status and status != "all":
+            filter_query["status"] = status
+
+        skip = (page - 1) * limit
+
+        courses = list(
+            db.courses.find(filter_query)
+            .skip(skip)
+            .limit(limit)
+        )
+
+        total = db.courses.count_documents(filter_query)
+
+        result = []
+
+        for course in courses:
+            course_status = course.get("status")
+
+            # 🎯 ACTION THEO STATUS
+            if course_status == "APPROVED":
+                actions = ["handle_update", "block", "delete"]
+
+            elif course_status == "UPDATED":
+                actions = ["approve", "delete"]
+
+            elif course_status == "PENDING":
+                actions = ["approve", "delete"]
+
+            elif course_status == "REJECTED":
+                actions = ["view", "delete"]
+
+            elif course_status == "DRAFT":
+                actions = ["view"]
+
+            else:
+                actions = []
+
+            result.append({
+                "id": str(course["_id"]),
+                "title": course.get("title"),
+                "thumbnail": course.get("thumbnail"),
+                "category": course.get("category"),
+                "price": course.get("price"),
+                "status": course_status,
+                "actions": actions
+            })
+
+        return {
+            "courses": result,
+            "total": total
+        }
+    
+    
 
     # ===================== FILTER & TOP COURSES =====================
 
@@ -896,3 +991,5 @@ class CourseService:
                 "items": [],
                 "total": 0,
             }
+        
+course_service = CourseService()
