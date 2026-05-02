@@ -9,6 +9,7 @@ from app.modules.lesson.lesson_repository import LessonRepository
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
 
 
+
 lesson_repository = LessonRepository()
 enrollment_repository = EnrollmentRepository()
 course_repository = CourseRepository()
@@ -672,24 +673,51 @@ class CourseService:
         }
 
     async def approve_course(self, course_id: str, price: float):
-        from app.database.mongodb import db as _db
-        from bson import ObjectId
+            from app.database.mongodb import db as _db
+            from bson import ObjectId
 
-        _db.courses.update_one(
-            {"_id": ObjectId(course_id)},
-            {"$set": {
-                "lessons.$[].is_approved": True,
-            }}
+            course_obj_id = ObjectId(course_id)
+
+    # 🔹 1. Lấy tất cả section của course
+            sections = list(_db.sections.find(
+        {"course_id": course_obj_id},
+        {"_id": 1}
+    ))
+
+            section_ids = [s["_id"] for s in sections]
+
+    # 🔹 2. Lấy tất cả lesson thuộc các section
+            lessons = list(_db.lessons.find(
+        {"section_id": {"$in": section_ids}},
+        {"_id": 1}
+    ))
+
+            lesson_ids = [l["_id"] for l in lessons]
+
+    # 🔹 3. Approve lessons
+            if section_ids:
+                _db.lessons.update_many(
+            {"section_id": {"$in": section_ids}},
+            {"$set": {"is_approved": True}}
         )
 
-        await course_repository.update(course_id, {
-            "status": "APPROVED",
-            "price": price,
-            "is_locked": False,
-            "has_pending_update": False,
-            "has_new_update": False,
-        })
-        return {"message": "Course approved"}
+    # 🔹 4. Approve videos (rất quan trọng)
+            if lesson_ids:
+                _db.videos.update_many(
+            {"lesson_id": {"$in": lesson_ids}},
+            {"$set": {"is_approved": True}}
+        )
+
+    # 🔹 5. Update course
+            await course_repository.update(course_id, {
+        "status": "APPROVED",
+        "price": price,
+        "is_locked": False,
+        "has_pending_update": False,
+        "has_new_update": False,
+    })
+
+            return {"message": "Course approved"}
 
     async def reject_course(self, course_id: str, reason: str = ""):
         await course_repository.update(course_id, {
