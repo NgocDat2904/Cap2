@@ -9,9 +9,12 @@ from app.modules.course.course_model import (
     EnrollRequest,
 )
 from app.utils.cloudinary import upload_image
+from app.middleware.auth_middleware import get_current_user
+from app.modules.course.course_service import course_service
+from datetime import datetime
+from bson import ObjectId
 
-router = APIRouter()
-course_service = CourseService()
+router = APIRouter(prefix="/course", tags=["Course"])
 
 
 def _http_from_exc(e: Exception) -> HTTPException:
@@ -36,6 +39,16 @@ async def get_all_courses(
 async def search_courses(
     keyword: str = Query("", description="Search keyword"),
     category: str = Query("", description="Filter by category"),
+
+    # giữ lại filter cũ để không phá FE
+    price: str = Query("", description="Price filter (under_1m, 1m_3m, over_3m)"),
+
+    # filter mới
+    min_price: float = Query(None),
+    max_price: float = Query(None),
+
+    sort: str = Query("newest"),
+
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
 ):
@@ -43,11 +56,16 @@ async def search_courses(
         keyword = keyword.strip()
 
         return await course_service.search_courses(
-            keyword,
-            category,
-            page,
-            limit,
+            keyword=keyword,
+            category=category,
+            price=price,
+            min_price=min_price,
+            max_price=max_price,
+            sort=sort,
+            page=page,
+            limit=limit,
         )
+
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -274,6 +292,52 @@ async def reject_course(
         return await course_service.reject_course(course_id, reason)
     except Exception as e:
         raise _http_from_exc(e)
+    
+@router.get("/admin/courses")
+def get_admin_courses(
+    q: str = None,
+    category: str = None,
+    status: str = None,
+    page: int = 1,
+    limit: int = 10,
+    current_user=Depends(get_current_user)
+):
+    # 🔒 CHỈ ADMIN
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return course_service.get_admin_courses(
+        q=q,
+        category=category,
+        status=status,
+        page=page,
+        limit=limit
+    )
+
+
+@router.put("/admin/courses/{course_id}/moderate")
+def moderate_course(
+    course_id: str,
+    status: str,
+    current_user=Depends(get_current_user)
+):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    from app.database.mongodb import db
+
+    db.courses.update_one(
+        {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                "status": status,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+
+    return {"message": "Updated successfully"}
+
 
 
 @router.put("/admin/courses/{course_id}/resolve-update")
@@ -292,7 +356,6 @@ async def resolve_pending_update(
         return await course_service.resolve_pending_update(course_id, price)
     except Exception as e:
         raise _http_from_exc(e)
-
 
 
 

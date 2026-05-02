@@ -177,6 +177,29 @@ class CourseRepository:
             })
         except InvalidId:
             return None
+        
+    async def search_with_sort(self, filter, sort, page=1, limit=10):
+        try:
+            page = max(page, 1)
+            limit = min(max(limit, 1), 100)
+
+            skip = (page - 1) * limit
+
+            filter["is_deleted"] = {"$ne": True}
+
+            cursor = (
+            self.collection
+            .find(filter)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+        )
+
+            return list(cursor)
+
+        except Exception as e:
+            print("❌ search_with_sort error:", e)
+            return []
 
     # ✅ UPDATE COURSE WITH LESSONS ARRAY — Two-layer State Management
     async def update_with_lessons(self, course_id: str, course_data: dict, lessons: list):
