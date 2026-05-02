@@ -14,7 +14,7 @@ from app.modules.course.course_service import course_service
 from datetime import datetime
 from bson import ObjectId
 
-router = APIRouter(prefix="/course", tags=["Course"])
+router = APIRouter(prefix="", tags=["Course"])
 
 
 def _http_from_exc(e: Exception) -> HTTPException:
