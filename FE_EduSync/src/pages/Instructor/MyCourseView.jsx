@@ -21,41 +21,79 @@ import {
   faWandMagicSparkles,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
-import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";
-
 
 // =========================================================================
-// 1. MOCK DATA FOR Q&A (Tạm giữ, sau sẽ fetch từ API)
+// 1. MOCK DATA 
 // =========================================================================
+
+// Mock Data Q&A
 const qnaList = [
   {
     id: 1,
     student: "Hoàng Nguyễn",
     avatar: "HN",
-    time: "2 giờ trước",
-    lesson: "What is Python?",
-    text: "Thầy cho em hỏi Python có dùng để lập trình Web được không ạ?",
+    time: "2 hours ago",
+    lesson: "What is React?",
+    text: "Can React be used for Mobile App Development?",
     status: "unanswered",
   },
   {
     id: 2,
     student: "Hương Lan",
     avatar: "HL",
-    time: "1 ngày trước",
-    lesson: "Setting up your environment",
-    text: "Em cài VS Code bị lỗi màn hình xanh, khắc phục sao ạ?",
+    time: "1 day ago",
+    lesson: "JSX and Rendering",
+    text: "Why do we need to use className instead of class in JSX?",
     status: "answered",
-    reply: "Em thử chạy bằng quyền Administrator xem sao nhé.",
+    reply: "Because 'class' is a reserved keyword in JavaScript.",
+  },
+];
+
+// Mock Data Chi tiết khóa học
+const mockCourseDetail = {
+  id: "course-101",
+  title: "Master ReactJS from zero to hero",
+  category: "Web Development",
+  status: "Published",
+  students: 1250,
+  duration: "12h 30m",
+  price: 49.99,
+  thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
+  instructor: "Nguyễn Văn A",
+  avatar: "https://i.pravatar.cc/150?img=11"
+};
+
+// Mock Data Danh sách bài giảng (Có đầy đủ videoStats và quizStats)
+const mockLessonsList = [
+  {
+    id: 1,
+    order: "01",
+    title: "Introduction to React",
+    description: "What is React and why should you use it?",
+    duration: "10:00",
+    quizStatus: "none",
+    videoStats: { views: 1250, completion: "95%" }
+  },
+  {
+    id: 2,
+    order: "02",
+    title: "JSX and Rendering Elements",
+    description: "Understanding JSX syntax and how React renders elements to the DOM.",
+    duration: "15:30",
+    quizStatus: "published",
+    videoStats: { views: 1100, completion: "88%" },
+    quizStats: { passRate: "92%", avgScore: "8.5" }
   },
   {
     id: 3,
-    student: "Trần Minh",
-    avatar: "TM",
-    time: "3 ngày trước",
-    lesson: "Variables and Data Types",
-    text: "Kiểu Dictionary trong Python giống Object trong JS đúng không thầy?",
-    status: "unanswered",
-  },
+    order: "03",
+    title: "State and Props",
+    description: "Managing data in React components and passing data between them.",
+    duration: "25:00",
+    quizStatus: "draft",
+    videoStats: { views: 850, completion: "70%" },
+    quizStats: { questions: 10 } // Bản nháp nên chỉ có số lượng câu hỏi
+  }
 ];
 
 // =========================================================================
@@ -103,8 +141,8 @@ const LessonAccordion = ({ lesson }) => {
                   }
                 />
                 {lesson.quizStatus === "draft"
-                  ? "AI Quiz (Đang xuất bản)"
-                  : "Bài tập (Quiz)"}
+                  ? "AI Quiz (Publishing)"
+                  : "Exercise (Quiz)"}
               </span>
             )}
           </div>
@@ -125,23 +163,25 @@ const LessonAccordion = ({ lesson }) => {
             {/* Hiệu suất Video */}
             <div className="p-6">
               <h5 className="font-extrabold text-slate-800 mb-4 text-xs uppercase tracking-wider text-center">
-                Hiệu suất Video
+                Video Performance
               </h5>
               <div className="space-y-4">
                 <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                   <span className="text-slate-500 text-sm font-semibold flex items-center gap-2">
-                    <FontAwesomeIcon icon={faEye} /> Lượt xem
+                    <FontAwesomeIcon icon={faEye} /> Views
                   </span>
                   <span className="font-black text-slate-900">
-                    {lesson.videoStats.views}
+                    {/* Đã thêm dấu ?. để tránh crash nếu videoStats bị undefined */}
+                    {lesson.videoStats?.views || 0}
                   </span>
                 </div>
                 <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                   <span className="text-slate-500 text-sm font-semibold flex items-center gap-2">
-                    <FontAwesomeIcon icon={faCheckCircle} /> Hoàn thành
+                    <FontAwesomeIcon icon={faCheckCircle} /> Completion
                   </span>
                   <span className="font-black text-green-600">
-                    {lesson.videoStats.completion}
+                    {/* Đã thêm dấu ?. */}
+                    {lesson.videoStats?.completion || "0%"}
                   </span>
                 </div>
               </div>
@@ -150,7 +190,7 @@ const LessonAccordion = ({ lesson }) => {
             {/* Đánh giá Quiz */}
             <div className="p-6">
               <h5 className="font-extrabold text-slate-800 mb-4 text-xs uppercase tracking-wider text-center">
-                Đánh giá Quiz
+                Quiz Results
               </h5>
               {lesson.quizStatus === "draft" ? (
                 <div className="flex flex-col items-center justify-center h-full bg-indigo-50/50 border border-indigo-100 rounded-xl p-4 text-center">
@@ -161,28 +201,31 @@ const LessonAccordion = ({ lesson }) => {
                     />
                   </div>
                   <p className="text-sm font-bold text-indigo-900 mb-1">
-                    AI đã tạo {lesson.quizStats.questions} câu hỏi
+                    {/* Đã thêm dấu ?. */}
+                    AI generated {lesson.quizStats?.questions || 0} questions
                   </p>
                   <p className="text-xs text-indigo-600/80">
-                    Sẽ được xuất bản tự động.
+                    Will be published automatically.
                   </p>
                 </div>
               ) : lesson.quizStatus === "published" ? (
                 <div className="space-y-4">
                   <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                     <span className="text-slate-500 text-sm font-semibold">
-                      Tỉ lệ Pass
+                      Pass Rate
                     </span>
                     <span className="font-black text-blue-600">
-                      {lesson.quizStats.passRate}
+                       {/* Đã thêm dấu ?. */}
+                      {lesson.quizStats?.passRate || "0%"}
                     </span>
                   </div>
                   <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
                     <span className="text-slate-500 text-sm font-semibold">
-                      Điểm TB
+                      Avg. Score
                     </span>
                     <span className="font-black text-slate-900">
-                      {lesson.quizStats.avgScore}
+                       {/* Đã thêm dấu ?. */}
+                      {lesson.quizStats?.avgScore || "0"}
                     </span>
                   </div>
                 </div>
@@ -202,10 +245,10 @@ const LessonAccordion = ({ lesson }) => {
             {/* Q&A */}
             <div className="p-6">
               <h5 className="font-extrabold text-slate-800 mb-4 text-xs uppercase tracking-wider flex justify-between items-center">
-                <span>Hỏi đáp (Q&A)</span>
+                <span>Q&A</span>
               </h5>
               <p className="text-xs text-slate-400 text-center italic mt-6">
-                Chưa có câu hỏi nào.
+                No questions yet.
               </p>
             </div>
           </div>
@@ -221,7 +264,7 @@ const LessonAccordion = ({ lesson }) => {
 const InstructorCourseDetailPage = () => {
   const navigate = useNavigate();
   const { courseId } = useParams();
-  
+
   const [activeTab, setActiveTab] = useState("Curriculum");
   const [courseDetail, setCourseDetail] = useState(null);
   const [lessonsList, setLessonsList] = useState([]);
@@ -229,37 +272,28 @@ const InstructorCourseDetailPage = () => {
   const [error, setError] = useState(null);
   const [isPublished, setIsPublished] = useState(false);
 
-  // Fetch course detail
+  // Fetch course detail giả lập
   useEffect(() => {
-    const fetchCourseDetail = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        const token = localStorage.getItem("access_token");
-        if (!token) {
-          setError("Token not found. Please log in again.");
+    const fetchCourseDetail = () => {
+      setIsLoading(true);
+      setError(null);
+      
+      // Giả lập API gọi mất 1 giây
+      setTimeout(() => {
+        try {
+          // Gán mock data vào state
+          setCourseDetail(mockCourseDetail);
+          setLessonsList(mockLessonsList);
+          setIsPublished(mockCourseDetail.status === "Published");
           setIsLoading(false);
-          return;
+        } catch (err) {
+          setError("Error loading course details");
+          setIsLoading(false);
         }
-        
-        const data = await getInstructorCourseDetailAPI(courseId, token);
-        
-        // Map API response to component state
-        setCourseDetail(data.courseDetail);
-        setLessonsList(Array.isArray(data.lessonsList) ? data.lessonsList : []);
-        setIsPublished(data.courseDetail.status === "Published");
-        setIsLoading(false);
-      } catch (err) {
-        setError(err.message || "Error loading course details");
-        setCourseDetail(null);
-        setLessonsList([]);
-        setIsLoading(false);
-      }
+      }, 1000); 
     };
 
-    if (courseId) {
-      fetchCourseDetail();
-    }
+    fetchCourseDetail();
   }, [courseId]);
 
   // Loading state
@@ -285,7 +319,7 @@ const InstructorCourseDetailPage = () => {
           onClick={() => navigate("/instructor/courses")}
           className="px-4 py-2 bg-slate-200 rounded-xl font-bold hover:bg-slate-300"
         >
-          Về danh sách khóa học
+          Back to course list
         </button>
       </div>
     );
@@ -300,7 +334,7 @@ const InstructorCourseDetailPage = () => {
               onClick={() => navigate(-1)}
               className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors mb-6 text-sm font-bold uppercase tracking-wider"
             >
-              <FontAwesomeIcon icon={faArrowLeft} /> Quay lại
+              <FontAwesomeIcon icon={faArrowLeft} /> Back
             </button>
             <div className="mb-4">
               <span className="inline-block px-4 py-1.5 bg-white/20 backdrop-blur-md rounded-full text-xs font-bold tracking-wider uppercase border border-white/20 shadow-sm">
@@ -311,11 +345,11 @@ const InstructorCourseDetailPage = () => {
                 ${isPublished ? "bg-emerald-500/20 border-emerald-400/50 text-emerald-200" : "bg-amber-500/20 border-amber-400/50 text-amber-200"}
               `}
               >
-                {isPublished ? "Đang xuất bản" : "Chờ duyệt"}
+                {isPublished ? "Published" : "Pending Review"}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-2 tracking-tight">
-              Quản trị khóa học
+              Course Management
             </h1>
             <p className="text-white/90 text-lg mb-10 font-medium">
               {courseDetail.title}
@@ -326,7 +360,7 @@ const InstructorCourseDetailPage = () => {
                   <FontAwesomeIcon icon={faUsers} className="text-lg" />
                 </div>
                 <p className="font-bold text-sm">
-                  {courseDetail.students} Học viên
+                  {courseDetail.students} Students
                 </p>
               </div>
               <div className="flex flex-col items-start gap-1">
@@ -347,7 +381,7 @@ const InstructorCourseDetailPage = () => {
             </div>
             <div className="px-2 pb-2">
               <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">
-                Giá bán
+                Price
               </p>
               <p className="text-2xl font-black text-emerald-600 mb-5">
                 ${Number(courseDetail.price).toFixed(2)}
@@ -356,7 +390,7 @@ const InstructorCourseDetailPage = () => {
                 to={`/instructor/courses/${courseDetail.id}/edit`}
                 className="w-full py-3.5 bg-[#1e3a8a] hover:bg-[#172e6e] text-white font-bold rounded-xl transition-all shadow-md shadow-blue-900/30 active:scale-95 text-sm flex items-center justify-center gap-2"
               >
-                <FontAwesomeIcon icon={faEdit} /> Chỉnh sửa Khóa học
+                <FontAwesomeIcon icon={faEdit} /> Edit Course
               </Link>
             </div>
           </div>
@@ -387,10 +421,10 @@ const InstructorCourseDetailPage = () => {
               <div className="mb-6 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex justify-between items-center">
                 <div>
                   <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-1">
-                    Chương trình giảng dạy
+                    Course Curriculum
                   </h2>
                   <p className="text-slate-500 text-sm font-medium">
-                    {lessonsList.length} Bài giảng • Tổng thời lượng {courseDetail.duration}
+                    {lessonsList.length} Lessons • Total duration {courseDetail.duration}
                   </p>
                 </div>
               </div>
@@ -412,17 +446,17 @@ const InstructorCourseDetailPage = () => {
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                   <div>
                     <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
-                      Hỏi đáp Khóa học (Q&A)
+                      Course Q&A
                     </h2>
                     <p className="text-slate-500 text-sm mt-1 font-medium">
-                      Bạn có 2 câu hỏi chưa trả lời cần xử lý.
+                      You have 2 unanswered questions to handle.
                     </p>
                   </div>
                   <div className="flex items-center gap-3 w-full sm:w-auto">
                     <div className="relative flex-1 sm:w-64">
                       <input
                         type="text"
-                        placeholder="Tìm kiếm câu hỏi..."
+                        placeholder="Search questions..."
                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                       <FontAwesomeIcon
@@ -455,7 +489,7 @@ const InstructorCourseDetailPage = () => {
                               {q.student}
                             </h4>
                             <p className="text-slate-500 text-xs mt-0.5">
-                              Bài giảng:{" "}
+                              Lesson:{" "}
                               <span className="text-blue-600 font-medium hover:underline cursor-pointer">
                                 {q.lesson}
                               </span>{" "}
@@ -464,7 +498,7 @@ const InstructorCourseDetailPage = () => {
                           </div>
                           {q.status === "unanswered" && (
                             <span className="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider">
-                              Chưa trả lời
+                              Unanswered
                             </span>
                           )}
                         </div>
@@ -474,7 +508,7 @@ const InstructorCourseDetailPage = () => {
                             <div className="bg-slate-100 p-4 rounded-xl border border-slate-200 mt-2 relative">
                               <div className="absolute -top-3 left-6 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-b-[12px] border-b-slate-200"></div>
                               <p className="text-xs font-bold text-slate-500 mb-1">
-                                Bạn đã trả lời:
+                                Your reply:
                               </p>
                               <p className="text-sm text-slate-700">
                                 {q.reply}
@@ -484,11 +518,11 @@ const InstructorCourseDetailPage = () => {
                             <div className="flex gap-2 mt-4">
                               <input
                                 type="text"
-                                placeholder="Viết câu trả lời..."
+                                placeholder="Write your reply..."
                                 className="flex-1 border border-slate-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
                               />
                               <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-lg transition-colors shadow-sm flex items-center gap-2">
-                                <FontAwesomeIcon icon={faReply} /> Trả lời
+                                <FontAwesomeIcon icon={faReply} /> Reply
                               </button>
                             </div>
                           )}
@@ -507,20 +541,20 @@ const InstructorCourseDetailPage = () => {
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-slate-100">
                   <h3 className="font-extrabold text-slate-800 text-lg">
-                    Trạng thái Khóa học
+                    Course Status
                   </h3>
                   <p className="text-slate-500 text-sm mt-1">
-                    Quản lý hiển thị khóa học của bạn trên EduSync.
+                    Manage your course visibility on EduSync.
                   </p>
                 </div>
                 <div className="p-6 bg-slate-50">
                   <div className="flex items-center justify-between">
                     <div>
                       <h4 className="font-bold text-slate-800">
-                        Hiển thị công khai (Published)
+                        Publicly visible (Published)
                       </h4>
                       <p className="text-slate-500 text-sm mt-1 max-w-lg">
-                        Nếu tắt đi, khóa học sẽ chuyển về dạng Bản nháp (Draft).
+                        If turned off, the course will revert to Draft status.
                       </p>
                     </div>
                     <button
@@ -538,7 +572,7 @@ const InstructorCourseDetailPage = () => {
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div className="p-6 border-b border-slate-100">
                   <h3 className="font-extrabold text-slate-800 text-lg">
-                    Cài đặt Giá khóa học
+                    Course Pricing
                   </h3>
                   <p className="text-slate-500 text-sm mt-1">
                     EduSync charges a 20% platform fee on each successful sale.
@@ -547,7 +581,7 @@ const InstructorCourseDetailPage = () => {
                 <div className="p-6 space-y-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">
-                      Giá niêm yết (USD)
+                      Listed Price (USD)
                     </label>
                     <div className="relative max-w-xs">
                       <span className="absolute left-4 top-2.5 text-slate-500 font-bold">
@@ -555,13 +589,13 @@ const InstructorCourseDetailPage = () => {
                       </span>
                       <input
                         type="number"
-                        defaultValue="10"
+                        defaultValue={courseDetail.price}
                         className="w-full pl-8 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
                   </div>
                   <button className="px-6 py-2.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors shadow-sm text-sm">
-                    Lưu thay đổi
+                    Save Changes
                   </button>
                 </div>
               </div>
@@ -573,21 +607,21 @@ const InstructorCourseDetailPage = () => {
                     className="text-red-500 text-xl"
                   />
                   <h3 className="font-extrabold text-red-700 text-lg">
-                    Khu vực nguy hiểm (Danger Zone)
+                    Danger Zone
                   </h3>
                 </div>
                 <div className="p-6">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                       <h4 className="font-bold text-slate-800">
-                        Xóa khóa học vĩnh viễn
+                        Permanently delete this course
                       </h4>
                       <p className="text-slate-500 text-sm mt-1 max-w-lg">
                         This action cannot be undone.
                       </p>
                     </div>
                     <button className="px-6 py-2.5 bg-white border-2 border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 hover:border-red-600 transition-colors shadow-sm text-sm shrink-0">
-                      Xóa Khóa Học
+                      Delete Course
                     </button>
                   </div>
                 </div>
@@ -600,7 +634,7 @@ const InstructorCourseDetailPage = () => {
         <div className="w-full lg:w-[320px] shrink-0 lg:mt-[4.5rem]">
           <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
             <h4 className="font-extrabold text-slate-800 mb-5 uppercase tracking-wider text-sm">
-              Hồ sơ Giảng viên
+              Instructor Profile
             </h4>
             <div className="flex items-center gap-4 mb-6">
               <img
@@ -613,20 +647,20 @@ const InstructorCourseDetailPage = () => {
                   {courseDetail.instructor}
                 </p>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Giảng viên cấp cao
+                  Senior Instructor
                 </p>
               </div>
             </div>
             <div className="space-y-3 border-t border-slate-100 pt-5">
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500 font-semibold">
-                  Khóa học đã tạo
+                  Courses Created
                 </span>
                 <span className="font-bold text-slate-800">5</span>
               </div>
               <div className="flex justify-between items-center text-sm">
                 <span className="text-slate-500 font-semibold">
-                  Tổng học viên
+                  Total Students
                 </span>
                 <span className="font-bold text-slate-800">1,250</span>
               </div>
