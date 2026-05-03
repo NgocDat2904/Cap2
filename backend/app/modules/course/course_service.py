@@ -124,17 +124,21 @@ class CourseService:
 
     def _serialize_public_card(self, c: dict):
         instructor_name = "Giảng viên EduSync"
+        instructor_avatar = "https://i.pravatar.cc/150?img=11"
         iid = c.get("instructor_id")
         if iid:
             u = get_user_by_id(str(iid))
             if u:
                 instructor_name = u.get("fullName") or u.get("email") or instructor_name
+                instructor_avatar = u.get("avatar_url") or u.get("avatar") or instructor_avatar
 
         course_id = str(c.get("_id")) if c.get("_id") is not None else str(c.get("id", ""))
         
-        # ✅ FIX SỐ LƯỢNG VIDEO: Đếm trực tiếp từ mảng lessons thay vì gọi hàm _video_count cũ
+        # ✅ FIX SỐ LƯỢNG VIDEO: Fallback đếm từ các collection khác nếu mảng nhúng rỗng
         lessons_array = c.get("lessons", [])
-        video_count = len([l for l in lessons_array if l.get("is_published", l.get("isPublished", True)) is True])
+        video_count = len(lessons_array)
+        if video_count == 0:
+            video_count = max(self._count_lessons(course_id), self._video_count(course_id))
 
         return {
             "id": course_id,
@@ -145,7 +149,8 @@ class CourseService:
             "thumbnail": c.get("image") or "",
             "price": float(c.get("price") or 0),
             "instructor": instructor_name,
-            "students": int(c.get("students") or 0),
+            "instructor_avatar": instructor_avatar,
+            "students": self._count_students(course_id),
             "videoCount": video_count,
             "status": c.get("status"),
         }
@@ -380,6 +385,8 @@ class CourseService:
             # Đếm độ dài của mảng lessons nhúng trong course
             lessons_array = c.get("lessons") or []
             lesson_count = len(lessons_array)
+            if lesson_count == 0:
+                lesson_count = max(self._count_lessons(course_id), self._video_count(course_id))
 
             result.append({
                 "id": course_id,
@@ -945,14 +952,23 @@ class CourseService:
             else:
                 actions = []
 
+            instructor_name = "Giảng viên EduSync"
+            iid = course.get("instructor_id")
+            if iid:
+                u = get_user_by_id(str(iid))
+                if u:
+                    instructor_name = u.get("fullName") or u.get("email") or instructor_name
+
             result.append({
                 "id": str(course["_id"]),
                 "title": course.get("title"),
-                "thumbnail": course.get("thumbnail"),
+                "thumbnail": course.get("image") or course.get("thumbnail"),
                 "category": course.get("category"),
                 "price": course.get("price"),
-                "status": course_status,
-                "actions": actions
+                "status": str(course_status).lower() if course_status else "draft",
+                "actions": actions,
+                "instructor": instructor_name,
+                "has_new_update": course.get("has_pending_update", False)
             })
 
         return {
