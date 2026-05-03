@@ -716,13 +716,19 @@ class CourseService:
 
             course_id = str(c.get("_id")) if c.get("_id") is not None else str(c.get("id", ""))
             submitted_at = c.get("submitted_at") or c.get("updated_at") or c.get("created_at")
+            
+            lessons_array = c.get("lessons", [])
+            v_count = len(lessons_array)
+            if v_count == 0:
+                v_count = max(self._count_lessons(course_id), self._video_count(course_id))
+
             items.append({
                 "id": course_id,
                 "title": c.get("title", ""),
                 "thumbnail": c.get("image") or "",
                 "instructor": instructor_name,
                 "submittedAt": self._dt_iso(submitted_at),
-                "videoCount": len([l for l in c.get("lessons", []) if l.get("is_published", l.get("isPublished", True)) is True]),
+                "videoCount": v_count,
                 "status": str(c.get("status", "")).lower(),
                 "has_pending_update": c.get("has_pending_update", False)
             })
