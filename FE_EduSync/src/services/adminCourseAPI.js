@@ -12,6 +12,17 @@ async function parseErrorMessage(res, fallback) {
   return fallback;
 }
 
+export async function fetchAllAdminCoursesAPI(token, params = {}) {
+  const query = new URLSearchParams(params).toString();
+  const res = await fetch(`${BASE_URL}/admin/courses?${query}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new Error(await parseErrorMessage(res, "Failed to load all courses"));
+  }
+  return res.json();
+}
+
 export async function fetchPendingCoursesAPI(token, page = 1, limit = 50) {
   const res = await fetch(
     `${BASE_URL}/admin/courses/pending?page=${page}&limit=${limit}`,
