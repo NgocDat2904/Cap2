@@ -15,85 +15,10 @@ import {
   faTimesCircle,
   faBell,
 } from "@fortawesome/free-solid-svg-icons";
+import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 
 // =========================================================================
-// MOCK DATA
 // =========================================================================
-const initialCourses = [
-  {
-    id: "CRS-101",
-    title: "ReactJS Project-Based Programming — EduSync",
-    instructor: "Tran Viet Anh",
-    category: "Frontend",
-    price: 49.99,
-    status: "published",
-    updatedDate: "03/20/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
-    has_new_update: true,
-  },
-  {
-    id: "CRS-102",
-    title: "Java Backend Complete with Spring Boot 3",
-    instructor: "Nguyen Van Expert",
-    category: "Backend",
-    price: 0,
-    status: "pending",
-    updatedDate: "03/27/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
-    has_new_update: false,
-  },
-  {
-    id: "CRS-103",
-    title: "Get Rich Quick Scam Course",
-    instructor: "Fraudster",
-    category: "Business Analysis",
-    price: 0,
-    status: "rejected",
-    updatedDate: "03/25/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=800&q=80",
-    has_new_update: false,
-  },
-  {
-    id: "CRS-104",
-    title: "UI/UX Design Fundamentals",
-    instructor: "Huong Design",
-    category: "UI/UX Design",
-    price: 0,
-    status: "draft",
-    updatedDate: "02/10/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-    has_new_update: false,
-  },
-  {
-    id: "CRS-105",
-    title: "Mastering C++ for Beginners",
-    instructor: "Tran Viet Anh",
-    category: "Backend",
-    price: 19.99,
-    status: "published",
-    updatedDate: "03/20/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80",
-    has_new_update: false,
-  },
-  {
-    id: "CRS-106",
-    title: "Figma Design from A to Z",
-    instructor: "Huong Design",
-    category: "UI/UX Design",
-    price: 0,
-    status: "draft",
-    updatedDate: "02/10/2026",
-    thumbnail:
-      "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-    has_new_update: false,
-  },
-];
-
 const CATEGORIES = [
   "All",
   "Frontend",
@@ -106,11 +31,28 @@ const CATEGORIES = [
 const AdminCourseManagement = () => {
   const navigate = useNavigate();
 
-  const [courses, setCourses] = useState(initialCourses);
+  const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const loadCourses = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        const data = await fetchAllAdminCoursesAPI(token, { limit: 1000 });
+        setCourses(data.courses || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCourses();
+  }, []);
+
 
   const stats = {
     total: courses.length,

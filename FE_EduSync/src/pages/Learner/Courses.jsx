@@ -303,7 +303,7 @@ const LearnerCoursesPage = () => {
                   {/* Tác giả */}
                   <div className="flex items-center gap-2 mb-3">
                     <img
-                      src="https://i.pravatar.cc/150?img=11"
+                      src={course.instructor_avatar || "https://i.pravatar.cc/150?img=11"}
                       alt="Avatar"
                       className="w-6 h-6 rounded-full object-cover"
                     />
