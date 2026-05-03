@@ -32,7 +32,7 @@ const CourseDetailPage = () => {
         const data = await getCourseDetailAPI(courseId);
         if (!cancelled) setCourseDetail(data);
       } catch (e) {
-        if (!cancelled) setError(e.message || "Không tải được chi tiết khóa học");
+        if (!cancelled) setError(e.message || "Failed to load course details");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -51,7 +51,7 @@ const CourseDetailPage = () => {
         title: l.title,
         duration: l.duration || "--:--",
         views: l.views || 0,
-        timeAgo: "Mới cập nhật",
+        timeAgo: "Recently updated",
         image: l.image || courseDetail.thumbnail,
       })),
     );
@@ -69,13 +69,13 @@ const CourseDetailPage = () => {
     return (
       <div className="w-full py-24 text-center text-slate-500">
         <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-        Đang tải chi tiết khóa học...
+        Loading course details...
       </div>
     );
   }
 
   if (error || !courseDetail) {
-    return <div className="w-full py-24 text-center text-red-600">{error || "Không có dữ liệu"}</div>;
+    return <div className="w-full py-24 text-center text-red-600">{error || "No data available"}</div>;
   }
 
   return (
@@ -95,7 +95,7 @@ const CourseDetailPage = () => {
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
             >
-              <FontAwesomeIcon icon={faArrowLeft} /> Quay lại
+              <FontAwesomeIcon icon={faArrowLeft} /> Back
             </button>
 
             {/* Badge Category */}
@@ -107,9 +107,6 @@ const CourseDetailPage = () => {
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
               {courseDetail.title}
             </h1>
-            {/* <p className="text-slate-300 text-base sm:text-lg mb-8 leading-relaxed max-w-2xl">
-              {courseDetail.subtitle}
-            </p> */}
 
             {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
             <Link
@@ -123,11 +120,11 @@ const CourseDetailPage = () => {
               />
               <div>
                 <p className="text-slate-300 text-xs font-semibold mb-0.5">
-                  Giảng viên
+                  Instructor
                 </p>
                 <div className="flex items-center gap-1.5">
                   <p className="text-white font-bold group-hover:text-blue-400 transition-colors">
-                    {courseDetail.instructor?.name || "Giảng viên EduSync"}
+                    {courseDetail.instructor?.name || "EduSync Instructor"}
                   </p>
                   <FontAwesomeIcon
                     icon={faCheckCircle}
@@ -150,7 +147,7 @@ const CourseDetailPage = () => {
                 <p className="text-white font-bold">
                   {courseDetail.students.toLocaleString()}{" "}
                   <span className="text-slate-400 font-medium text-sm">
-                    Học viên
+                    Students
                   </span>
                 </p>
               </div>
@@ -162,7 +159,7 @@ const CourseDetailPage = () => {
                 <p className="text-white font-bold">
                   {courseDetail.duration}{" "}
                   <span className="text-slate-400 font-medium text-sm">
-                    Thời lượng
+                    Duration
                   </span>
                 </p>
               </div>
@@ -174,7 +171,7 @@ const CourseDetailPage = () => {
                 <p className="text-white font-bold">
                   {courseDetail.lessonCount}{" "}
                   <span className="text-slate-400 font-medium text-sm">
-                    Bài giảng
+                    Lessons
                   </span>
                 </p>
               </div>
@@ -187,13 +184,12 @@ const CourseDetailPage = () => {
       {/* 2. FLOATING PRICING CARD (Thẻ nổi chứa video và giá) */}
       {/* Trên PC: Nó nằm nổi lên góc phải màn hình. Trên Mobile: Nó rớt xuống dưới. */}
       {/* ===================================================================== */}
-     <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
-        {/* Đã giảm p-6 thành p-5 và giảm bo góc xuống 28px cho cân đối với chiều cao mới */}
+      <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
         <div className="bg-white rounded-[28px] p-5 shadow-2xl shadow-black/40 border border-slate-100 flex flex-col h-fit">
-          
+
           {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
           <div className="relative aspect-video rounded-xl overflow-hidden mb-4 group cursor-pointer border border-slate-100">
-              <img
+            <img
               src={courseDetail.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"}
               alt="Preview"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
@@ -208,7 +204,7 @@ const CourseDetailPage = () => {
               </div>
             </div>
             <span className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-md">
-              Xem trước
+              Preview
             </span>
           </div>
 
@@ -221,12 +217,12 @@ const CourseDetailPage = () => {
 
           {/* Nút Mua ngay: Giảm py-4 xuống py-3.5 */}
           <button className="w-full py-3.5 bg-[#1dbf54] hover:bg-[#19a347] text-white font-extrabold rounded-xl transition-colors shadow-lg shadow-[#1dbf54]/30 flex items-center justify-center gap-2 text-lg active:scale-95">
-            <FontAwesomeIcon icon={faCartShopping} /> Mua ngay
+            <FontAwesomeIcon icon={faCartShopping} /> Buy Now
           </button>
 
           {/* Text hoàn tiền: Giảm mt-4 xuống mt-3, text-xs */}
           <p className="text-center text-xs text-slate-500 mt-3 font-medium">
-            Hoàn tiền trong 30 ngày nếu không hài lòng
+            30-day money-back guarantee
           </p>
         </div>
       </div>
@@ -237,10 +233,10 @@ const CourseDetailPage = () => {
       <section className="mt-12 lg:mt-16 lg:w-2/3 px-4 lg:px-0">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-extrabold text-slate-900">
-            Nội dung khóa học
+            Course Content
           </h2>
           <span className="text-slate-500 font-medium text-sm">
-            {lessons.length} video bài giảng
+            {lessons.length} video lessons
           </span>
         </div>
 
@@ -276,13 +272,13 @@ const CourseDetailPage = () => {
               {/* Thông tin Bài giảng */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">
-                  Bài {index + 1}
+                  Lesson {index + 1}
                 </p>
                 <h3 className="text-base font-bold text-slate-800 leading-snug group-hover:text-blue-900 transition-colors line-clamp-2">
                   {lesson.title}
                 </h3>
                 <div className="flex items-center gap-4 mt-2 text-xs font-medium text-slate-500">
-                  <span>{lesson.views.toLocaleString()} lượt xem</span>
+                  <span>{lesson.views.toLocaleString()} views</span>
                   <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                   <span>{lesson.timeAgo}</span>
                 </div>

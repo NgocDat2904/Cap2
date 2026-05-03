@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlayCircle ,
+  faPlayCircle,
   faChalkboardTeacher,
   faCalendarAlt,
   faPlus,
@@ -72,27 +72,27 @@ const kpiDataByFilter = {
   },
 };
 
-// Mock dữ liệu biểu đồ (Biểu đồ doanh thu hàng tháng)
+// Mock dữ liệu biểu đồ (Biểu đồ học viên hàng tháng)
 const chartDataYear = [
-  { month: "Jan", earnings: 500, students: 50 },
-  { month: "Feb", earnings: 1100, students: 110 },
-  { month: "Mar", earnings: 1150, students: 115 },
-  { month: "Apr", earnings: 1900, students: 190 },
-  { month: "May", earnings: 1750, students: 175 },
-  { month: "Jun", earnings: 2400, students: 240 },
-  { month: "Jul", earnings: 2900, students: 290 },
-  { month: "Aug", earnings: 3200, students: 320 },
-  { month: "Sep", earnings: 3400, students: 340 },
-  { month: "Oct", earnings: 3700, students: 370 },
-  { month: "Nov", earnings: 4700, students: 470 },
-  { month: "Dec", earnings: 5200, students: 520 },
+  { month: "Jan", students: 50 },
+  { month: "Feb", students: 110 },
+  { month: "Mar", students: 115 },
+  { month: "Apr", students: 190 },
+  { month: "May", students: 175 },
+  { month: "Jun", students: 240 },
+  { month: "Jul", students: 290 },
+  { month: "Aug", students: 320 },
+  { month: "Sep", students: 340 },
+  { month: "Oct", students: 370 },
+  { month: "Nov", students: 470 },
+  { month: "Dec", students: 520 },
 ];
 
 // Mock dữ liệu Q&A mới nhất
 const qnaData = [
   { id: 1, avatar: "A", name: "Learner A",  course: "Python Basics",    question: "I don't understand the 'Variables' part...",        date: "03/21/2026" },
-  { id: 2, avatar: "T", name: "TeacherB",    course: "Network Administration", question: "Question about routers...",                   date: "03/20/2026" },
-  { id: 3, avatar: "B", name: "Learner B",  course: "ReactJS in Practice", question: "When should I use useEffect?",                    date: "03/19/2026" },
+  { id: 2, avatar: "T", name: "TeacherB",    course: "Network Administration", question: "Question about routers...",                  date: "03/20/2026" },
+  { id: 3, avatar: "B", name: "Learner B",  course: "ReactJS in Practice", question: "When should I use useEffect?",                   date: "03/19/2026" },
 ];
 
 // Mock dữ liệu Khóa học phổ biến nhất
@@ -160,9 +160,6 @@ const InstructorDashboardPage = () => {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState("Year 2026");
 
-  // State quản lý Biểu đồ
-  const [chartFilter, setChartFilter] = useState("earnings");
-
   // Quản lý Action Dropdown của bảng Khóa học
   const [openActionId, setOpenActionId] = useState(null);
   const actionDropdownRef = useRef(null);
@@ -187,17 +184,15 @@ const InstructorDashboardPage = () => {
     { icon: faQuestionCircle,     title: "Total Q&A Questions", value: kpiDataByFilter[timeFilter].questions.value, change: kpiDataByFilter[timeFilter].questions.change, changeType: kpiDataByFilter[timeFilter].questions.type,  bgColor: "bg-purple-100",  iconColor: "text-purple-600" },
   ];
 
-  // Tính toán dữ liệu trục tung cho biểu đồ
+  // Tính toán dữ liệu trục tung cho biểu đồ học viên
   const chartLabelsYear = chartDataYear.map((item) => item.month);
-  const chartValuesYear = chartDataYear.map((item) => item[chartFilter]);
-  const maxChartValue = chartFilter === "earnings" ? 5500 : 550;
-  const chartStep = chartFilter === "earnings" ? 1000 : 100;
+  const chartValuesYear = chartDataYear.map((item) => item.students);
+  const maxChartValue = 600; // Tăng max lên 600 để bao phủ đỉnh cao nhất (520)
+  const chartStep = 100;
 
   const yAxisLabelsYear = [];
   for (let i = 0; i <= maxChartValue; i += chartStep) {
-    yAxisLabelsYear.push(
-      chartFilter === "earnings" ? `$${i.toLocaleString()}` : i.toString(),
-    );
+    yAxisLabelsYear.push(i.toString());
   }
   yAxisLabelsYear.reverse();
 
@@ -226,33 +221,17 @@ const InstructorDashboardPage = () => {
         ))}
       </div>
 
-      {/* DÒNG 2: BIỂU ĐỒ VÀ Q&A TÓM TẮT (Đã được khôi phục) */}
+      {/* DÒNG 2: BIỂU ĐỒ VÀ Q&A TÓM TẮT */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8 overflow-visible">
-        {/* Biểu đồ doanh thu hàng tháng */}
+        {/* Biểu đồ số lượng học viên hàng tháng */}
         <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up overflow-visible relative z-10">
           <div className="flex items-center justify-between mb-8 overflow-visible">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              {chartFilter === "earnings"
-                ? "Revenue Chart"
-                : "Students Chart"}
+              Students Chart
             </h2>
-            {/* <div className="flex gap-2 bg-slate-100 p-1 rounded-lg">
-              <button
-                onClick={() => setChartFilter("earnings")}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${chartFilter === "earnings" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-              >
-                Revenue
-              </button>
-              <button
-                onClick={() => setChartFilter("students")}
-                className={`px-4 py-1.5 text-sm font-bold rounded-md transition-colors ${chartFilter === "students" ? "bg-white text-blue-600 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
-              >
-                Students
-              </button>
-            </div> */}
           </div>
 
-          {/* Mockup Biểu đồ Bar Chart */}
+          {/* Biểu đồ Bar Chart */}
           <div className="relative w-full h-[320px] flex gap-4 overflow-visible">
             {/* Trục Y labels */}
             <div className="flex flex-col justify-between items-end text-xs text-slate-400 h-[280px] w-12 shrink-0 font-medium relative -top-2">
@@ -264,7 +243,7 @@ const InstructorDashboardPage = () => {
             <div className="flex-1 flex flex-col justify-between overflow-visible relative">
               {/* Lưới nền (Grid lines) */}
               <div className="absolute inset-0 flex flex-col justify-between h-[280px] pointer-events-none">
-                {[...Array(6)].map((_, i) => (
+                {yAxisLabelsYear.map((_, i) => (
                   <div
                     key={i}
                     className="border-t border-slate-100 w-full h-0"
@@ -283,14 +262,12 @@ const InstructorDashboardPage = () => {
                     >
                       {/* Cột */}
                       <div
-                        className={`w-full rounded-t-sm transition-all duration-500 ${chartFilter === "earnings" ? "bg-blue-500 group-hover:bg-blue-600" : "bg-emerald-400 group-hover:bg-emerald-500"}`}
+                        className="w-full rounded-t-sm transition-all duration-500 bg-emerald-400 group-hover:bg-emerald-500"
                         style={{ height: `${heightPercent}%` }}
                       ></div>
                       {/* Tooltip khi hover */}
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-40 pointer-events-none">
-                        {chartFilter === "earnings"
-                          ? `$${value.toLocaleString()}`
-                          : `${value.toLocaleString()} students`}
+                        {value.toLocaleString()} students
                       </div>
                     </div>
                   );

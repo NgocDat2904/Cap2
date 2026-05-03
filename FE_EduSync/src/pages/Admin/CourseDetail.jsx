@@ -40,8 +40,8 @@ function formatUpdatedDate(iso) {
 // ✅ THUẬT TOÁN ĐỔI DUNG LƯỢNG (BYTES SANG MB, GB)
 const formatFileSize = (bytes) => {
   if (bytes === "—" || !bytes || bytes === 0) return "—";
-  if (typeof bytes === "string" && bytes.includes("B")) return bytes; 
-  
+  if (typeof bytes === "string" && bytes.includes("B")) return bytes;
+
   const k = 1024;
   const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
@@ -154,7 +154,7 @@ const AdminCourseDetail = () => {
       alert("Course rejected.");
       await loadCourse();
     } catch (e) {
-      alert(e.message || "Từ chối thất bại");
+      alert(e.message || "Rejection failed");
     } finally {
       setActionLoading(false);
     }
@@ -170,8 +170,8 @@ const AdminCourseDetail = () => {
       setActionLoading(true);
       try {
         const newPrice = isPriceChanged ? parseFloat(adminPrice) : null;
-        await resolveUpdateAPI(id, newPrice, token); 
-        
+        await resolveUpdateAPI(id, newPrice, token);
+
         alert("Update processed successfully!");
         await loadCourse();
       } catch (e) {
@@ -186,7 +186,7 @@ const AdminCourseDetail = () => {
     const newStatus = course.status === "suspended" ? "published" : "suspended";
     if (
       window.confirm(
-        `Bạn có chắc chắn muốn ${newStatus === "suspended" ? "đình chỉ" : "khôi phục"} khóa học này?`,
+        `Are you sure you want to ${newStatus === "suspended" ? "suspend" : "restore"} this course?`,
       )
     ) {
       setCourse({ ...course, status: newStatus });
@@ -215,16 +215,16 @@ const AdminCourseDetail = () => {
               icon={faBell}
               className="text-amber-500 animate-bounce"
             />
-            Xem xét lại Giá bán
+            Review Pricing
           </h3>
           <p className="text-amber-700/80 text-xs font-medium mb-5">
-            Giảng viên vừa cập nhật nội dung! Bạn có thể điều chỉnh giá bán nếu
-            nhận thấy bản cập nhật này làm khóa học chất lượng hơn.
+            The instructor just updated the content! You may adjust the price if
+            you feel this update improves the course quality.
           </p>
 
           <div className="mb-6">
             <label className="block text-xs font-bold text-amber-800 mb-2 uppercase tracking-wider">
-              Mức giá mới (USD)
+              New Price (USD)
             </label>
             <div className="relative">
               <FontAwesomeIcon
@@ -263,10 +263,10 @@ const AdminCourseDetail = () => {
               icon={faCheckCircle}
               className="text-emerald-400"
             />
-            Thiết lập giá bán (USD)
+            Set Listing Price (USD)
           </h3>
           <p className="text-blue-200 text-xs font-medium mb-5 relative z-10">
-            Nội dung đạt chuẩn? Hãy định giá để xuất bản lên sàn.
+            Content meets the standard? Set a price to publish it to the platform.
           </p>
           <div className="relative z-10 mb-6">
             <div className="relative">
@@ -278,7 +278,7 @@ const AdminCourseDetail = () => {
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="VD: 49.99 (Để 0 nếu miễn phí)"
+                placeholder="E.g: 49.99 (Set 0 if free)"
                 value={adminPrice}
                 onChange={(e) => setAdminPrice(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-0 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-emerald-500/30 outline-none"
@@ -319,15 +319,15 @@ const AdminCourseDetail = () => {
             <FontAwesomeIcon icon={faTimesCircle} className="text-2xl" />
           </div>
           <h3 className="text-base font-black text-red-700 mb-2">
-            Khóa học đã bị từ chối!
+            This course has been rejected!
           </h3>
           <p className="text-xs text-red-600/80 font-medium">
-            Bạn đã từ chối duyệt khóa học này. Giảng viên cần phải chỉnh sửa lại
-            nội dung và gửi lại yêu cầu duyệt.
+            You have rejected this course. The instructor needs to revise the
+            content and resubmit for review.
           </p>
           {course.rejectReason ? (
             <p className="text-xs text-red-800 font-bold mt-3 text-left bg-white/60 p-2 rounded-lg border border-red-100">
-              Lý do: {course.rejectReason}
+              Reason: {course.rejectReason}
             </p>
           ) : null}
         </div>
@@ -341,11 +341,11 @@ const AdminCourseDetail = () => {
             <FontAwesomeIcon icon={faPenRuler} className="text-xl" />
           </div>
           <h3 className="text-base font-black text-slate-700 mb-2">
-            Khóa học đang soạn thảo
+            Course is in Draft
           </h3>
           <p className="text-xs text-slate-500 font-medium">
-            Giảng viên chưa gửi yêu cầu duyệt. Không có hành động nào khả dụng
-            lúc này.
+            The instructor has not submitted a review request yet. No actions are
+            available at this time.
           </p>
         </div>
       );
@@ -354,7 +354,7 @@ const AdminCourseDetail = () => {
     return (
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 overflow-hidden relative">
         <h3 className="text-lg font-black text-slate-900 mb-5">
-          Hậu kiểm & Xử lý
+          Post-Publish Actions
         </h3>
         <button
           onClick={handleToggleSuspension}
@@ -383,30 +383,30 @@ const AdminCourseDetail = () => {
       return (
         <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-emerald-200">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-          Đang hoạt động
+          Active
         </span>
       );
     if (status === "pending")
       return (
         <span className="px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-amber-200 animate-pulse">
-          <FontAwesomeIcon icon={faClockRotateLeft} /> Đang chờ duyệt
+          <FontAwesomeIcon icon={faClockRotateLeft} /> Pending Review
         </span>
       );
     if (status === "rejected")
       return (
         <span className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-red-200">
-          <FontAwesomeIcon icon={faTimesCircle} /> Đã từ chối
+          <FontAwesomeIcon icon={faTimesCircle} /> Rejected
         </span>
       );
     if (status === "draft")
       return (
         <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-slate-200">
-          <FontAwesomeIcon icon={faPenRuler} /> Bản nháp GV
+          <FontAwesomeIcon icon={faPenRuler} /> Instructor Draft
         </span>
       );
     return (
       <span className="px-3 py-1.5 bg-slate-800 text-white text-sm font-bold rounded-xl flex items-center gap-2 border border-slate-900">
-        <FontAwesomeIcon icon={faBan} /> Bị đình chỉ
+        <FontAwesomeIcon icon={faBan} /> Suspended
       </span>
     );
   };
@@ -429,11 +429,11 @@ const AdminCourseDetail = () => {
             </div>
             <div>
               <h3 className="text-amber-800 font-bold text-sm">
-                Hệ thống báo cáo: Có bản cập nhật nội dung!
+                System Notice: New content update available!
               </h3>
               <p className="text-amber-700/80 text-xs mt-0.5">
-                Giảng viên vừa thêm/sửa bài giảng mới. Vui lòng xem bảng công cụ
-                bên phải để xử lý.
+                The instructor has added or edited lessons. Please check the
+                right panel to take action.
               </p>
             </div>
           </div>
@@ -444,7 +444,7 @@ const AdminCourseDetail = () => {
             <div className="flex items-center gap-3 mb-3">
               {renderStatusBadge(course.status)}
               <span className="text-slate-400 font-bold text-sm border-l border-slate-300 pl-3">
-                Mã: {course.id}
+                ID: {course.id}
               </span>
             </div>
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
@@ -491,9 +491,9 @@ const AdminCourseDetail = () => {
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
             <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
               <FontAwesomeIcon icon={faListUl} className="text-blue-600" />
-              Giáo trình ({lessons.length} bài)
+              Curriculum ({lessons.length} lessons)
             </h3>
-            
+
             {/* ✅ ĐÃ SỬA: Danh sách bài giảng mới ở đây */}
             <div className="space-y-3">
               {lessons.map((lesson) => {
@@ -512,28 +512,28 @@ const AdminCourseDetail = () => {
                         ev.currentTarget.src = THUMB_FALLBACK;
                       }}
                     />
-                    
+
                     <div className="flex-1 min-w-0">
                       <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
                         {lesson.title}
                         {isNewLesson && (
                           <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase shadow-sm">
-                            Mới thêm
+                            New
                           </span>
                         )}
                       </p>
                       <p className="text-xs text-slate-500 font-medium mt-1">
-                        Dung lượng: <span className="font-bold">{formatFileSize(lesson.size)}</span>
+                        File size: <span className="font-bold">{formatFileSize(lesson.size)}</span>
                       </p>
                     </div>
-                    
+
                     <div className="shrink-0 text-xs font-bold text-slate-400 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
                       <FontAwesomeIcon icon={faClock} /> {lesson.duration}
                     </div>
                   </div>
                 );
               })}
-              
+
               {lessons.length === 0 && (
                 <p className="text-sm text-slate-400 text-center py-4">
                   No lessons yet.
@@ -552,13 +552,12 @@ const AdminCourseDetail = () => {
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
             <h3 className="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
               <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />{" "}
-              Thông hiện chung
+              General Information
             </h3>
             <ul className="space-y-4">
               <li className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUserTie} className="w-4" /> Giảng
-                  viên
+                  <FontAwesomeIcon icon={faUserTie} className="w-4" /> Instructor
                 </span>
                 <span className="text-sm font-black text-slate-800">
                   {course.instructor}
@@ -566,7 +565,7 @@ const AdminCourseDetail = () => {
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faTag} className="w-4" /> Phân loại
+                  <FontAwesomeIcon icon={faTag} className="w-4" /> Category
                 </span>
                 <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">
                   {course.category}
@@ -579,7 +578,7 @@ const AdminCourseDetail = () => {
                   <li className="flex items-center justify-between">
                     <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
                       <FontAwesomeIcon icon={faDollarSign} className="w-4" />{" "}
-                      Giá bán
+                      Price
                     </span>
                     <span className="text-sm font-black text-emerald-600">
                       ${course.price}

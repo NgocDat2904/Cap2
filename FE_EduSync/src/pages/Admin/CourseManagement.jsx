@@ -21,11 +21,14 @@ import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 // =========================================================================
 const CATEGORIES = [
   "All",
-  "Frontend",
-  "Backend",
+  "Frontend Web Development",
+  "Backend Web Development",
+  "Mobile Programming",
+  "AI & Machine Learning",
+  "Data Analysis",
+  "Data Engineering",
   "UI/UX Design",
   "Business Analysis",
-  "Data Analysis",
 ];
 
 const AdminCourseManagement = () => {
@@ -257,9 +260,37 @@ const AdminCourseManagement = () => {
                     key={course.id}
                     className={`hover:bg-slate-50/80 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}
                   >
-                    <td className="p-5 text-center text-sm font-bold text-slate-400">
-                      {course.id.replace("CRS-", "#")}
-                    </td>
+                    <td className="p-5 text-center">
+  <div className="relative group/id flex items-center justify-center">
+    {/* Text bị cắt với dấu 3 chấm */}
+    <span
+      className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
+      title={course.id}
+    >
+      {course.id}
+    </span>
+
+    {/* Tooltip hiện full ID khi hover */}
+    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
+      <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
+        <span className="select-all">{course.id}</span>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            navigator.clipboard.writeText(course.id);
+            e.currentTarget.innerText = "✓";
+            setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
+          }}
+          className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
+        >
+          Copy
+        </button>
+      </div>
+      {/* Mũi tên nhỏ */}
+      <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
+    </div>
+  </div>
+</td>
                     <td className="p-5">
                       <div className="flex items-start gap-4">
                         <img
