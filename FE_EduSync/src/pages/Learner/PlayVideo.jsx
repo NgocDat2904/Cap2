@@ -63,22 +63,24 @@ const CourseLearningWorkspace = () => {
   }, [courseId]);
 
   const playlist = useMemo(() => {
-    const sections = courseDetail?.sections || [];
-    return sections.flatMap((section) =>
-      (section.lessons || []).map((lesson) => ({
-        id: lesson.id,
-        title: lesson.title || "Untitled lesson",
-        duration: lesson.duration || "00:00",
-        description: lesson.description || "",
-        transcript: lesson.transcript || "",
-        image: lesson.image || courseDetail?.thumbnail || "",
-        videoUrl: lesson.play_url || lesson.url || "",
-        completed: false,
-        locked: false,
-        timeline: [],
-        views: lesson.views || 0,
-      })),
-    );
+    const lessons = courseDetail?.lessons || [];
+
+    return lessons.map((lesson) => ({
+      id: lesson.id,
+      title: lesson.title || "Untitled lesson",
+      duration: lesson.duration || "00:00",
+      description: lesson.description || "",
+      transcript: lesson.transcript || "",
+      image: lesson.image || courseDetail?.thumbnail || "",
+
+      // 🔥 QUAN TRỌNG NHẤT
+      videoUrl: lesson.play_url || "",
+
+      completed: false,
+      locked: false,
+      timeline: [],
+      views: lesson.views || 0,
+    }));
   }, [courseDetail]);
 
   useEffect(() => {
