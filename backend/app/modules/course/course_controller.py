@@ -1,7 +1,5 @@
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, Query
-
 from app.middleware.auth_middleware import require_role
-from app.modules.course.course_service import CourseService
 from app.modules.course.course_model import (
     CourseResponse,
     CourseUpdate,
@@ -13,6 +11,7 @@ from app.middleware.auth_middleware import get_current_user
 from app.modules.course.course_service import course_service
 from datetime import datetime
 from bson import ObjectId
+from app.database.mongodb import db
 
 router = APIRouter(prefix="", tags=["Course"])
 
@@ -37,23 +36,17 @@ async def get_all_courses(
 
 @router.get("/courses/search")
 async def search_courses(
-    keyword: str = Query("", description="Search keyword"),
-    category: str = Query("", description="Filter by category"),
-
-    # giữ lại filter cũ để không phá FE
-    price: str = Query("", description="Price filter (under_1m, 1m_3m, over_3m)"),
-
-    # filter mới
+    keyword: str = Query(None),
+    category: str = Query(None),
+    price: str = Query(None),          # under_1m | 1m_3m | over_3m
     min_price: float = Query(None),
     max_price: float = Query(None),
-
-    sort: str = Query("newest"),
-
+    sort: str = Query("newest"),       # newest | price_asc | price_desc
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=100),
 ):
     try:
-        keyword = keyword.strip()
+        keyword = (keyword or "").strip()
 
         return await course_service.search_courses(
             keyword=keyword,
@@ -65,7 +58,6 @@ async def search_courses(
             page=page,
             limit=limit,
         )
-
     except Exception as e:
         raise HTTPException(500, str(e))
 
@@ -77,23 +69,6 @@ async def get_top_courses():
     except Exception as e:
         raise HTTPException(500, str(e))
 
-
-@router.get("/courses/filter")
-async def filter_courses(
-    category: str = Query("all"),
-    price: str = Query("all"),
-    page: int = Query(1),
-    limit: int = Query(10),
-):
-    try:
-        return await course_service.filter_courses(
-            category,
-            price,
-            page,
-            limit
-        )
-    except Exception as e:
-        raise HTTPException(500, str(e))
 
 
 # 🔥 MAIN API (MATCH UI)
@@ -294,7 +269,7 @@ async def reject_course(
         raise _http_from_exc(e)
     
 @router.get("/admin/courses")
-def get_admin_courses(
+async def get_admin_courses(
     q: str = None,
     category: str = None,
     status: str = None,
@@ -306,7 +281,7 @@ def get_admin_courses(
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return course_service.get_admin_courses(
+    return await course_service.get_admin_courses(
         q=q,
         category=category,
         status=status,
@@ -315,8 +290,9 @@ def get_admin_courses(
     )
 
 
+
 @router.put("/admin/courses/{course_id}/moderate")
-def moderate_course(
+async def moderate_course(
     course_id: str,
     status: str,
     current_user=Depends(get_current_user)
@@ -324,19 +300,7 @@ def moderate_course(
     if current_user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    from app.database.mongodb import db
-
-    db.courses.update_one(
-        {"_id": ObjectId(course_id)},
-        {
-            "$set": {
-                "status": status,
-                "updated_at": datetime.utcnow()
-            }
-        }
-    )
-
-    return {"message": "Updated successfully"}
+    return await course_service.moderate_course(course_id, status)
 
 
 

@@ -105,29 +105,29 @@ export const saveVideoToDBAPI = async (courseId, videoData, token) => {
   return await response.json();
 };
 
-export const createSectionAPI = async (sectionData, token) => {
-  const response = await fetch(`${BASE_URL}/instructor/sections`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(sectionData),
-  });
+// export const createSectionAPI = async (sectionData, token) => {
+//   const response = await fetch(`${BASE_URL}/instructor/sections`, {
+//     method: "POST",
+//     headers: {
+//       Authorization: `Bearer ${token}`,
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify(sectionData),
+//   });
 
-  if (!response.ok) {
-    let detail = "Lỗi khi tạo section";
-    try {
-      const err = await response.json();
-      if (typeof err.detail === "string") detail = err.detail;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(detail);
-  }
+//   if (!response.ok) {
+//     let detail = "Lỗi khi tạo section";
+//     try {
+//       const err = await response.json();
+//       if (typeof err.detail === "string") detail = err.detail;
+//     } catch {
+//       /* ignore */
+//     }
+//     throw new Error(detail);
+//   }
 
-  return response.json();
-};
+//   return response.json();
+// };
 
 export const createLessonAPI = async (lessonData, token) => {
   const response = await fetch(`${BASE_URL}/instructor/lessons`, {

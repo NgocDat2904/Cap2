@@ -76,6 +76,15 @@ class InstructorInfo(BaseModel):
 class EnrollRequest(BaseModel):
     course_id: str
 
+
+# ===================== VIDEO =====================
+
+class VideoResponse(BaseModel):
+    id: str
+    title: Optional[str] = None
+    video_url: Optional[str] = None
+    duration: Optional[str] = None
+
 # ===================== LESSON =====================
 
 class LessonResponse(BaseModel):
@@ -85,16 +94,9 @@ class LessonResponse(BaseModel):
     duration: Optional[str] = None
     views: Optional[int] = 0
     image: Optional[str] = None
-
     play_url: Optional[str] = None
+    videos: List[VideoResponse] = []
 
-
-# ===================== SECTION =====================
-
-class SectionResponse(BaseModel):
-    id: str
-    title: str
-    lessons: List[LessonResponse] = []
 
 
 # ===================== COURSE DETAIL =====================
@@ -115,7 +117,7 @@ class CourseDetailResponse(BaseModel):
     duration: Optional[str] = None
     lessonCount: int = 0
 
-    sections: List[SectionResponse] = []
+    lessons: List[LessonResponse] = []
 
 class CourseUpdate(BaseModel):
     title: Optional[str] = None
