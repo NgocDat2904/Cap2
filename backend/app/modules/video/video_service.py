@@ -38,7 +38,7 @@ class VideoService:
 
     async def save_video(self, data: VideoRequest, instructor_id: str):
 
-        # 🔥 1. Validate lesson_id
+    # ===================== VALIDATE LESSON =====================
         if not data.lesson_id:
             raise HTTPException(400, "lesson_id is required")
 
@@ -47,22 +47,24 @@ class VideoService:
 
         lesson = db.lessons.find_one({
             "_id": ObjectId(data.lesson_id)
-        })
+    })
 
         if not lesson:
             raise HTTPException(404, "Lesson not found")
 
-        # 🔥 2. Validate ownership
-        section = db.sections.find_one({
-            "_id": lesson["section_id"]
-        })
+    # ===================== GET COURSE (NO SECTION) =====================
+        course_id = lesson.get("course_id")
 
-        if not section:
-            raise HTTPException(404, "Section not found")
+        if not course_id:
+            raise HTTPException(400, "Lesson chưa có course_id")
+
+    # 🔥 FIX kiểu dữ liệu
+        if isinstance(course_id, str):
+            course_id = ObjectId(course_id)
 
         course = db.courses.find_one({
-            "_id": section["course_id"]
-        })
+            "_id": course_id
+    })
 
         if not course:
             raise HTTPException(404, "Course not found")
@@ -70,35 +72,39 @@ class VideoService:
         if str(course["instructor_id"]) != instructor_id:
             raise HTTPException(403, "Not your course")
 
-        # 🔥 3. Validate video data
+    # ===================== VALIDATE VIDEO =====================
         if not data.video_url and not data.storage_path:
             raise HTTPException(400, "Cần url hoặc storage_path")
 
-        # ===================== BUILD DATA =====================
-
+    # ===================== BUILD DATA =====================
         doc = {
-            "lesson_id": ObjectId(data.lesson_id),
-            "course_id": course["_id"],   # 🔥 QUAN TRỌNG
+        "lesson_id": lesson["_id"],
+        "course_id": course["_id"],
 
-            "video_url": data.video_url,
-            "storage_path": data.storage_path,
+        "video_url": (data.video_url or "").strip(),
+        "storage_path": (data.storage_path or "").strip(),
 
-            # 🔥 UI DATA
-            "title": data.title or lesson.get("title"),
-            "description": data.description,
+        # UI
+        "title": data.title or lesson.get("title"),
+        "description": data.description,
 
-            "thumbnail_url": data.thumbnail_url,
-            "image": data.image or data.thumbnail_url,
+        "thumbnail_url": data.thumbnail_url,
+        "image": data.image or data.thumbnail_url,
 
-            "duration": data.duration or "10:00",
-            "views": data.views or 0,
-            "transcript": data.transcript,
-            "transcript_segments": [],
-            "ai_status": "ready" if (data.transcript and data.transcript.strip()) else "pending",
-            "ai_cache": {},
+        "duration": data.duration or "10:00",
+        "views": data.views or 0,
 
-            "created_at": datetime.utcnow(),
-        }
+        # AI
+        "transcript": data.transcript,
+        "transcript_segments": [],
+        "ai_status": "ready" if (data.transcript and data.transcript.strip()) else "pending",
+        "ai_cache": {},
+
+        # 🔥 NEW
+        "is_approved": True,
+
+        "created_at": datetime.utcnow(),
+    }
 
         return video_repository.create(doc)
 

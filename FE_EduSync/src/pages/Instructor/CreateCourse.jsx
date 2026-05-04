@@ -13,7 +13,7 @@ import {
   saveVideoToDBAPI,
   submitCourseAPI,
   uploadCourseThumbnailAPI,
-  createSectionAPI,
+  // createSectionAPI,
   createLessonAPI,
 } from "../../services/courseAPI";
 
@@ -147,22 +147,22 @@ const InstructorCreateCourse = () => {
       const newCourseId = createResponse.id;
 
       // Tạo section mặc định để chứa danh sách video upload ở màn này
-      let defaultSectionId = null;
-      if (uploadedVideos.length > 0) {
-        setUploadProgressText("Đang tạo section nội dung...");
-        const sectionRes = await createSectionAPI(
-          {
-            course_id: newCourseId,
-            title: "Nội dung khóa học",
-            order_index: 1,
-          },
-          token,
-        );
-        defaultSectionId = sectionRes?.id;
-        if (!defaultSectionId) {
-          throw new Error("Không tạo được section cho khóa học");
-        }
-      }
+      // let defaultSectionId = null;
+      // if (uploadedVideos.length > 0) {
+      //   setUploadProgressText("Đang tạo section nội dung...");
+      //   const sectionRes = await createSectionAPI(
+      //     {
+      //       course_id: newCourseId,
+      //       title: "Nội dung khóa học",
+      //       order_index: 1,
+      //     },
+      //     token,
+      //   );
+      //   defaultSectionId = sectionRes?.id;
+      //   if (!defaultSectionId) {
+      //     throw new Error("Không tạo được section cho khóa học");
+      //   }
+      // }
 
       // BƯỚC 2 + 3 + 4: XỬ LÝ UP TỪNG VIDEO
       if (uploadedVideos.length > 0) {
@@ -183,7 +183,7 @@ const InstructorCreateCourse = () => {
           // Mỗi video tạo một lesson rồi mới gắn video vào lesson đó
           const lessonRes = await createLessonAPI(
             {
-              section_id: defaultSectionId,
+              course_id: newCourseId,
               title: video.title || `Bài ${i + 1}`,
               order_index: i + 1,
             },
@@ -215,7 +215,7 @@ const InstructorCreateCourse = () => {
         setUploadProgressText("Đang gửi yêu cầu duyệt khóa học...");
         await submitCourseAPI(newCourseId, token);
         alert("Đã gửi khóa học lên Trung tâm! Vui lòng chờ Admin định giá và xuất bản.");
-        
+
         // Reset form cho sạch sẽ
         setCourseInfo({ title: "", description: "", category: "", prerequisites: "", enableQA: true, visibility: "public" });
         setUploadedVideos([]);
@@ -260,7 +260,7 @@ const InstructorCreateCourse = () => {
 
   return (
     <div className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-slate-50 font-sans min-h-screen relative">
-      
+
       {/* LỚP MÀN MỜ KHI ĐANG UPLOAD */}
       {isLoading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex flex-col items-center justify-center text-white">

@@ -1,16 +1,18 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
+
+from app.modules.course.course_service import course_service
 from .instructor_schema import InstructorProfileUpdate
 from app.middleware.auth_middleware import get_current_user
 from app.modules.instructor.instructor_service import instructor_service
 
-router = APIRouter(prefix="", tags=["Instructor"])
+router = APIRouter(prefix="/instructor", tags=["Instructor"])
 
 
 # =========================
 # 🔍 GET PROFILE
 # =========================
 @router.get("/profile")
-def get_profile(current_user=Depends(get_current_user)):
+async def get_profile(current_user=Depends(get_current_user)):
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
@@ -21,35 +23,35 @@ def get_profile(current_user=Depends(get_current_user)):
 # 🔄 UPDATE PROFILE (JSON)
 # =========================
 @router.put("/update-profile")
-def update_profile(
+async  def update_profile(
     data: InstructorProfileUpdate,
     current_user=Depends(get_current_user)
 ):
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return instructor_service.update_instructor_profile(current_user["id"], data)
+    return await instructor_service.update_instructor_profile(current_user["id"], data)
 
 
 # =========================
 # 🖼️ UPLOAD AVATAR (RIÊNG)
 # =========================
 @router.post("/upload-avatar")
-def upload_avatar_api(
+async def upload_avatar_api(
     file: UploadFile = File(...),
     current_user=Depends(get_current_user)
 ):
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return instructor_service.upload_avatar(current_user["id"], file)
+    return await instructor_service.upload_avatar(current_user["id"], file)
 
 
 # =========================
 # 🔥 API GỘP (TEXT + AVATAR)
 # =========================
 @router.post("/update-full-profile")
-def update_full_profile_api(
+async def update_full_profile_api(
     fullName: str = Form(None),
     email: str = Form(None),
     phone: str = Form(None),
@@ -100,6 +102,15 @@ def update_full_profile_api(
     return result
 
 
+
+@router.get("/dashboard/top-courses")
+async def get_top_courses(current_user=Depends(get_current_user)):
+    try:
+        return await course_service.get_top_courses(current_user["id"])
+    except Exception as e:
+        raise HTTPException(500, str(e))
+
+
 # =========================
 # 📊 GET STUDENTS
 # =========================
@@ -117,3 +128,5 @@ async def get_students(
         search=search,
         course_id=course_id
     )
+
+
