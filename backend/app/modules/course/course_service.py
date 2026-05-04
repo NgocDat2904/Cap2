@@ -4,8 +4,11 @@ from app.modules.auth.auth_repository import get_user_by_id
 from app.modules.video.video_repository import VideoRepository
 from app.storage.gcs_client import GCSClient
 from app.database.mongodb import db
+from app.database.mongodb import db as _db
 from .course_repository import CourseRepository
 from app.modules.lesson.lesson_repository import LessonRepository
+from fastapi import HTTPException
+
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
 
 
@@ -159,8 +162,7 @@ class CourseService:
 
     async def get_public_courses(self, page=1, limit=10):
         filter = {"status": "APPROVED"}
-
-        courses = await course_repository.find_public(filter, page, limit)
+        courses = await course_repository.find_public(filter, page, limit, [("created_at", -1)])
         total = await course_repository.count(filter)
 
         return {
@@ -172,146 +174,69 @@ class CourseService:
 
     async def get_public_course_detail(self, course_id: str):
         try:
-            course = await course_repository.get_public_by_id_with_sections(course_id)
-        except Exception:
-            course = None
+            course = await course_repository.get_by_id(course_id)
+            if not course:
+               return None
 
-        if not course:
-            return None
+            course_thumb = (course.get("image") or "").strip()
 
-        course_thumb = (course.get("image") or "").strip()
-
-        instructor = None
-        iid = course.get("instructor_id")
-
-        if iid:
-            user = get_user_by_id(str(iid))
-            if user:
-                instructor = {
+        # 👉 instructor
+            instructor = None
+            iid = course.get("instructor_id")
+            if iid:
+                user = get_user_by_id(str(iid))
+                if user:
+                    instructor = {
                     "id": str(iid),
                     "name": user.get("fullName") or user.get("email"),
-                    "title": "Senior Software Engineer",
+                    # "title": "Senior Software Engineer",
+                    "title": "Instructor",
                     # ✅ FIX: DB lưu là avatar_url (snake_case), thử cả 2 field để tương thích
                     "avatar": user.get("avatar_url") or user.get("avatar") or "https://i.pravatar.cc/150?img=11"
+                    # "avatar": user.get("avatar_url") or ""
                 }
 
-        # ===================== LESSONS — ƯU TIÊN EMBEDDED =====================
-        # Hậu kiểm: Learner thấy tất cả bài giảng mà GV đã publish, bỏ qua trạng thái is_approved
-        embedded_lessons = course.get("lessons") or []
-
-        if embedded_lessons:
-            public_lessons = [
-                l for l in embedded_lessons
-                if l.get("is_published", l.get("isPublished", True)) is True 
-            ]
-
-            # ✅ FIX VIDEO PLAYBACK: Cross-reference với collection `videos` để lấy play_url.
-            # Embedded lessons chỉ lưu metadata (title, duration...), URL video thật nằm trong
-            # collection `videos` được link qua lesson_id hoặc title matching.
-            # Build lookup map: lesson_id (str) -> video doc
-            course_obj_id = course.get("_id")
-            raw_videos_for_course = video_repository.get_by_course(str(course_obj_id)) if course_obj_id else []
-            video_by_lesson_id = {}
-            video_by_title = {}
-            for v in raw_videos_for_course:
-                lid = v.get("lesson_id")
-                if lid:
-                    video_by_lesson_id[str(lid)] = v
-                t = (v.get("title") or "").strip()
-                if t:
-                    video_by_title[t] = v
-
-            def _resolve_play_url(lesson_doc, idx):
-                """Tìm video tương ứng và trả về signed URL."""
-                lesson_id_str = str(lesson_doc.get("_id") or lesson_doc.get("id") or "")
-                # 1. Match theo lesson_id
-                matched_video = video_by_lesson_id.get(lesson_id_str)
-                # 2. Fallback: match theo title
-                if not matched_video:
-                    t = (lesson_doc.get("title") or "").strip()
-                    matched_video = video_by_title.get(t)
-                if not matched_video:
-                    print(f"⚠️ Embedded lesson {idx+1} ('{lesson_doc.get('title')}') — no matching video found")
-                    return ""
-                raw_url = matched_video.get("video_url") or matched_video.get("url") or ""
-                path = matched_video.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
-                if path:
-                    try:
-                        url = _gcs.generate_read_signed_url(path)
-                        print(f"✅ Signed URL generated for embedded lesson {idx+1}: {path[:50]}...")
-                        return url
-                    except Exception as e:
-                        print(f"❌ Failed to generate signed URL for embedded lesson {idx+1}: {e}")
-                        return raw_url or ""
-                if raw_url:
-                    print(f"⚠️ No storage_path for embedded lesson {idx+1}, using raw_url")
-                    return raw_url
-                return ""
-
+        # 🔥 lấy lesson theo course
+            lessons_db = list(db.lessons.find({
+                "course_id": ObjectId(course_id)
+        }).sort("order_index", 1))
 
             lessons = []
-            # ✅ FIX LỖI SẬP SERVER: Đã đổi chữ approved_lessons thành public_lessons ở vòng lặp for
-            for i, l in enumerate(public_lessons):
-                # Tìm video doc tương ứng để lấy video_id thật (dùng cho AI features)
-                lesson_id_str = str(l.get("_id") or l.get("id") or "")
-                matched_v = video_by_lesson_id.get(lesson_id_str)
-                if not matched_v:
-                    t = (l.get("title") or "").strip()
-                    matched_v = video_by_title.get(t)
-                real_video_id = str(matched_v.get("_id")) if matched_v else ""
+            for i, lesson in enumerate(lessons_db):
 
-                lessons.append({
-                    "id": real_video_id or str(l.get("_id") or l.get("id") or f"emb{i+1}"),
-                    "title": l.get("title") or f"Bài {i+1}",
-                    "duration": l.get("duration") or "10:00",
-                    "views": 0,
-                    "image": (l.get("thumbnail_url") or "").strip() or course_thumb,
-                    "play_url": _resolve_play_url(l, i),
-                    "transcript": matched_v.get("transcript") if matched_v else None,
-                    "description": l.get("description") or (matched_v.get("description") if matched_v else ""),
-                })
-        else:
-            # Fallback: đọc từ collection videos riêng
-            raw_lessons = video_repository.get_by_course(str(course.get("_id")))
-            lessons = []
-            for i, l in enumerate(raw_lessons):
-                raw_url = l.get("video_url") or l.get("url") or ""
-                path = l.get("storage_path") or _gcs.object_name_from_public_url(raw_url)
+            # ✅ FIX _id
+                lesson_id = str(lesson.get("_id") or lesson.get("id"))
 
-                play_url = ""
+                videos = video_repository.get_by_lesson(lesson_id)
+                video = videos[0] if videos else {}
+
+                raw_url = video.get("video_url") or ""
+                path = video.get("storage_path")
+
+                play_url = raw_url
+
                 if path:
                     try:
-                        play_url = _gcs.generate_read_signed_url(path)
-                        print(f"✅ Generated signed URL for video: {path[:50]}...")
-                    except Exception as e:
-                        print(f"❌ Failed to generate signed URL for {path}: {str(e)}")
-                        play_url = raw_url or ""
-                else:
-                    if raw_url:
-                        print(f"⚠️ No storage_path found, using raw_url: {raw_url[:50]}...")
-                        play_url = raw_url
-                    else:
-                        print(f"⚠️ Video {i+1} has no URL or storage_path")
+                       play_url = _gcs.generate_read_signed_url(path)
+                    except:
+                       pass
 
                 lessons.append({
-                    "id": str(l.get("_id") or f"v{i+1}"),
-                    "title": l.get("title") or l.get("file_name") or f"Bài {i+1}",
-                    "duration": l.get("duration") or "10:00",
-                    "views": int(l.get("views") or 0),
-                    "image": (l.get("thumbnail_url") or "").strip() or course_thumb,
-                    "play_url": play_url,
-                })
+                "id": lesson_id,
+                "title": lesson.get("title", f"Bài {i+1}"),
+                "duration": video.get("duration", "10:00"),
+                "views": video.get("views", 0),
+                "image": video.get("thumbnail_url") or course_thumb,
+                "play_url": play_url,
+                "videos": videos
+            })
+            print("🔥 NEW SERVICE RUNNING")
 
-        sections = [{
-            "id": "section-1",
-            "title": "Nội dung khóa học",
-            "lessons": lessons,
-        }]
-        total_lessons = len(lessons)
-        total_seconds = sum(self._duration_to_seconds(l.get("duration")) for l in lessons)
+        # ✅ TÍNH duration SAU LOOP
+            total_seconds = sum(self._duration_to_seconds(l["duration"]) for l in lessons)
 
-        return {
-            "id": str(course["_id"]),
+            return {
+            "id": str(course.get("_id") or course.get("id")),
             "title": course.get("title", ""),
             "description": course.get("description", ""),
             "category": self._category_display(course.get("category")),
@@ -320,50 +245,70 @@ class CourseService:
             "instructor": instructor,
             "students": self._students_count(course),
             "duration": self._seconds_to_hhmm(total_seconds),
-            "lessonCount": total_lessons,
-            "sections": sections
+            "lessonCount": len(lessons),
+            "lessons": lessons
         }
+        
+
+        except Exception as e:
+            print("❌ Get course detail error:", e)
+        raise
 
     # ===================== SEARCH =====================
 
     async def search_courses(
         self,
-        category="all",
-        price="all",
+        keyword=None,
+        category=None,
+        price=None,
+        min_price=None,
+        max_price=None,
+        sort="newest",
         page=1,
         limit=10
 ):
         filter = {"status": "APPROVED"}
 
-    # =========================
-    # CATEGORY
-    # =========================
-        if category and category != "all":
-            mapped = self._category_display(category)
-            filter["category"] = mapped
+    # 🔍 Search theo tên
+        if keyword:
+            filter["title"] = {"$regex": keyword, "$options": "i"}
 
-    # =========================
-    # PRICE FILTER (CHUẨN UI)
-    # =========================
-        if price == "free":
-            filter["price"] = 0
+    # 🎯 Category
+        if category and category.lower() != "all":
+            filter["category"] = category
+        
+        price_cond = {}
 
-        elif price == "under_1m":
-            filter["price"] = {"$lt": 1_000_000}
+    # 💰 Price (preset)
+        if price:
+            if price == "under_1m":
+               filter["price"] = {"$lt": 1_000_000}
+            elif price == "1m_3m":
+                filter["price"] = {"$gte": 1_000_000, "$lte": 3_000_000}
+            elif price == "over_3m":
+                filter["price"] = {"$gt": 3_000_000}
 
-        elif price == "1m_2m":
-            filter["price"] = {
-                "$gte": 1_000_000,
-                "$lte": 2_000_000
-        }
+    # 💰 Price (range override)
+        if min_price is not None or max_price is not None:
+            price_cond = {}
+        if min_price is not None:
+            price_cond["$gte"] = min_price
+        if max_price is not None:
+            price_cond["$lte"] = max_price
+        if price_cond:
+            filter["price"] = price_cond
 
-        elif price == "over_2m":
-            filter["price"] = {"$gt": 2_000_000}
+    # 📊 Sort
+        if sort == "price_asc":
+            sort_option = [("price", 1)]
+        elif sort == "price_desc":
+            sort_option = [("price", -1)]
+        else:
+            sort_option = [("created_at", -1)]
 
-    # =========================
-    # QUERY
-    # =========================
-        courses = await course_repository.search(filter, page, limit)
+        courses = await course_repository.find_public(
+            filter, page, limit, sort_option
+    )
         total = await course_repository.count(filter)
 
         return {
@@ -371,7 +316,6 @@ class CourseService:
         "total": total,
         "page": page,
         "limit": limit,
-        "totalPages": (total + limit - 1) // limit,
     }
 
     # ===================== INSTRUCTOR =====================
@@ -393,7 +337,7 @@ class CourseService:
                 "title": c.get("title", ""),
                 "category": self._category_display(c.get("category", "")),
                 "status": self.map_status(c.get("status")),
-                "students": self._count_students(course_id), 
+                "students": await self._count_students(course_id), 
                 "lessons": lesson_count, 
                 "price": c.get("price", 0),
                 "image": c.get("image", "")
@@ -401,27 +345,17 @@ class CourseService:
 
         return result
     
-    def _count_students(self, course_id: str):
+    async def _count_students(self, course_id: str):
         try:
-            return enrollment_repository.count_by_course(course_id)
+            return await enrollment_repository.count_by_course(course_id)
         except:
             return 0  # sau này bạn thay bằng query thật
     
     def _count_lessons(self, course_id: str):
         try:
-            from app.database.mongodb import db
-            from bson import ObjectId
-
-            sections = list(db.sections.find({
-            "course_id": ObjectId(course_id)
-        }))
-
-            section_ids = [s["_id"] for s in sections]
-
             return db.lessons.count_documents({
-            "section_id": {"$in": section_ids}
+            "course_id": ObjectId(course_id)
         })
-
         except Exception as e:
             print("Count lesson error:", e)
             return 0
@@ -702,7 +636,7 @@ class CourseService:
             ]
         }
 
-        courses = await course_repository.find_public(filter, page, limit)
+        courses = await course_repository.find_public(filter, page, limit,[("created_at", -1)] )
         total = await course_repository.count(filter)
 
         items = []
@@ -741,43 +675,33 @@ class CourseService:
         }
 
     async def approve_course(self, course_id: str, price: float):
-            from app.database.mongodb import db as _db
-            from bson import ObjectId
 
-            course_obj_id = ObjectId(course_id)
+        course_obj_id = ObjectId(course_id)
 
-    # 🔹 1. Lấy tất cả section của course
-            sections = list(_db.sections.find(
-        {"course_id": course_obj_id},
-        {"_id": 1}
+    # 🔥 1. Lấy lesson theo course_id (NEW)
+        lessons = list(_db.lessons.find(
+            {"course_id": course_obj_id},
+            {"_id": 1}
     ))
 
-            section_ids = [s["_id"] for s in sections]
+        lesson_ids = [l["_id"] for l in lessons]
 
-    # 🔹 2. Lấy tất cả lesson thuộc các section
-            lessons = list(_db.lessons.find(
-        {"section_id": {"$in": section_ids}},
-        {"_id": 1}
-    ))
-
-            lesson_ids = [l["_id"] for l in lessons]
-
-    # 🔹 3. Approve lessons
-            if section_ids:
-                _db.lessons.update_many(
-            {"section_id": {"$in": section_ids}},
+    # 🔥 2. Approve lessons
+        if lesson_ids:
+            _db.lessons.update_many(
+            {"_id": {"$in": lesson_ids}},
             {"$set": {"is_approved": True}}
         )
 
-    # 🔹 4. Approve videos (rất quan trọng)
-            if lesson_ids:
-                _db.videos.update_many(
+    # 🔥 3. Approve videos
+        if lesson_ids:
+            _db.videos.update_many(
             {"lesson_id": {"$in": lesson_ids}},
             {"$set": {"is_approved": True}}
         )
 
-    # 🔹 5. Update course
-            await course_repository.update(course_id, {
+    # 🔥 4. Update course
+        await course_repository.update(course_id, {
         "status": "APPROVED",
         "price": price,
         "is_locked": False,
@@ -785,7 +709,7 @@ class CourseService:
         "has_new_update": False,
     })
 
-            return {"message": "Course approved"}
+        return {"message": "Course approved"}
 
     async def reject_course(self, course_id: str, reason: str = ""):
         await course_repository.update(course_id, {
@@ -801,8 +725,6 @@ class CourseService:
         """
         Admin xử lý bản cập nhật của khóa học đang PUBLISHED
         """
-        from app.database.mongodb import db as _db
-        from bson import ObjectId
 
         _db.courses.update_one(
             {"_id": ObjectId(course_id)},
@@ -905,8 +827,7 @@ class CourseService:
             "pending_lesson_count": pending_lesson_count,
             "rejectReason": course.get("reject_reason", ""),
             "updatedAt": self._dt_iso(course.get("updated_at")),
-            "lessons": lessons,
-            "sections": []
+            "lessons": lessons
         }
     
     def get_admin_courses(self, q=None, category=None, status=None, page=1, limit=10):
@@ -1004,7 +925,7 @@ class CourseService:
             elif price == "over_2m":
                 filter["price"] = {"$gt": 2000000}
 
-        courses = await course_repository.find_public(filter, page, limit)
+        courses = await course_repository.find_public( filter, page, limit, [("created_at", -1)])
         total = await course_repository.count(filter)
 
         return {
@@ -1013,34 +934,65 @@ class CourseService:
             "page": page,
             "limit": limit,
         }
+    
 
-    async def get_top_courses(self, limit: int = 4):
+    async def moderate_course(self, course_id: str, status: str):
+
+        if not ObjectId.is_valid(course_id):
+            raise HTTPException(400, "Invalid course_id")
+
+        result = db.courses.update_one(
+             {"_id": ObjectId(course_id)},
+        {
+            "$set": {
+                "status": status,
+                "updated_at": datetime.utcnow()
+            }
+        }
+    )
+
+        if result.matched_count == 0:
+            raise HTTPException(404, "Course not found")
+
+        return {
+        "message": "Updated successfully",
+        "course_id": course_id,
+        "status": status
+    }
+
+    async def get_top_courses(self, instructor_id: str):
         try:
-            filter = {"status": "APPROVED"}
-            
-            all_courses = await course_repository.find_public(filter, page=1, limit=1000)
-            
-            if not all_courses:
-                return {
-                    "items": [],
-                    "total": 0,
-                }
-            
-            sorted_courses = sorted(
-                all_courses, 
-                key=lambda c: int(c.get("students", 0)), 
-                reverse=True
-            )[:limit]
-            
+            courses = await course_repository.find_by_instructor(instructor_id)
+
+            result = []
+
+            for course in courses:
+                course_id = course["id"]
+
+            # 👇 đếm số học viên
+                students = await enrollment_repository.count_by_course(course_id)
+
+                revenue = students * course.get("price", 0)
+
+                result.append({
+                "id": course_id,
+                "title": course.get("title"),
+                "image": course.get("thumbnail") or course.get("image"),
+                "students": students,
+                "revenue": revenue
+            })
+
+        # 👉 sort top
+            result.sort(key=lambda x: x["students"], reverse=True)
+
             return {
-                "items": [self._serialize_public_card(c) for c in sorted_courses],
-                "total": len(sorted_courses),
-            }
+            "items": result[:5]
+        }
+
         except Exception as e:
-            print("❌ Get top courses error:", e)
-            return {
-                "items": [],
-                "total": 0,
-            }
+            print("❌ get_top_courses error:", e)
+        raise e
+    
+
         
 course_service = CourseService()

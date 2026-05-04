@@ -14,7 +14,7 @@ from app.modules.user.user_repository import get_user_by_id, update_user
 from app.utils.cloudinary import upload_image
 from app.modules.course.course_repository import CourseRepository
 # course
-from app.modules.course.course_repository import CourseRepository
+
 
 
 class InstructorService:
@@ -146,73 +146,146 @@ class InstructorService:
             if not course:
                 continue
 
-            c_id = course.get("id")
+        # 🔥 FIX ObjectId an toàn
+            c_id = course.get("id") or course.get("_id")
+
+            if not c_id or not ObjectId.is_valid(str(c_id)):
+                continue
+
+            c_id = ObjectId(c_id)
 
             enrollments = list(db.enrollments.find({
-                "course_id": ObjectId(c_id)
-            }))
+                "course_id": c_id
+        }))
 
-            for enroll in enrollments:
-                user_id = enroll.get("learner_id")
-                if not user_id:
+        for enroll in enrollments:
+            user_id = enroll.get("learner_id")
+            if not user_id:
+                continue
+
+            user = get_user_by_id(str(user_id))
+            if not user:
+                continue
+
+            # 🔍 SEARCH SAFE
+            if search:
+                keyword = search.lower()
+                name = (user.get("fullName") or "").lower()
+                email = (user.get("email") or "").lower()
+
+                if keyword not in name and keyword not in email:
                     continue
 
-                user = get_user_by_id(str(user_id))
-                if not user:
-                    continue
+            progress = int(enroll.get("progress_percent", 0))
 
-                # 🔍 search
-                if search:
-                    keyword = search.lower()
-                    if keyword not in user.get("fullName", "").lower() and \
-                       keyword not in user.get("email", "").lower():
-                        continue
+            # 🔥 LAST ACTIVITY SAFE
+            last_time = enroll.get("last_accessed_at")
 
-                progress = enroll.get("progress_percent", 0)
+            if last_time and isinstance(last_time, datetime):
+                diff = datetime.utcnow() - last_time
+                hours = int(diff.total_seconds() // 3600)
 
-                # 🔥 LAST ACTIVITY (NEW)
-                last_time = enroll.get("last_accessed_at")
-
-                if last_time:
-                    diff = datetime.utcnow() - last_time
-                    hours = int(diff.total_seconds() // 3600)
-
-                    if hours < 1:
-                        last_activity = "Vừa xong"
-                    elif hours < 24:
-                        last_activity = f"{hours} giờ trước"
-                    else:
-                        last_activity = f"{hours // 24} ngày trước"
+                if hours < 1:
+                    last_activity = "Vừa xong"
+                elif hours < 24:
+                    last_activity = f"{hours} giờ trước"
                 else:
-                    last_activity = "Chưa học"
+                    last_activity = f"{hours // 24} ngày trước"
 
-                total_students += 1
-                total_progress += progress
+                enrolled_at = last_time.strftime("%d/%m/%Y")
+            else:
+                last_activity = "Chưa học"
+                enrolled_at = ""
 
-                if progress > 0:
-                    active_students += 1
+            total_students += 1
+            total_progress += progress
 
-                result.append({
-                    "studentName": user.get("fullName"),
-                    "email": user.get("email"),
-                    "avatar": user.get("avatar_url"),
-                    "courseName": course.get("title"),
-                    "progress": progress,
-                    "progressLabel": f"{progress}%",
-                    "enrolledAt": last_time.strftime("%d/%m/%Y") if last_time else "",
-                    "lastActivity": last_activity   # ✅ THÊM
-                })
+            if progress > 0:
+                active_students += 1
+
+            result.append({
+                "studentName": user.get("fullName") or "",
+                "email": user.get("email") or "",
+                "avatar": user.get("avatar_url") or "",   # 🔥 FIX null
+                "courseName": course.get("title") or "",
+                "progress": progress,
+                "progressLabel": f"{progress}%",
+                "enrolledAt": enrolled_at,
+                "lastActivity": last_activity
+            })
 
         avg_progress = int(total_progress / total_students) if total_students else 0
 
         return {
-            "stats": {
-                "totalStudents": total_students,
-                "activeStudents": active_students,
-                "avgProgress": avg_progress
-            },
-            "students": result
+        "stats": {
+            "totalStudents": total_students,
+            "activeStudents": active_students,
+            "avgProgress": avg_progress
+        },
+        "students": result
+    }
+    
+
+    async def get_top_courses(self, instructor_id: str):
+
+        pipeline = [
+        {
+            "$match": {
+                "instructor_id": ObjectId(instructor_id),
+                "status": "APPROVED"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "enrollments",
+                "localField": "_id",
+                "foreignField": "course_id",
+                "as": "enrollments"
+            }
+        },
+        {
+            "$addFields": {
+                "student_count": {"$size": "$enrollments"},
+                "revenue": {
+                    "$multiply": [
+                        {"$size": "$enrollments"},
+                        {"$ifNull": ["$price", 0]}
+                    ]
+                }
+            }
+        },
+        {
+            "$sort": {"student_count": -1}
+        },
+        {
+            "$limit": 5
+        },
+        {
+            "$project": {
+                "title": 1,
+                "image": 1,
+                "student_count": 1,
+                "revenue": 1
+            }
         }
+    ]
+
+        courses = await db.courses.aggregate(pipeline).to_list(length=5)
+
+        return {
+        "items": [
+            {
+                "id": str(c["_id"]),
+                "title": c["title"],
+                "image": c.get("image"),
+                "students": c.get("student_count", 0),
+                "revenue":  int(c.get("revenue", 0))
+            }
+            for c in courses
+        ]
+    }
+    
+
 
 
 # singleton

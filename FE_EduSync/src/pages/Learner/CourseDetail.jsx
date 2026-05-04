@@ -44,17 +44,20 @@ const CourseDetailPage = () => {
   }, [courseId]);
 
   const lessons = useMemo(() => {
-    if (!courseDetail?.sections) return [];
-    return courseDetail.sections.flatMap((s) =>
-      (s.lessons || []).map((l) => ({
-        id: l.id,
-        title: l.title,
-        duration: l.duration || "--:--",
-        views: l.views || 0,
-        timeAgo: "Recently updated",
-        image: l.image || courseDetail.thumbnail,
-      })),
-    );
+    if (!courseDetail?.lessons) return [];
+
+    return courseDetail.lessons.map((lesson) => {
+      const video = lesson.videos?.[0] || {};
+
+      return {
+        id: lesson.id,
+        title: lesson.title,
+        duration: video.duration || "--:--",
+        views: video.views || 0,
+        timeAgo: "Mới cập nhật",
+        image: video.thumbnail_url || courseDetail.thumbnail,
+      };
+    });
   }, [courseDetail]);
 
   // Hàm format tiền tệ VNĐ
@@ -185,6 +188,9 @@ const CourseDetailPage = () => {
       {/* Trên PC: Nó nằm nổi lên góc phải màn hình. Trên Mobile: Nó rớt xuống dưới. */}
       {/* ===================================================================== */}
       <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
+
+
+        {/* Đã giảm p-6 thành p-5 và giảm bo góc xuống 28px cho cân đối với chiều cao mới */}
         <div className="bg-white rounded-[28px] p-5 shadow-2xl shadow-black/40 border border-slate-100 flex flex-col h-fit">
 
           {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
