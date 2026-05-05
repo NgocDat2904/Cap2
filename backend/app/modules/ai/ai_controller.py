@@ -27,7 +27,7 @@ async def _video_doc(video_id: str) -> dict:
     if not ObjectId.is_valid(video_id):
         raise HTTPException(400, "Invalid video_id")
 
-    video = await db.videos.find_one({"_id": ObjectId(video_id)})
+    video = db.videos.find_one({"_id": ObjectId(video_id)})
     if not video:
         raise HTTPException(404, "Video not found")
 
@@ -39,7 +39,7 @@ def _cache_get(video: dict, key: str):
 
 
 async def _cache_set(video_id: str, key: str, value):
-    await db.videos.update_one(
+    db.videos.update_one(
         {"_id": ObjectId(video_id)},
         {
             "$set": {
