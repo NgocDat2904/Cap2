@@ -77,35 +77,7 @@ class VideoService:
         if not data.video_url and not data.storage_path:
             raise HTTPException(400, "Cần url hoặc storage_path")
     # ===================== 🔥 AUTO GET DURATION =====================
-        duration_str = "00:00"
-
-        try:
-            if data.storage_path:
-                bucket = gcs_client.client.bucket(gcs_client.bucket_name)
-                blob = bucket.blob(data.storage_path)
-
-                temp_file = f"temp_{ObjectId()}.mp4"
-                blob.download_to_filename(temp_file)
-
-            # 👉 lấy duration
-                video = cv2.VideoCapture(temp_file)
-                fps = video.get(cv2.CAP_PROP_FPS)
-                frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
-
-                seconds = int(frame_count / fps) if fps else 0
-
-            # 👉 convert mm:ss
-                m = seconds // 60
-                s = seconds % 60
-                duration_str = f"{m}:{str(s).zfill(2)}"
-
-            # 👉 xoá file temp
-                import os
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
-
-        except Exception as e:
-            print("❌ Cannot calculate video duration:", e)
+        duration_str = data.duration or "00:00"
 
     # ===================== BUILD DATA =====================
         doc = {
