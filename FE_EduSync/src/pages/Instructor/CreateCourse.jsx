@@ -168,7 +168,28 @@ const InstructorCreateCourse = () => {
       // BƯỚC 2 + 3 + 4: XỬ LÝ UP TỪNG VIDEO
       if (uploadedVideos.length > 0) {
         for (let i = 0; i < uploadedVideos.length; i++) {
+          const getVideoDuration = (file) => {
+            return new Promise((resolve) => {
+              const video = document.createElement("video");
+              video.preload = "metadata";
+
+              video.onloadedmetadata = () => {
+                window.URL.revokeObjectURL(video.src);
+
+                const seconds = video.duration;
+                const m = Math.floor(seconds / 60);
+                const s = Math.floor(seconds % 60);
+
+                const duration = `${m}:${s.toString().padStart(2, "0")}`;
+                resolve(duration);
+              };
+
+              video.src = URL.createObjectURL(file);
+            });
+          };
           const video = uploadedVideos[i];
+          const duration = await getVideoDuration(video.file);
+          console.log("Duration:", duration);
           setUploadProgressText(`Đang xử lý Video ${i + 1}/${uploadedVideos.length}...`);
 
           // 2. Xin vé thông hành GCS
@@ -204,6 +225,7 @@ const InstructorCreateCourse = () => {
             title: video.title,
             description: video.description,
             file_name: video.file.name,
+            duration: duration,
           };
           await saveVideoToDBAPI(newCourseId, videoDbPayload, token);
         }
