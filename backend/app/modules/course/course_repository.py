@@ -17,7 +17,7 @@ class CourseRepository:
 
         new_doc = dict(doc)
         new_doc["id"] = str(new_doc["_id"])
-        del new_doc["_id"]   # 🔥 FIX
+        new_doc["_id"] = str(new_doc["_id"])  # 🔥 FIX
 
         return new_doc
 

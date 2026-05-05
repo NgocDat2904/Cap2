@@ -33,6 +33,7 @@ const CourseLearningWorkspace = () => {
   const [loadingCourse, setLoadingCourse] = useState(true);
   const [courseError, setCourseError] = useState("");
   const [activeLesson, setActiveLesson] = useState(null);
+  const [videoDuration, setVideoDuration] = useState("00:00");
   const playerRef = React.useRef(null);
 
   useEffect(() => {
@@ -74,7 +75,13 @@ const CourseLearningWorkspace = () => {
       image: lesson.image || courseDetail?.thumbnail || "",
 
       // 🔥 QUAN TRỌNG NHẤT
-      videoUrl: lesson.play_url || "",
+      videoUrl:
+        lesson.videoUrl ||
+        lesson.video_url ||
+        lesson.play_url ||
+        (lesson.videos && lesson.videos[0]?.video_url) ||  // 🔥 FIX CHÍNH
+        "",
+
 
       completed: false,
       locked: false,
@@ -89,6 +96,10 @@ const CourseLearningWorkspace = () => {
       return;
     }
     const matched = playlist.find((lesson) => String(lesson.id) === String(lessonId));
+    const nextLesson = matched || playlist[0];
+
+    console.log("🔥 SET ACTIVE LESSON:", nextLesson);
+
     setActiveLesson(matched || playlist[0]);
   }, [playlist, lessonId]);
 
@@ -207,6 +218,21 @@ const CourseLearningWorkspace = () => {
                 controls
                 className="absolute inset-0 w-full h-full object-contain bg-black"
                 playsInline
+                onLoadedMetadata={(e) => {
+                  const seconds = Math.floor(e.target.duration);
+
+                  const h = Math.floor(seconds / 3600);
+                  const m = Math.floor((seconds % 3600) / 60);
+                  const s = seconds % 60;
+
+                  const formatted =
+                    h > 0
+                      ? `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`
+                      : `${m}:${s.toString().padStart(2, "0")}`;
+
+                  setVideoDuration(formatted);
+                }}
+
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
@@ -413,7 +439,7 @@ const CourseLearningWorkspace = () => {
                             {lesson.title}
                           </h5>
                           <span className="text-[11px] font-medium text-slate-500 mt-1">
-                            ({lesson.duration})
+                            ({lesson.id === activeLesson?.id ? videoDuration : lesson.duration})
                           </span>
                         </div>
                       </button>

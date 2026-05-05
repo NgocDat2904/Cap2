@@ -25,7 +25,7 @@ const InstructorMyCourses = () => {
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("all");
-const [deletingId, setDeletingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   // ==================== EFFECTS ====================
   useEffect(() => {
@@ -37,7 +37,7 @@ const [deletingId, setDeletingId] = useState(null);
     applyFilters();
   }, [allCourses, searchQuery, activeFilter]);
 
-  
+
 
   // ==================== FUNCTIONS ====================
   const fetchCourses = async () => {
@@ -83,25 +83,25 @@ const [deletingId, setDeletingId] = useState(null);
     setFilteredCourses(result);
   };
   const handleDeleteCourse = async (courseId) => {
-  if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
+    if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
 
-  try {
-    setDeletingId(courseId);
-    const token = localStorage.getItem("access_token");
-    if (!token) {
-      setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
-      return;
+    try {
+      setDeletingId(courseId);
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+        return;
+      }
+      await deleteCourseAPI(courseId, token);
+      // Cập nhật UI ngay, không cần fetch lại
+      setAllCourses(prev => prev.filter(c => c.id !== courseId));
+    } catch (err) {
+      setError(err.message || "Error deleting course");
+      console.error("Error deleting course:", err);
+    } finally {
+      setDeletingId(null);
     }
-    await deleteCourseAPI(courseId, token);
-    // Cập nhật UI ngay, không cần fetch lại
-    setAllCourses(prev => prev.filter(c => c.id !== courseId));
-  } catch (err) {
-    setError(err.message || "Error deleting course");
-    console.error("Error deleting course:", err);
-  } finally {
-    setDeletingId(null);
-  }
-};
+  };
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -167,41 +167,37 @@ const [deletingId, setDeletingId] = useState(null);
         <div className="flex items-center gap-2.5 p-1.5 bg-white border border-slate-100 rounded-full shadow-inner w-full lg:w-auto justify-center sm:justify-start">
           <button
             onClick={() => handleFilterClick("all")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "all"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "all"
                 ? "text-blue-800 bg-blue-100"
                 : "text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             All
           </button>
           <button
             onClick={() => handleFilterClick("published")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "published"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "published"
                 ? "text-blue-800 bg-blue-100"
                 : "text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Published
           </button>
           <button
             onClick={() => handleFilterClick("draft")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "draft"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "draft"
                 ? "text-blue-800 bg-blue-100"
                 : "text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Draft
           </button>
           <button
             onClick={() => handleFilterClick("pending")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "pending"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "pending"
                 ? "text-blue-800 bg-blue-100"
                 : "text-slate-600 hover:bg-slate-50"
-            }`}
+              }`}
           >
             Pending
           </button>
@@ -277,13 +273,12 @@ const [deletingId, setDeletingId] = useState(null);
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 bg-slate-200"
                 />
                 <span
-                  className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase backdrop-blur-sm ${
-                    course.status === "Published"
+                  className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase backdrop-blur-sm ${course.status === "Published"
                       ? "bg-green-100 text-green-800"
                       : course.status === "Pending"
                         ? "bg-yellow-100 text-yellow-800"
                         : "bg-slate-100 text-slate-800"
-                  }`}
+                    }`}
                 >
                   {course.status}
                 </span>
@@ -344,22 +339,22 @@ const [deletingId, setDeletingId] = useState(null);
                     <FontAwesomeIcon icon={faEdit} className="text-lg" />
                   </Link>
                   <Link
-                    to={`/instructor/courses/${course.id}`}
+                    to={`/instructor/courses/${course.id || course._id}`}
                     className="font-bold text-sm text-slate-800 hover:text-blue-700 transition hover:underline"
                   >
                     View Details
                   </Link>
                   <button
-  className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
-  title="Delete course"
-  disabled={deletingId === course.id}
-  onClick={() => handleDeleteCourse(course.id)}
->
-  <FontAwesomeIcon
-    icon={deletingId === course.id ? faSpinner : faTrash}
-    className={`text-lg ${deletingId === course.id ? "animate-spin" : ""}`}
-  />
-</button>
+                    className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title="Delete course"
+                    disabled={deletingId === course.id}
+                    onClick={() => handleDeleteCourse(course.id)}
+                  >
+                    <FontAwesomeIcon
+                      icon={deletingId === course.id ? faSpinner : faTrash}
+                      className={`text-lg ${deletingId === course.id ? "animate-spin" : ""}`}
+                    />
+                  </button>
                 </div>
               </div>
             </div>
