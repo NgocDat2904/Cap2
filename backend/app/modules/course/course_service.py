@@ -8,6 +8,7 @@ from app.database.mongodb import db as _db
 from .course_repository import CourseRepository
 from app.modules.lesson.lesson_repository import LessonRepository
 from fastapi import HTTPException
+from bson.errors import InvalidId
 
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
 
@@ -60,47 +61,45 @@ class CourseService:
 
     @staticmethod
     def _duration_to_seconds(value: str) -> int:
-        """
-        Hỗ trợ định dạng:
-        - mm:ss (vd 10:30)
-        - hh:mm:ss (vd 01:05:20)
-        - 10m / 2h / 45s
-        """
         if not value:
             return 0
+
         raw = str(value).strip().lower()
-        if not raw:
-            return 0
 
         try:
             if ":" in raw:
                 parts = [int(p) for p in raw.split(":")]
-                if len(parts) == 2:
-                    mm, ss = parts
-                    return mm * 60 + ss
-                if len(parts) == 3:
-                    hh, mm, ss = parts
-                    return hh * 3600 + mm * 60 + ss
-                return 0
 
-            if raw.endswith("h"):
-                return int(raw[:-1]) * 3600
-            if raw.endswith("m"):
-                return int(raw[:-1]) * 60
-            if raw.endswith("s"):
-                return int(raw[:-1])
+                if len(parts) == 2:
+                    m, s = parts
+                    return m * 60 + s
+
+                if len(parts) == 3:
+                    h, m, s = parts
+                    return h * 3600 + m * 60 + s
+
+        # fallback: chỉ số
             return int(float(raw))
-        except Exception:
+
+        except:
             return 0
 
     @staticmethod
     def _seconds_to_hhmm(seconds: int) -> str:
-        seconds = max(int(seconds or 0), 0)
+        if not seconds:
+            return "0m"
+
         h = seconds // 3600
         m = (seconds % 3600) // 60
+        s = seconds % 60
+
         if h > 0:
             return f"{h}h {m}m"
-        return f"{m}m"
+
+        if m > 0:
+            return f"{m}m"
+
+        return f"{s}s"
 
     @staticmethod
     def _students_count(course: dict) -> int:
@@ -125,7 +124,7 @@ class CourseService:
         except Exception:
             return 0
 
-    def _serialize_public_card(self, c: dict):
+    async def _serialize_public_card(self, c: dict):
         instructor_name = "Giảng viên EduSync"
         instructor_avatar = "https://i.pravatar.cc/150?img=11"
         iid = c.get("instructor_id")
@@ -153,7 +152,7 @@ class CourseService:
             "price": float(c.get("price") or 0),
             "instructor": instructor_name,
             "instructor_avatar": instructor_avatar,
-            "students": self._count_students(course_id),
+            "students": await self._count_students(course_id),
             "videoCount": video_count,
             "status": c.get("status"),
         }
@@ -165,95 +164,168 @@ class CourseService:
         courses = await course_repository.find_public(filter, page, limit, [("created_at", -1)])
         total = await course_repository.count(filter)
 
+        items = []
+        for c in courses:
+            item = await self._serialize_public_card(c)
+            items.append(item)
+
         return {
-            "items": [self._serialize_public_card(c) for c in courses],
+            "items": items,
             "total": total,
             "page": page,
             "limit": limit,
         }
 
+    async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
+        try:
+            print("👉 course_id:", course_id)
+
+        # ✅ FIX ObjectId crash
+            try:
+                course_obj_id = ObjectId(course_id)
+            except InvalidId:
+                raise Exception("Invalid course_id")
+
+        # 1. Lấy course
+            course = await course_repository.get_by_id(course_id)
+
+            print("👉 course:", course)
+
+            if not course:
+                return None
+
+            if str(course.get("instructor_id")) != instructor_id:
+                raise Exception("Permission denied")
+
+        # 2. Instructor
+            instructor = db.users.find_one({
+                "_id": ObjectId(instructor_id)
+        })
+
+            instructor_name = instructor.get("fullName", "Unknown") if instructor else "Unknown"
+            avatar = instructor.get("avatar_url", "") if instructor else ""
+
+        # 3. Students
+            students = db.enrollments.count_documents({
+                "course_id": course_obj_id
+        })
+
+        # 4. Lessons
+            lessons_db = list(db.lessons.find({
+                "course_id": course_obj_id
+            }).sort("order_index", 1))
+
+            print("👉 lessons:", lessons_db)
+
+            lessons_list = []
+            for lesson in lessons_db:
+                lessons_list.append({
+                    "id": str(lesson.get("_id", "")),  # ✅ SAFE
+                    "title": lesson.get("title", ""),
+                    "description": lesson.get("description", ""),
+                    "duration": lesson.get("duration", "00:00"),
+                    "is_published": lesson.get("is_published", True),
+                    "isPublished": lesson.get("is_published", True),
+                    "is_approved": lesson.get("is_approved", True),
+            })
+
+        # 5. Return
+            return {
+                "courseDetail": {
+                "id": str(course.get("_id", "")),  # ✅ SAFE
+                "title": course.get("title", ""),
+                "category": self._category_display(course.get("category")),
+                "instructor": instructor_name,
+                "students": students,
+                "students_enrolled": students,
+                "duration": "0h",
+                "lessonCount": len(lessons_list),
+                "price": course.get("price", 0),
+                "thumbnail": course.get("image", ""),
+                "avatar": avatar,
+                "status": self.map_status(course.get("status", "DRAFT"))
+            },
+            "lessonsList": lessons_list
+        }
+
+        except Exception as e:
+            print("❌ ERROR:", str(e))
+            raise
+
     async def get_public_course_detail(self, course_id: str):
         try:
-            course = await course_repository.get_by_id(course_id)
+            course = await course_repository.get_public_by_id(course_id)
+
+
             if not course:
-               return None
+                raise Exception("Course not found")
 
-            course_thumb = (course.get("image") or "").strip()
+        # 🔥 Instructor
+            instructor = get_user_by_id(str(course.get("instructor_id")))
+            instructor_name = instructor.get("fullName") if instructor else "Unknown"
+            avatar = instructor.get("avatar_url", "") if instructor else ""
 
-        # 👉 instructor
-            instructor = None
-            iid = course.get("instructor_id")
-            if iid:
-                user = get_user_by_id(str(iid))
-                if user:
-                    instructor = {
-                    "id": str(iid),
-                    "name": user.get("fullName") or user.get("email"),
-                    # "title": "Senior Software Engineer",
-                    "title": "Instructor",
-                    # ✅ FIX: DB lưu là avatar_url (snake_case), thử cả 2 field để tương thích
-                    "avatar": user.get("avatar_url") or user.get("avatar") or "https://i.pravatar.cc/150?img=11"
-                    # "avatar": user.get("avatar_url") or ""
-                }
-
-        # 🔥 lấy lesson theo course
+        # 🔥 Lessons
             lessons_db = list(db.lessons.find({
                 "course_id": ObjectId(course_id)
-        }).sort("order_index", 1))
+            }).sort("order_index", 1))
 
             lessons = []
-            for i, lesson in enumerate(lessons_db):
+            total_seconds = 0
 
-            # ✅ FIX _id
-                lesson_id = str(lesson.get("_id") or lesson.get("id"))
-
-                videos = video_repository.get_by_lesson(lesson_id)
+            for lesson in lessons_db:
+                videos = video_repository.get_by_lesson(str(lesson["_id"]))
                 video = videos[0] if videos else {}
+                print("🔥 video duration:", video.get("duration"))
 
-                raw_url = video.get("video_url") or ""
-                path = video.get("storage_path")
+                duration = video.get("duration", "00:00")
+                if not duration:
+                    duration = "00:00"
+                total_seconds += self._duration_to_seconds(duration)
 
-                play_url = raw_url
+                storage_path = video.get("storage_path")
 
-                if path:
+                if storage_path:
                     try:
-                       play_url = _gcs.generate_read_signed_url(path)
-                    except:
-                       pass
+                        video_url = _gcs.generate_read_signed_url(storage_path)
+                    except Exception as e:
+                        print("❌ SIGNED URL ERROR:", e)
+                        video_url = ""
+                else:
+                    video_url = video.get("video_url") or video.get("play_url") or ""
 
                 lessons.append({
-                "id": lesson_id,
-                "title": lesson.get("title", f"Bài {i+1}"),
-                "duration": video.get("duration", "10:00"),
-                "views": video.get("views", 0),
-                "image": video.get("thumbnail_url") or course_thumb,
-                "play_url": play_url,
-                "videos": videos
-            })
-            print("🔥 NEW SERVICE RUNNING")
+                    "id": str(lesson["_id"]),
+                    "title": lesson.get("title", ""),
+                    "duration": duration,
+                    "thumbnail": video.get("thumbnail_url") or course.get("image", ""),
+                    "videoUrl": video_url,
+               })
 
-        # ✅ TÍNH duration SAU LOOP
-            total_seconds = sum(self._duration_to_seconds(l["duration"]) for l in lessons)
-
+        # 🔥 RETURN ĐÚNG FORMAT
             return {
-            "id": str(course.get("_id") or course.get("id")),
-            "title": course.get("title", ""),
-            "description": course.get("description", ""),
-            "category": self._category_display(course.get("category")),
-            "price": float(course.get("price") or 0),
-            "thumbnail": course_thumb,
-            "instructor": instructor,
-            "students": self._students_count(course),
-            "duration": self._seconds_to_hhmm(total_seconds),
-            "lessonCount": len(lessons),
-            "lessons": lessons
+                "id": str(course["_id"]),
+                "title": course.get("title", ""),
+                "description": course.get("description", ""),
+                "category": self._category_display(course.get("category")),
+                "price": course.get("price", 0),
+                "thumbnail": course.get("image", ""),
+
+            # ✅ FIX QUAN TRỌNG
+                "instructor": {
+                    "id": str(instructor.get("_id")) if instructor else "",
+                    "name": instructor_name,
+                    "avatar": avatar
+                },
+
+                "duration": self._seconds_to_hhmm(total_seconds),
+                "lessonCount": len(lessons),
+                "lessons": lessons
         }
-        
 
         except Exception as e:
             print("❌ Get course detail error:", e)
-        raise
-
+            raise
     # ===================== SEARCH =====================
 
     async def search_courses(
@@ -311,8 +383,13 @@ class CourseService:
     )
         total = await course_repository.count(filter)
 
+        items = []
+        for c in courses:
+            item = await self._serialize_public_card(c)
+            items.append(item)
+
         return {
-        "items": [self._serialize_public_card(c) for c in courses],
+        "items": items,
         "total": total,
         "page": page,
         "limit": limit,
@@ -406,66 +483,69 @@ class CourseService:
 
         return {"message": "Submitted successfully"}
     
-    async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
-        # 1. Lấy course
-        course = await course_repository.get_by_id(course_id)
+    # async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
+    # # 1. Lấy course
+    #     print("🔥 course_id:", course_id)
+    #     course = await course_repository.get_by_id(course_id)
+    #     print("🔥 course result:", course)
 
-        if not course:
-            return None
+    #     if not course:
+    #         raise Exception("Course not found")
+        
+    #     course_instructor_id = str(course.get("instructor_id", ""))
+    #     if course_instructor_id != instructor_id:
+    #         raise Exception(f"Permission denied: {course_instructor_id} != {instructor_id}")
 
-        if str(course.get("instructor_id")) != instructor_id:
-            raise Exception("Permission denied")
+    # # 2. Lấy instructor
+    #     instructor = db.users.find_one({
+    #         "_id": ObjectId(instructor_id)
+    # })
 
-        # 2. Lấy instructor
-        instructor = db.users.find_one({
-            "_id": ObjectId(instructor_id)
-        })
+    #     instructor_name = instructor.get("fullName", "Unknown") if instructor else "Unknown"
+    #     avatar = instructor.get("avatar_url", "") if instructor else ""
 
-        instructor_name = instructor.get("fullName", "Unknown") if instructor else "Unknown"
-        avatar = instructor.get("avatar_url", "") if instructor else ""
+    # # 3. Đếm students
+    #     students = db.enrollments.count_documents({
+    #         "course_id": ObjectId(course_id)
+    # })
 
-        # 3. Đếm students
-        students = db.enrollments.count_documents({
-            "course_id": ObjectId(course_id)
-        })
+    # # 4. ✅ LẤY LESSONS ĐÚNG (FIX)
+    #     lessons_db = list(db.lessons.find({
+    #     "course_id": ObjectId(course_id)
+    # }).sort("order_index", 1))
 
-        # 4. LẤY LESSONS TỪ COURSE DOCUMENT
-        lessons_from_db = course.get("lessons", [])
-        lesson_count = len(lessons_from_db) if lessons_from_db else 0
+    #     lesson_count = len(lessons_db)
 
-        # 5. Build lessons list
-        lessons_list = []
-        if lessons_from_db:
-            for idx, lesson in enumerate(lessons_from_db):
-                lessons_list.append({
-                    "_id": lesson.get("_id", str(idx)),
-                    "id": lesson.get("_id", str(idx)),  
-                    "title": lesson.get("title", ""),
-                    "description": lesson.get("description", ""),
-                    "duration": lesson.get("duration", "00:00"),
-                    "is_published": lesson.get("is_published", True),
-                    "isPublished": lesson.get("is_published", True),  
-                    "is_approved": lesson.get("is_approved", True),
-                })
+    #     lessons_list = []
+    #     for lesson in lessons_db:
+    #         lessons_list.append({
+    #         "id": str(lesson["_id"]),
+    #         "title": lesson.get("title", ""),
+    #         "description": lesson.get("description", ""),
+    #         "duration": lesson.get("duration", "00:00"),
+    #         "is_published": lesson.get("is_published", True),
+    #         "isPublished": lesson.get("is_published", True),
+    #         "is_approved": lesson.get("is_approved", True),
+    #     })
 
-        # 6. Return đúng format FE
-        return {
-            "courseDetail": {
-                "id": str(course["id"]), 
-                "title": course.get("title", ""),
-                "category": self._category_display(course.get("category")),
-                "instructor": instructor_name,
-                "students": students,
-                "students_enrolled": students, 
-                "duration": "0h",
-                "lessonCount": lesson_count,
-                "price": course.get("price", 0),
-                "thumbnail": course.get("image", ""),
-                "avatar": avatar,
-                "status": self.map_status(course.get("status", "DRAFT"))
-            },
-            "lessonsList": lessons_list
-        }
+    # # 5. ✅ FIX ID COURSE
+    #     return {
+    #     "courseDetail": {
+    #         "id": str(course.get("_id") or course.get("id")),  # 🔥 FIX Ở ĐÂY
+    #         "title": course.get("title", ""),
+    #         "category": self._category_display(course.get("category")),
+    #         "instructor": instructor_name,
+    #         "students": students,
+    #         "students_enrolled": students,
+    #         "duration": "0h",
+    #         "lessonCount": lesson_count,
+    #         "price": course.get("price", 0),
+    #         "thumbnail": course.get("image", ""),
+    #         "avatar": avatar,
+    #         "status": self.map_status(course.get("status", "DRAFT"))
+    #     },
+    #     "lessonsList": lessons_list
+    # }
 
     async def update_course(self, course_id: str, instructor_id: str, data: dict):
         """
@@ -784,7 +864,7 @@ class CourseService:
                 "duration": l.get("duration") or "10:00",
                 "size": l.get("size") or "—",
                 "thumbnail_url": (l.get("thumbnail_url") or "").strip(),
-                "play_url": play_url,   
+                "play_url": play_url, 
                 "url": raw_url,
                 "is_approved": is_approved,
             })
@@ -830,7 +910,7 @@ class CourseService:
             "lessons": lessons
         }
     
-    def get_admin_courses(self, q=None, category=None, status=None, page=1, limit=10):
+    async def get_admin_courses(self, q=None, category=None, status=None, page=1, limit=10):
         filter_query = {}
 
         # 🔍 SEARCH
@@ -843,7 +923,7 @@ class CourseService:
 
         # 🟨 FILTER STATUS
         if status and status != "all":
-            filter_query["status"] = status
+            filter_query["status"] = status.upper()
 
         skip = (page - 1) * limit
 
@@ -892,7 +972,7 @@ class CourseService:
                 "thumbnail": course.get("image") or course.get("thumbnail"),
                 "category": course.get("category"),
                 "price": course.get("price"),
-                "status": str(course_status).lower() if course_status else "draft",
+                "status": (course_status or "DRAFT").upper(),
                 "actions": actions,
                 "instructor": instructor_name,
                 "has_new_update": course.get("has_pending_update", False)
@@ -928,8 +1008,13 @@ class CourseService:
         courses = await course_repository.find_public( filter, page, limit, [("created_at", -1)])
         total = await course_repository.count(filter)
 
+        items = []
+        for c in courses:
+            item = await self._serialize_public_card(c)
+            items.append(item)
+
         return {
-            "items": [self._serialize_public_card(c) for c in courses],
+            "items": items,
             "total": total,
             "page": page,
             "limit": limit,

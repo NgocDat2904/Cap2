@@ -32,11 +32,18 @@ export async function searchPublicCoursesAPI({
 }
 
 export async function getCourseDetailAPI(courseId) {
-  const res = await fetch(`${BASE_URL}/courses/detail/${courseId}`);
+  const res = await fetch(`http://localhost:8000/courses/detail/${courseId}`);
   if (res.status === 404) throw new Error("Course not found");
   if (!res.ok) throw new Error(await parseError(res, "Failed to load course details"));
-  return res.json();
+  
+  const data = await res.json();   // 👈 LẤY DATA RA
+  // 🔥 THÊM LOG Ở ĐÂY
+  console.log("🔥 learner API FIXED:", data);
+
+  return data;
+
 }
+
 
 /**
  * Lấy danh sách khóa học của learner đang đăng nhập

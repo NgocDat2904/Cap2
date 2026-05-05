@@ -21,6 +21,8 @@ import {
   faWandMagicSparkles,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";
+
 
 // =========================================================================
 // 1. MOCK DATA 
@@ -215,7 +217,7 @@ const LessonAccordion = ({ lesson }) => {
                       Pass Rate
                     </span>
                     <span className="font-black text-blue-600">
-                       {/* Đã thêm dấu ?. */}
+                      {/* Đã thêm dấu ?. */}
                       {lesson.quizStats?.passRate || "0%"}
                     </span>
                   </div>
@@ -224,7 +226,7 @@ const LessonAccordion = ({ lesson }) => {
                       Avg. Score
                     </span>
                     <span className="font-black text-slate-900">
-                       {/* Đã thêm dấu ?. */}
+                      {/* Đã thêm dấu ?. */}
                       {lesson.quizStats?.avgScore || "0"}
                     </span>
                   </div>
@@ -273,27 +275,39 @@ const InstructorCourseDetailPage = () => {
   const [isPublished, setIsPublished] = useState(false);
 
   // Fetch course detail giả lập
+
   useEffect(() => {
-    const fetchCourseDetail = () => {
-      setIsLoading(true);
-      setError(null);
-      
-      // Giả lập API gọi mất 1 giây
-      setTimeout(() => {
-        try {
-          // Gán mock data vào state
-          setCourseDetail(mockCourseDetail);
-          setLessonsList(mockLessonsList);
-          setIsPublished(mockCourseDetail.status === "Published");
-          setIsLoading(false);
-        } catch (err) {
-          setError("Error loading course details");
-          setIsLoading(false);
-        }
-      }, 1000); 
+    const fetchCourseDetail = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        const token = localStorage.getItem("access_token");
+
+        const data = await getInstructorCourseDetailAPI(courseId, token);
+        console.log("🔥 API DATA:", data);
+
+
+        console.log("DATA:", data); // debug
+
+        setCourseDetail({
+          ...data.courseDetail,
+          price: data.courseDetail.price || 0,
+          image: data.courseDetail.thumbnail || "",
+        });
+
+        setLessonsList(data.lessonsList || []);
+
+      } catch (err) {
+        console.error(err);
+        setError("Error loading course details");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchCourseDetail();
+
+    if (courseId) fetchCourseDetail();
   }, [courseId]);
 
   // Loading state

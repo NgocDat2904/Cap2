@@ -52,8 +52,8 @@ const CourseDetailPage = () => {
       return {
         id: lesson.id,
         title: lesson.title,
-        duration: video.duration || "--:--",
-        views: video.views || 0,
+        duration: lesson.duration || "--:--",
+        views: lesson.views || 0,
         timeAgo: "Mới cập nhật",
         image: video.thumbnail_url || courseDetail.thumbnail,
       };
