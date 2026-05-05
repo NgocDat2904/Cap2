@@ -292,8 +292,8 @@ class CourseService:
 
 
             # ✅ FIX _id
+            for lesson in lessons_db:
                 lesson_id = str(lesson.get("_id") or lesson.get("id"))
-
                 videos = await video_repository.get_by_lesson(lesson_id)
                 video = videos[0] if videos else {}
                 print("🔥 video duration:", video.get("duration"))
