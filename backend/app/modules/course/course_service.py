@@ -270,7 +270,7 @@ class CourseService:
             instructor = None
             iid = course.get("instructor_id")
             if iid:
-                user = await get_user_by_id(str(iid))
+                user = get_user_by_id(str(iid))
                 if user:
                     instructor = {
                     "id": str(iid),
@@ -294,7 +294,7 @@ class CourseService:
             # ✅ FIX _id
             for lesson in lessons_db:
                 lesson_id = str(lesson.get("_id") or lesson.get("id"))
-                videos = await video_repository.get_by_lesson(lesson_id)
+                videos = video_repository.get_by_lesson(lesson_id)
                 video = videos[0] if videos else {}
                 print("🔥 video duration:", video.get("duration"))
 
