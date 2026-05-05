@@ -1,19 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
 from datetime import datetime
+import re
 
 from app.middleware.auth_middleware import require_role
-from app.modules.ai.ai_schema import (
-    ChatRequest,
-    SummaryRequest,
-    QuizRequest,
-    VideoChatRequest,
-    VideoSummaryRequest,
-    VideoQuizRequest,
-    MindmapRequest,
-    VideoMindmapRequest,
-    LessonContext,
-)
+from app.modules.ai.ai_schema import *
 from app.modules.ai import gemini_service
 from app.database.mongodb import db
 
@@ -34,6 +25,10 @@ async def _video_doc(video_id: str) -> dict:
     return video
 
 
+def _normalize(text: str) -> str:
+    return re.sub(r"\s+", " ", text.strip().lower())
+
+
 def _cache_get(video: dict, key: str):
     return (video.get("ai_cache") or {}).get(key)
 
@@ -50,12 +45,10 @@ async def _cache_set(video_id: str, key: str, value):
     )
 
 
-async def _context_from_video(video_id: str) -> LessonContext:
-    video = await _video_doc(video_id)
-
+def _build_context(video: dict) -> LessonContext:
     transcript = (video.get("transcript") or "").strip()
     if not transcript:
-        raise HTTPException(409, "Video chưa có transcript (cần STT)")
+        raise HTTPException(409, "Transcript chưa sẵn sàng")
 
     return LessonContext(
         title=video.get("title") or "Video lesson",
@@ -75,10 +68,7 @@ def _handle_ai_error(e: Exception):
 # BASIC APIs
 # =========================
 @router.post("/chat")
-async def ai_chat(
-    body: ChatRequest,
-    user=Depends(require_role(["learner"]))
-):
+async def ai_chat(body: ChatRequest, user=Depends(require_role(["learner"]))):
     try:
         text = await gemini_service.chat_about_lesson(body.context, body.messages)
         return {"reply": text}
@@ -87,10 +77,7 @@ async def ai_chat(
 
 
 @router.post("/summary")
-async def ai_summary(
-    body: SummaryRequest,
-    user=Depends(require_role(["learner"]))
-):
+async def ai_summary(body: SummaryRequest, user=Depends(require_role(["learner"]))):
     try:
         text = await gemini_service.summarize_lesson(body.context, body.language)
         return {"summary": text}
@@ -99,10 +86,7 @@ async def ai_summary(
 
 
 @router.post("/quiz")
-async def ai_quiz(
-    body: QuizRequest,
-    user=Depends(require_role(["learner"]))
-):
+async def ai_quiz(body: QuizRequest, user=Depends(require_role(["learner"]))):
     try:
         items = await gemini_service.generate_quiz_json(
             body.context,
@@ -115,10 +99,7 @@ async def ai_quiz(
 
 
 @router.post("/mindmap")
-async def ai_mindmap(
-    body: MindmapRequest,
-    user=Depends(require_role(["learner"]))
-):
+async def ai_mindmap(body: MindmapRequest, user=Depends(require_role(["learner"]))):
     try:
         markdown = await gemini_service.generate_mindmap_markdown(
             body.context,
@@ -137,8 +118,8 @@ async def ai_chat_by_video(
     body: VideoChatRequest,
     user=Depends(require_role(["learner"]))
 ):
-    context = await _context_from_video(body.video_id)
     video = await _video_doc(body.video_id)
+    context = _build_context(video)
 
     # lấy câu hỏi cuối
     latest_question = ""
@@ -150,7 +131,7 @@ async def ai_chat_by_video(
     # check cache
     if latest_question:
         chat_items = _cache_get(video, "chat_items") or []
-        q_norm = latest_question.lower()
+        q_norm = _normalize(latest_question)
 
         for item in chat_items:
             if item.get("q_norm") == q_norm:
@@ -165,7 +146,7 @@ async def ai_chat_by_video(
 
             chat_items.append({
                 "question": latest_question,
-                "q_norm": latest_question.lower(),
+                "q_norm": _normalize(latest_question),
                 "reply": text,
                 "created_at": datetime.utcnow().isoformat(),
             })
@@ -188,15 +169,21 @@ async def ai_summary_by_video(
     video = await _video_doc(body.video_id)
 
     summary_cache = _cache_get(video, "summary") or {}
+
     if body.language in summary_cache:
         return {"summary": summary_cache[body.language]}
 
-    context = await _context_from_video(body.video_id)
+    context = _build_context(video)
 
     try:
         text = await gemini_service.summarize_lesson(context, body.language)
 
         summary_cache[body.language] = text
+
+        # limit cache
+        if len(summary_cache) > 10:
+            summary_cache = dict(list(summary_cache.items())[-10:])
+
         await _cache_set(body.video_id, "summary", summary_cache)
 
         return {"summary": text}
@@ -218,7 +205,7 @@ async def ai_quiz_by_video(
     if cache_key in quiz_cache:
         return {"questions": quiz_cache[cache_key]}
 
-    context = await _context_from_video(body.video_id)
+    context = _build_context(video)
 
     try:
         items = await gemini_service.generate_quiz_json(
@@ -228,6 +215,10 @@ async def ai_quiz_by_video(
         )
 
         quiz_cache[cache_key] = items
+
+        if len(quiz_cache) > 10:
+            quiz_cache = dict(list(quiz_cache.items())[-10:])
+
         await _cache_set(body.video_id, "quiz", quiz_cache)
 
         return {"questions": items}
@@ -248,7 +239,7 @@ async def ai_mindmap_by_video(
     if body.language in cache:
         return {"mindmap_markdown": cache[body.language]}
 
-    context = await _context_from_video(body.video_id)
+    context = _build_context(video)
 
     try:
         markdown = await gemini_service.generate_mindmap_markdown(
@@ -257,6 +248,10 @@ async def ai_mindmap_by_video(
         )
 
         cache[body.language] = markdown
+
+        if len(cache) > 10:
+            cache = dict(list(cache.items())[-10:])
+
         await _cache_set(body.video_id, "mindmap_markdown", cache)
 
         return {"mindmap_markdown": markdown}

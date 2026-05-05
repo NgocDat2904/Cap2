@@ -2,6 +2,7 @@ import json
 import os
 import re
 import asyncio
+import traceback
 from typing import List, Optional
 
 import google.generativeai as genai
@@ -14,33 +15,100 @@ from app.modules.ai.ai_schema import ChatMessage, LessonContext
 # =========================
 load_dotenv()
 
+# =========================
+# GLOBAL CONFIG
+# =========================
+_configured = False
 
-# =========================
-# CONFIG
-# =========================
+
 def _configure() -> bool:
+    global _configured
+
+    if _configured:
+        return True
+
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
-        print("⚠️ No GEMINI_API_KEY → dùng fallback")
+        print("⚠️ Missing GEMINI_API_KEY")
         return False
 
     try:
         genai.configure(api_key=key)
+        _configured = True
         return True
-    except Exception as e:
-        print("⚠️ Gemini config lỗi:", e)
+    except Exception:
+        print("❌ Gemini config error")
+        print(traceback.format_exc())
         return False
 
 
-def _model_name():
-    return os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+def _model():
+    return genai.GenerativeModel(
+        os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+    )
 
 
 # =========================
-# FALLBACK (ANTI CRASH)
+# UTIL
+# =========================
+def _trim_text(text: str, max_chars: int = 8000) -> str:
+    return text[:max_chars] if text else ""
+
+
+def _extract_json(text: str) -> Optional[str]:
+    if not text:
+        return None
+
+    text = re.sub(r"```json|```", "", text.strip())
+
+    # non-greedy match
+    match = re.search(r"\[\s*{.*?}\s*\]", text, re.DOTALL)
+    if match:
+        return match.group(0)
+
+    match = re.search(r"\{.*?\}", text, re.DOTALL)
+    if match:
+        return match.group(0)
+
+    return None
+
+
+# =========================
+# CORE CALL
+# =========================
+async def _call_gemini(prompt: str) -> Optional[str]:
+    if not _configure():
+        return None
+
+    model = _model()
+
+    for attempt in range(3):
+        try:
+            resp = await asyncio.wait_for(
+                model.generate_content_async(prompt),
+                timeout=20
+            )
+
+            text = (resp.text or "").strip()
+            if text:
+                return text
+
+        except asyncio.TimeoutError:
+            print(f"⚠️ Timeout Gemini (lần {attempt+1})")
+        except Exception:
+            print(f"❌ Gemini error (lần {attempt+1})")
+            print(traceback.format_exc())
+
+        await asyncio.sleep(1.5)
+
+    return None
+
+
+# =========================
+# FALLBACK
 # =========================
 def _fallback_chat(ctx: LessonContext, messages: List[ChatMessage]) -> str:
-    return f"[MOCK] Bạn hỏi: {messages[-1].text}\n👉 Nội dung bài học: {ctx.title}"
+    return f"[MOCK] Bạn hỏi: {messages[-1].text}\n👉 Nội dung: {ctx.title}"
 
 
 def _fallback_summary(ctx: LessonContext) -> str:
@@ -48,7 +116,6 @@ def _fallback_summary(ctx: LessonContext) -> str:
 
 - Chủ đề: {ctx.title}
 - {ctx.description}
-- Nội dung liên quan đến bài học
 """
 
 
@@ -67,84 +134,32 @@ def _fallback_quiz(num_questions: int):
 def _fallback_mindmap(ctx: LessonContext):
     return f"""# {ctx.title}
 
-- Ý chính 1
-  - Ý nhỏ 1.1
-- Ý chính 2
-  - Ý nhỏ 2.1
+- Ý chính
+  - Ý nhỏ
 """
-
-
-# =========================
-# HELPER
-# =========================
-def _extract_json(text: str) -> Optional[str]:
-    """
-    Làm sạch JSON từ Gemini (loại bỏ markdown, text thừa)
-    """
-    if not text:
-        return None
-
-    text = text.strip()
-
-    # remove ```json ```
-    text = re.sub(r"```json|```", "", text)
-
-    # tìm array JSON
-    match = re.search(r"\[.*\]", text, re.DOTALL)
-    if match:
-        return match.group(0)
-
-    # fallback: object JSON
-    match = re.search(r"\{.*\}", text, re.DOTALL)
-    if match:
-        return match.group(0)
-
-    return None
-
-
-async def _call_gemini(prompt: str) -> Optional[str]:
-    """
-    Core call Gemini với retry + timeout
-    """
-    if not _configure():
-        return None
-
-    model = genai.GenerativeModel(_model_name())
-
-    for attempt in range(3):
-        try:
-            resp = await asyncio.wait_for(
-                model.generate_content_async(prompt),
-                timeout=20
-            )
-
-            text = (resp.text or "").strip()
-
-            if text:
-                return text
-
-        except asyncio.TimeoutError:
-            print(f"⚠️ Timeout Gemini (lần {attempt+1})")
-        except Exception as e:
-            print(f"⚠️ Gemini error (lần {attempt+1}):", e)
-
-        await asyncio.sleep(1.5)
-
-    return None
 
 
 # =========================
 # PUBLIC APIs
 # =========================
-async def chat_about_lesson(ctx: LessonContext, messages: List[ChatMessage]) -> str:
+async def chat_about_lesson(
+    ctx: LessonContext,
+    messages: List[ChatMessage]
+) -> str:
+    transcript = _trim_text(ctx.transcript)
+
     prompt = f"""
-Bạn là trợ giảng AI. Trả lời NGẮN GỌN, dễ hiểu.
+Bạn là trợ giảng AI.
 
-Tiêu đề: {ctx.title}
-Mô tả: {ctx.description}
+QUY TẮC:
+- Chỉ được dùng transcript
+- Không suy đoán
+- Nếu không có thông tin → "Không có trong bài học"
+- Trả lời tối đa 150 từ
 
-Nội dung bài học:
-{ctx.transcript}
+====================
+{transcript}
+====================
 
 Câu hỏi:
 {messages[-1].text}
@@ -156,21 +171,24 @@ Trả lời:
     return result or _fallback_chat(ctx, messages)
 
 
-async def summarize_lesson(ctx: LessonContext, language: str = "Vietnamese") -> str:
+async def summarize_lesson(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+) -> str:
+    transcript = _trim_text(ctx.transcript)
+
     prompt = f"""
 Tóm tắt bài học bằng {language}.
 
 YÊU CẦU:
+- Bullet point
 - Ngắn gọn
-- Dạng bullet point
 - Dễ hiểu
+- Tối đa 150 từ
 
-Nội dung:
-Tiêu đề: {ctx.title}
-Mô tả: {ctx.description}
-
-Transcript:
-{ctx.transcript}
+====================
+{transcript}
+====================
 """
 
     result = await _call_gemini(prompt)
@@ -182,25 +200,27 @@ async def generate_quiz_json(
     num_questions: int = 5,
     language: str = "Vietnamese"
 ):
+    transcript = _trim_text(ctx.transcript)
+
     prompt = f"""
 Tạo {num_questions} câu hỏi trắc nghiệm bằng {language}.
 
-YÊU CẦU:
-- Trả về JSON array
-- KHÔNG thêm text ngoài JSON
-- Format:
+QUY TẮC:
+- Chỉ trả JSON
+- Không thêm text ngoài JSON
 
+FORMAT:
 [
   {{
     "id": 1,
     "question": "...",
-    "options": ["A", "B", "C", "D"],
+    "options": ["A","B","C","D"],
     "correct_index": 0
   }}
 ]
 
-Nội dung:
-{ctx.transcript}
+NỘI DUNG:
+{transcript}
 """
 
     result = await _call_gemini(prompt)
@@ -208,15 +228,15 @@ Nội dung:
     if not result:
         return _fallback_quiz(num_questions)
 
-    clean_json = _extract_json(result)
+    clean = _extract_json(result)
 
-    if not clean_json:
+    if not clean:
         return _fallback_quiz(num_questions)
 
     try:
-        return json.loads(clean_json)
-    except Exception as e:
-        print("⚠️ JSON parse lỗi:", e)
+        return json.loads(clean)
+    except Exception:
+        print("❌ JSON parse lỗi")
         return _fallback_quiz(num_questions)
 
 
@@ -224,20 +244,19 @@ async def generate_mindmap_markdown(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ):
+    transcript = _trim_text(ctx.transcript)
+
     prompt = f"""
-Tạo mindmap dạng markdown bằng {language}.
+Tạo mindmap markdown bằng {language}.
 
 YÊU CẦU:
 - Dạng cây
-- Dùng dấu "-"
+- Dùng "-"
+- Ngắn gọn
 
-Ví dụ:
-- Chủ đề
-  - Ý 1
-  - Ý 2
-
-Nội dung:
-{ctx.transcript}
+====================
+{transcript}
+====================
 """
 
     result = await _call_gemini(prompt)
