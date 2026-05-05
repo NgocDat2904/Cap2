@@ -63,16 +63,18 @@ class VideoRepository:
 
     # ===================== GET BY LESSON =====================
 
-    def get_by_lesson(self, lesson_id: str):
-        try:
-            oid = self._to_object_id(lesson_id)
-            if not oid:
-                return []
+    from bson import ObjectId
 
+    def get_by_lesson(self, lesson_id):
+        try:
+        # 🔥 FIX QUAN TRỌNG
+            oid = lesson_id if isinstance(lesson_id, ObjectId) else ObjectId(lesson_id)
+            print("🔥 QUERY lesson_id:", oid)
             videos = list(
                 db.videos.find({"lesson_id": oid})
                 .sort("created_at", 1)
             )
+            print("🔥 FOUND VIDEOS:", videos)
 
             return [self._serialize(v) for v in videos]
 

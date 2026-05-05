@@ -95,6 +95,8 @@ class LessonResponse(BaseModel):
     views: Optional[int] = 0
     image: Optional[str] = None
     play_url: Optional[str] = None
+    videoUrl: Optional[str] = None
+    # video_url: Optional[str] = None
     videos: List[VideoResponse] = []
 
 

@@ -7,6 +7,7 @@ from app.modules.video.video_schema import VideoRequest
 from app.database.mongodb import db
 from app.storage.gcs_client import GCSClient
 from app.modules.ai.stt_service import transcribe_from_video_url
+import cv2
 
 
 video_repository = VideoRepository()
@@ -75,6 +76,36 @@ class VideoService:
     # ===================== VALIDATE VIDEO =====================
         if not data.video_url and not data.storage_path:
             raise HTTPException(400, "Cần url hoặc storage_path")
+    # ===================== 🔥 AUTO GET DURATION =====================
+        duration_str = "00:00"
+
+        try:
+            if data.storage_path:
+                bucket = gcs_client.client.bucket(gcs_client.bucket_name)
+                blob = bucket.blob(data.storage_path)
+
+                temp_file = f"temp_{ObjectId()}.mp4"
+                blob.download_to_filename(temp_file)
+
+            # 👉 lấy duration
+                video = cv2.VideoCapture(temp_file)
+                fps = video.get(cv2.CAP_PROP_FPS)
+                frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+
+                seconds = int(frame_count / fps) if fps else 0
+
+            # 👉 convert mm:ss
+                m = seconds // 60
+                s = seconds % 60
+                duration_str = f"{m}:{str(s).zfill(2)}"
+
+            # 👉 xoá file temp
+                import os
+                if os.path.exists(temp_file):
+                    os.remove(temp_file)
+
+        except Exception as e:
+            print("❌ Cannot calculate video duration:", e)
 
     # ===================== BUILD DATA =====================
         doc = {
@@ -91,7 +122,7 @@ class VideoService:
         "thumbnail_url": data.thumbnail_url,
         "image": data.image or data.thumbnail_url,
 
-        "duration": data.duration or "10:00",
+        "duration": duration_str,
         "views": data.views or 0,
 
         # AI
@@ -186,3 +217,19 @@ class VideoService:
                 },
             )
             raise HTTPException(500, f"Transcript generation failed: {e}")
+        
+    def get_video_duration(file_path):
+        video = cv2.VideoCapture(file_path)
+        fps = video.get(cv2.CAP_PROP_FPS)
+        frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+        if fps == 0:
+            return 0
+
+        duration = frame_count / fps
+        return int(duration)
+    
+    def _seconds_to_hhmm(self, seconds: int) -> str:
+        m = seconds // 60
+        s = seconds % 60
+        return f"{m}:{str(s).zfill(2)}"
+    
