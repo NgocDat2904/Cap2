@@ -32,7 +32,7 @@ class VideoRequest(BaseModel):
     # ===================== UI METADATA =====================
 
     duration: Optional[str] = Field(
-        default="10:00",
+        default=None, 
         description="Thời lượng video (mm:ss hoặc hh:mm:ss)",
     )
 
