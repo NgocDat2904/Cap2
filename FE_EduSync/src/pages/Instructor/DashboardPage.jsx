@@ -16,6 +16,7 @@ import {
   faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useNavigate } from "react-router-dom";
+import { getInstructorDashboardAPI } from "../../services/instructorAPI";
 
 // Component con cho Thẻ KPI
 const KpiCard = ({
@@ -50,57 +51,8 @@ const KpiCard = ({
   </div>
 );
 
-// Mock dữ liệu KPI LỌC THEO NĂM
-const kpiDataByFilter = {
-  "Year 2026": {
-    earnings: { value: "$12,500", change: "+15% vs last year", type: "increase" },
-    students: { value: "1,250",   change: "+8% vs last year",  type: "increase" },
-    courses:  { value: "15",      change: "+1 new course",     type: "increase" },
-    questions:{ value: "120",    change: "+10 new questions",  type: "increase" },
-  },
-  "Year 2025": {
-    earnings: { value: "$10,800", change: "+25% vs 2024", type: "increase" },
-    students: { value: "1,150",   change: "+30% vs 2024", type: "increase" },
-    courses:  { value: "14",      change: "+4 new courses",type: "increase" },
-    questions:{ value: "450",    change: "Stable",        type: "increase" },
-  },
-  "Year 2024": {
-    earnings: { value: "$8,640", change: "-", type: "increase" },
-    students: { value: "880",    change: "-", type: "increase" },
-    courses:  { value: "10",     change: "-", type: "increase" },
-    questions:{ value: "320",   change: "-", type: "increase" },
-  },
-};
-
-// Mock dữ liệu biểu đồ (Biểu đồ học viên hàng tháng)
-const chartDataYear = [
-  { month: "Jan", students: 50 },
-  { month: "Feb", students: 110 },
-  { month: "Mar", students: 115 },
-  { month: "Apr", students: 190 },
-  { month: "May", students: 175 },
-  { month: "Jun", students: 240 },
-  { month: "Jul", students: 290 },
-  { month: "Aug", students: 320 },
-  { month: "Sep", students: 340 },
-  { month: "Oct", students: 370 },
-  { month: "Nov", students: 470 },
-  { month: "Dec", students: 520 },
-];
-
-// Mock dữ liệu Q&A mới nhất
-const qnaData = [
-  { id: 1, avatar: "A", name: "Learner A",  course: "Python Basics",    question: "I don't understand the 'Variables' part...",        date: "03/21/2026" },
-  { id: 2, avatar: "T", name: "TeacherB",    course: "Network Administration", question: "Question about routers...",                  date: "03/20/2026" },
-  { id: 3, avatar: "B", name: "Learner B",  course: "ReactJS in Practice", question: "When should I use useEffect?",                   date: "03/19/2026" },
-];
-
-// Mock dữ liệu Khóa học phổ biến nhất
-const popularCoursesData = [
-  { id: 1, image: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80", title: "Master Python from basics to advanced", students: 1250, earnings: "$12,500" },
-  { id: 2, image: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=300&q=80", title: "ReactJS in Practice 2026",              students: 842,  earnings: "$8,420"  },
-  { id: 3, image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300&q=80", title: "Building Microservices with NodeJS",    students: 451,  earnings: "$4,510"  },
-];
+// Mock data replaced by API state. Month map for labels:
+const monthMap = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 // Component Dropdown Thời gian
 const TimeFilterDropdown = ({ currentFilter, onFilterChange }) => {
@@ -159,6 +111,8 @@ const TimeFilterDropdown = ({ currentFilter, onFilterChange }) => {
 const InstructorDashboardPage = () => {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState("Year 2026");
+  const [dashboardData, setDashboardData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   // Quản lý Action Dropdown của bảng Khóa học
   const [openActionId, setOpenActionId] = useState(null);
@@ -177,24 +131,55 @@ const InstructorDashboardPage = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const fetchDashboard = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) return;
+        const data = await getInstructorDashboardAPI(token);
+        setDashboardData(data);
+      } catch (err) {
+        console.error("Failed to load dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboard();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 lg:p-8 bg-slate-50 min-h-screen flex items-center justify-center">
+        <p className="text-slate-500 font-bold">Loading dashboard...</p>
+      </div>
+    );
+  }
+
+  const data = dashboardData || {};
+
   const currentKpiData = [
-    { icon: faChalkboardTeacher,  title: "Active Courses",      value: kpiDataByFilter[timeFilter].courses.value,   change: kpiDataByFilter[timeFilter].courses.change,   changeType: kpiDataByFilter[timeFilter].courses.type,    bgColor: "bg-amber-100",   iconColor: "text-amber-600" },
-    { icon: faPlayCircle,      title: "Total Lessons",       value: kpiDataByFilter[timeFilter].earnings.value,  change: kpiDataByFilter[timeFilter].earnings.change,  changeType: kpiDataByFilter[timeFilter].earnings.type,   bgColor: "bg-emerald-100", iconColor: "text-emerald-600" },
-    { icon: faUserGraduate,       title: "Enrolled Students",   value: kpiDataByFilter[timeFilter].students.value,  change: kpiDataByFilter[timeFilter].students.change,  changeType: kpiDataByFilter[timeFilter].students.type,   bgColor: "bg-blue-100",    iconColor: "text-blue-600" },
-    { icon: faQuestionCircle,     title: "Total Q&A Questions", value: kpiDataByFilter[timeFilter].questions.value, change: kpiDataByFilter[timeFilter].questions.change, changeType: kpiDataByFilter[timeFilter].questions.type,  bgColor: "bg-purple-100",  iconColor: "text-purple-600" },
+    { icon: faChalkboardTeacher,  title: "Active Courses",      value: data.active_courses || 0,   change: "Up to date",   changeType: "increase",    bgColor: "bg-amber-100",   iconColor: "text-amber-600" },
+    { icon: faPlayCircle,      title: "Total Lessons",       value: data.total_lessons || 0,  change: "Up to date",  changeType: "increase",   bgColor: "bg-emerald-100", iconColor: "text-emerald-600" },
+    { icon: faUserGraduate,       title: "Enrolled Students",   value: data.enrolled_students || 0,  change: "Up to date",  changeType: "increase",   bgColor: "bg-blue-100",    iconColor: "text-blue-600" },
+    { icon: faQuestionCircle,     title: "Total Q&A Questions", value: data.total_questions || 0, change: "Up to date", changeType: "increase",  bgColor: "bg-purple-100",  iconColor: "text-purple-600" },
   ];
 
   // Tính toán dữ liệu trục tung cho biểu đồ học viên
-  const chartLabelsYear = chartDataYear.map((item) => item.month);
-  const chartValuesYear = chartDataYear.map((item) => item.students);
-  const maxChartValue = 600; // Tăng max lên 600 để bao phủ đỉnh cao nhất (520)
-  const chartStep = 100;
+  const chartDataApi = data.student_chart || [];
+  const chartLabelsYear = chartDataApi.map((item) => monthMap[item.month - 1] || item.month);
+  const chartValuesYear = chartDataApi.map((item) => item.students);
+  const maxVal = Math.max(...chartValuesYear, 500);
+  const maxChartValue = Math.ceil(maxVal / 100) * 100;
+  const chartStep = maxChartValue / 5;
 
   const yAxisLabelsYear = [];
   for (let i = 0; i <= maxChartValue; i += chartStep) {
     yAxisLabelsYear.push(i.toString());
   }
   yAxisLabelsYear.reverse();
+
+  const qnaList = data.latest_qa || [];
+  const popularCoursesData = data.popular_courses || [];
 
   return (
     <div className="flex-1 p-6 lg:p-8 bg-slate-50 min-h-screen animate-fade-slide-up pb-20 overflow-visible">
@@ -300,32 +285,36 @@ const InstructorDashboardPage = () => {
             </Link>
           </div>
           <div className="space-y-4">
-            {qnaData.map((qna) => (
-              <div
-                key={qna.id}
-                className="flex gap-4 p-4 border border-slate-100 rounded-xl group transition-all hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
-              >
+            {qnaList.length > 0 ? (
+              qnaList.map((qna, idx) => (
                 <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 border border-slate-300 ${qna.avatar === "T" ? "bg-blue-600" : "bg-emerald-600"}`}
+                  key={qna.id || idx}
+                  className="flex gap-4 p-4 border border-slate-100 rounded-xl group transition-all hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
                 >
-                  {qna.avatar}
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 border border-slate-300 bg-emerald-600`}
+                  >
+                    {qna.name ? qna.name.charAt(0).toUpperCase() : "U"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-blue-800">
+                      {qna.name || "Learner"}
+                    </h4>
+                    <p className="text-xs text-slate-500 truncate mt-0.5">
+                      Course: {qna.course}
+                    </p>
+                    <p className="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">
+                      {qna.question}
+                    </p>
+                    <p className="text-[10px] font-medium text-slate-400 mt-2">
+                      {qna.date || new Date().toLocaleDateString()}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-blue-800">
-                    {qna.name}
-                  </h4>
-                  <p className="text-xs text-slate-500 truncate mt-0.5">
-                    Course: {qna.course}
-                  </p>
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">
-                    {qna.question}
-                  </p>
-                  <p className="text-[10px] font-medium text-slate-400 mt-2">
-                    {qna.date}
-                  </p>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-slate-500 text-center py-4">No recent Q&A.</p>
+            )}
           </div>
         </div>
       </div>
@@ -360,27 +349,28 @@ const InstructorDashboardPage = () => {
                 className="divide-y divide-slate-100"
                 ref={actionDropdownRef}
               >
-                {popularCoursesData.map((course) => (
-                  <tr
-                    key={course.id}
-                    className="hover:bg-slate-50/80 transition-colors group"
-                  >
-                    <td className="p-4 flex items-center gap-4 min-w-0">
-                      <img
-                        src={course.image}
-                        alt={course.title}
-                        className="w-12 h-12 rounded-lg object-cover shrink-0"
-                      />
-                      <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-blue-800">
-                        {course.title}
-                      </h4>
-                    </td>
-                    <td className="p-4 font-semibold text-slate-700">
-                      {course.students.toLocaleString()}
-                    </td>
-                    <td className="p-4 font-semibold text-slate-700">
-                      {course.earnings}
-                    </td>
+                {popularCoursesData.length > 0 ? (
+                  popularCoursesData.map((course) => (
+                    <tr
+                      key={course.id}
+                      className="hover:bg-slate-50/80 transition-colors group"
+                    >
+                      <td className="p-4 flex items-center gap-4 min-w-0">
+                        <img
+                          src={course.thumbnail || course.image || "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80"}
+                          alt={course.title}
+                          className="w-12 h-12 rounded-lg object-cover shrink-0"
+                        />
+                        <h4 className="font-bold text-slate-800 line-clamp-2 group-hover:text-blue-800">
+                          {course.title}
+                        </h4>
+                      </td>
+                      <td className="p-4 font-semibold text-slate-700">
+                        {course.students ? course.students.toLocaleString() : 0}
+                      </td>
+                      <td className="p-4 font-semibold text-slate-700">
+                        ${course.revenue ? course.revenue.toLocaleString() : "0.00"}
+                      </td>
 
                     {/* CỘT HÀNH ĐỘNG */}
                     <td className="p-4 text-center">
@@ -451,7 +441,14 @@ const InstructorDashboardPage = () => {
                       </div>
                     </td>
                   </tr>
-                ))}
+                ))
+              ) : (
+                <tr>
+                  <td colSpan="4" className="text-center p-4 text-slate-500">
+                    No popular courses yet.
+                  </td>
+                </tr>
+              )}
               </tbody>
             </table>
           </div>

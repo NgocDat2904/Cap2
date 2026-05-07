@@ -857,7 +857,9 @@ class CourseService:
             "description": course.get("description", ""),
             "category": self._category_display(course.get("category")),
             "price": float(course.get("price") or 0),
-            "status": str(course.get("status") or "").lower(),
+            # "status": str(course.get("status") or "").lower(),
+            "status": self.map_status(course.get("status")),
+
             "thumbnail": course.get("image") or "",
             "instructor": instructor_name,
             "has_new_update": bool(
