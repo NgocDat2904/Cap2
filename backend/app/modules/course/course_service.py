@@ -505,69 +505,6 @@ class CourseService:
 
         return {"message": "Submitted successfully"}
     
-    # async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
-    # # 1. Lấy course
-    #     print("🔥 course_id:", course_id)
-    #     course = await course_repository.get_by_id(course_id)
-    #     print("🔥 course result:", course)
-
-    #     if not course:
-    #         raise Exception("Course not found")
-        
-    #     course_instructor_id = str(course.get("instructor_id", ""))
-    #     if course_instructor_id != instructor_id:
-    #         raise Exception(f"Permission denied: {course_instructor_id} != {instructor_id}")
-
-    # # 2. Lấy instructor
-    #     instructor = db.users.find_one({
-    #         "_id": ObjectId(instructor_id)
-    # })
-
-    #     instructor_name = instructor.get("fullName", "Unknown") if instructor else "Unknown"
-    #     avatar = instructor.get("avatar_url", "") if instructor else ""
-
-    # # 3. Đếm students
-    #     students = db.enrollments.count_documents({
-    #         "course_id": ObjectId(course_id)
-    # })
-
-    # # 4. ✅ LẤY LESSONS ĐÚNG (FIX)
-    #     lessons_db = list(db.lessons.find({
-    #     "course_id": ObjectId(course_id)
-    # }).sort("order_index", 1))
-
-    #     lesson_count = len(lessons_db)
-
-    #     lessons_list = []
-    #     for lesson in lessons_db:
-    #         lessons_list.append({
-    #         "id": str(lesson["_id"]),
-    #         "title": lesson.get("title", ""),
-    #         "description": lesson.get("description", ""),
-    #         "duration": lesson.get("duration", "00:00"),
-    #         "is_published": lesson.get("is_published", True),
-    #         "isPublished": lesson.get("is_published", True),
-    #         "is_approved": lesson.get("is_approved", True),
-    #     })
-
-    # # 5. ✅ FIX ID COURSE
-    #     return {
-    #     "courseDetail": {
-    #         "id": str(course.get("_id") or course.get("id")),  # 🔥 FIX Ở ĐÂY
-    #         "title": course.get("title", ""),
-    #         "category": self._category_display(course.get("category")),
-    #         "instructor": instructor_name,
-    #         "students": students,
-    #         "students_enrolled": students,
-    #         "duration": "0h",
-    #         "lessonCount": lesson_count,
-    #         "price": course.get("price", 0),
-    #         "thumbnail": course.get("image", ""),
-    #         "avatar": avatar,
-    #         "status": self.map_status(course.get("status", "DRAFT"))
-    #     },
-    #     "lessonsList": lessons_list
-    # }
 
     async def update_course(self, course_id: str, instructor_id: str, data: dict):
         """
