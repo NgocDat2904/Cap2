@@ -37,8 +37,6 @@ const InstructorMyCourses = () => {
     applyFilters();
   }, [allCourses, searchQuery, activeFilter]);
 
-
-
   // ==================== FUNCTIONS ====================
   const fetchCourses = async () => {
     try {
@@ -82,6 +80,7 @@ const InstructorMyCourses = () => {
 
     setFilteredCourses(result);
   };
+
   const handleDeleteCourse = async (courseId) => {
     if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
 
@@ -109,6 +108,21 @@ const InstructorMyCourses = () => {
 
   const handleFilterClick = (filter) => {
     setActiveFilter(filter);
+  };
+
+  // ==================== HELPER FUNCTION ====================
+  const getStatusBadgeClasses = (status) => {
+    const normalizedStatus = status.toLowerCase();
+    switch (normalizedStatus) {
+      case "published":
+        return "bg-emerald-500/95 text-white shadow-lg shadow-emerald-500/30";
+      case "pending":
+        return "bg-amber-500/95 text-white shadow-lg shadow-amber-500/30";
+      case "draft":
+        return "bg-slate-500/95 text-white shadow-lg shadow-slate-500/30";
+      default:
+        return "bg-gray-500/95 text-white shadow-lg shadow-gray-500/30";
+    }
   };
 
   // ==================== SKELETON LOADER ====================
@@ -167,37 +181,41 @@ const InstructorMyCourses = () => {
         <div className="flex items-center gap-2.5 p-1.5 bg-white border border-slate-100 rounded-full shadow-inner w-full lg:w-auto justify-center sm:justify-start">
           <button
             onClick={() => handleFilterClick("all")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "all"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
+              activeFilter === "all"
                 ? "text-blue-800 bg-blue-100"
                 : "text-slate-600 hover:bg-slate-50"
-              }`}
+            }`}
           >
             All
           </button>
           <button
             onClick={() => handleFilterClick("published")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "published"
-                ? "text-blue-800 bg-blue-100"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
+              activeFilter === "published"
+                ? "text-emerald-800 bg-emerald-100"
                 : "text-slate-600 hover:bg-slate-50"
-              }`}
+            }`}
           >
             Published
           </button>
           <button
             onClick={() => handleFilterClick("draft")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "draft"
-                ? "text-blue-800 bg-blue-100"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
+              activeFilter === "draft"
+                ? "text-slate-800 bg-slate-200"
                 : "text-slate-600 hover:bg-slate-50"
-              }`}
+            }`}
           >
             Draft
           </button>
           <button
             onClick={() => handleFilterClick("pending")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${activeFilter === "pending"
-                ? "text-blue-800 bg-blue-100"
+            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
+              activeFilter === "pending"
+                ? "text-amber-800 bg-amber-100"
                 : "text-slate-600 hover:bg-slate-50"
-              }`}
+            }`}
           >
             Pending
           </button>
@@ -273,12 +291,9 @@ const InstructorMyCourses = () => {
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 bg-slate-200"
                 />
                 <span
-                  className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase backdrop-blur-sm ${course.status === "Published"
-                      ? "bg-green-100 text-green-800"
-                      : course.status === "Pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-slate-100 text-slate-800"
-                    }`}
+                  className={`absolute top-4 right-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase backdrop-blur-md ${getStatusBadgeClasses(
+                    course.status
+                  )}`}
                 >
                   {course.status}
                 </span>
