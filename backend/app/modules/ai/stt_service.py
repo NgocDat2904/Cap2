@@ -102,15 +102,7 @@ def transcribe_from_video_url(
             "video_url trống, không thể tạo transcript"
         )
 
-    # =========================
-    # FIX URL ENCODE
-    # =========================
-    video_url = quote(
-        video_url,
-        safe=":/?=&"
-    )
-
-    print("✅ Encoded URL:", video_url)
+    print("✅ Signed URL:", video_url)
 
     with tempfile.TemporaryDirectory(
         prefix="edusync-stt-"
@@ -124,6 +116,13 @@ def transcribe_from_video_url(
         audio_path = os.path.join(
             tmp_dir,
             "audio.wav"
+        )
+
+        print("🚀 Downloading video...")
+
+        _download_file(
+            video_url,
+            video_path
         )
 
         # =========================

@@ -380,4 +380,7 @@ class VideoService:
         m = seconds // 60
         s = seconds % 60
         return f"{m}:{str(s).zfill(2)}"
+
+
+video_service = VideoService()
     

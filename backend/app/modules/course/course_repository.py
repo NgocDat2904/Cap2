@@ -202,3 +202,5 @@ class CourseRepository:
         except Exception as e:
             print("❌ search_with_sort error:", e)
             return []
+
+course_repository = CourseRepository()
