@@ -20,15 +20,15 @@ import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 // =========================================================================
 // =========================================================================
 const CATEGORIES = [
-  "All",
-  "Frontend Web Development",
-  "Backend Web Development",
-  "Mobile Programming",
-  "AI & Machine Learning",
-  "Data Analysis",
-  "Data Engineering",
-  "UI/UX Design",
-  "Business Analysis",
+  { label: "All", value: "all" },
+  { label: "Frontend Web Development", value: "frontend" },
+  { label: "Backend Web Development", value: "backend" },
+  { label: "Mobile Programming", value: "mobile" },
+  { label: "AI & Machine Learning", value: "ai" },
+  { label: "Data Analysis", value: "data_analysis" },
+  { label: "Data Engineering", value: "data_engineer" },
+  { label: "UI/UX Design", value: "uiux" },
+  { label: "Business Analysis", value: "ba" },
 ];
 
 const AdminCourseManagement = () => {
@@ -36,7 +36,7 @@ const AdminCourseManagement = () => {
 
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("All");
+  const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -67,17 +67,30 @@ const AdminCourseManagement = () => {
   };
 
   const filteredCourses = courses.filter((course) => {
+    const title = (course.title || "").toLowerCase();
+    const instructor = (course.instructor || "").toLowerCase();
+    const search = searchTerm.toLowerCase();
+
     const matchesSearch =
-      course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.instructor.toLowerCase().includes(searchTerm.toLowerCase());
+      title.includes(search) ||
+      instructor.includes(search);
+
     const matchesCategory =
-      categoryFilter === "All" || course.category === categoryFilter;
+      categoryFilter === "all" ||
+      (course.category || "").toLowerCase() ===
+      categoryFilter.toLowerCase();
 
     let matchesStatus = false;
-    if (statusFilter === "all") matchesStatus = true;
-    else if (statusFilter === "has_update")
+
+    if (statusFilter === "all") {
+      matchesStatus = true;
+    } else if (statusFilter === "has_update") {
       matchesStatus = course.has_new_update === true;
-    else matchesStatus = course.status === statusFilter;
+    } else {
+      matchesStatus =
+        (course.status || "").toLowerCase() ===
+        statusFilter.toLowerCase();
+    }
 
     return matchesSearch && matchesCategory && matchesStatus;
   });
@@ -169,10 +182,10 @@ const AdminCourseManagement = () => {
       {/* WIDGETS THỐNG KÊ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Courses",             value: stats.total,     icon: faBookOpen,         color: "text-blue-600",    bg: "bg-blue-100" },
-          { label: "Pending Review & Pricing",  value: stats.pending,   icon: faClockRotateLeft,  color: "text-amber-600",   bg: "bg-amber-100" },
-          { label: "Active",                    value: stats.published, icon: faCheckCircle,      color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Draft / Rejected / Banned", value: stats.others,    icon: faBan,              color: "text-slate-600",   bg: "bg-slate-200" },
+          { label: "Total Courses", value: stats.total, icon: faBookOpen, color: "text-blue-600", bg: "bg-blue-100" },
+          { label: "Pending Review & Pricing", value: stats.pending, icon: faClockRotateLeft, color: "text-amber-600", bg: "bg-amber-100" },
+          { label: "Active", value: stats.published, icon: faCheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Draft / Rejected / Banned", value: stats.others, icon: faBan, color: "text-slate-600", bg: "bg-slate-200" },
         ].map((stat, idx) => (
           <div
             key={idx}
@@ -220,8 +233,8 @@ const AdminCourseManagement = () => {
               className="w-full md:w-48 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer truncate"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
+                <option key={cat.value} value={cat.value}>
+                  {cat.label}
                 </option>
               ))}
             </select>
@@ -261,36 +274,36 @@ const AdminCourseManagement = () => {
                     className={`hover:bg-slate-50/80 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}
                   >
                     <td className="p-5 text-center">
-  <div className="relative group/id flex items-center justify-center">
-    {/* Text bị cắt với dấu 3 chấm */}
-    <span
-      className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
-      title={course.id}
-    >
-      {course.id}
-    </span>
+                      <div className="relative group/id flex items-center justify-center">
+                        {/* Text bị cắt với dấu 3 chấm */}
+                        <span
+                          className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
+                          title={course.id}
+                        >
+                          {course.id}
+                        </span>
 
-    {/* Tooltip hiện full ID khi hover */}
-    <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
-      <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
-        <span className="select-all">{course.id}</span>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            navigator.clipboard.writeText(course.id);
-            e.currentTarget.innerText = "✓";
-            setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
-          }}
-          className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
-        >
-          Copy
-        </button>
-      </div>
-      {/* Mũi tên nhỏ */}
-      <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
-    </div>
-  </div>
-</td>
+                        {/* Tooltip hiện full ID khi hover */}
+                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
+                          <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
+                            <span className="select-all">{course.id}</span>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigator.clipboard.writeText(course.id);
+                                e.currentTarget.innerText = "✓";
+                                setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
+                              }}
+                              className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
+                            >
+                              Copy
+                            </button>
+                          </div>
+                          {/* Mũi tên nhỏ */}
+                          <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
+                        </div>
+                      </div>
+                    </td>
                     <td className="p-5">
                       <div className="flex items-start gap-4">
                         <img
@@ -327,12 +340,23 @@ const AdminCourseManagement = () => {
                     </td>
                     <td className="p-5">
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
-                        {course.category}
+                        {
+                          {
+                            frontend: "Frontend Web Development",
+                            backend: "Backend Web Development",
+                            mobile: "Mobile Programming",
+                            ai: "AI & Machine Learning",
+                            data_analysis: "Data Analysis",
+                            data_engineer: "Data Engineering",
+                            uiux: "UI/UX Design",
+                            ba: "Business Analysis",
+                          }[course.category] || course.category
+                        }
                       </span>
                     </td>
                     <td className="p-5 text-right">
                       {course.status === "pending" ||
-                      course.status === "draft" ? (
+                        course.status === "draft" ? (
                         <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
                           Awaiting pricing
                         </span>
@@ -373,13 +397,12 @@ const AdminCourseManagement = () => {
                                   `/admin/courses/${course.id}/approval`,
                                 );
                               }}
-                              className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${
-                                course.has_new_update
-                                  ? "text-amber-700 bg-amber-50 hover:bg-amber-100"
-                                  : course.status === "pending"
-                                    ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
-                                    : "text-slate-700 hover:bg-slate-50"
-                              }`}
+                              className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${course.has_new_update
+                                ? "text-amber-700 bg-amber-50 hover:bg-amber-100"
+                                : course.status === "pending"
+                                  ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
+                                  : "text-slate-700 hover:bg-slate-50"
+                                }`}
                             >
                               <FontAwesomeIcon
                                 icon={course.has_new_update ? faBell : faEye}
