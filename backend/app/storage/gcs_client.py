@@ -11,7 +11,7 @@ class GCSClient:
 
         key_path = os.getenv(
             "GCS_KEY_PATH",
-            "C:\\Users\\ADMIN\\Key\\edusync-491910-856293ef86ce.json"
+            "E:\\Keys\\edusync-491910-0a7be5d8fd86.json"
         )
 
         self.client = None
@@ -20,8 +20,11 @@ class GCSClient:
 
             if os.path.exists(key_path):
 
-                self.client = storage.Client.from_service_account_json(
-                    key_path
+                self.client = (
+                    storage.Client
+                    .from_service_account_json(
+                        key_path
+                    )
                 )
 
                 print(
@@ -44,19 +47,22 @@ class GCSClient:
 
             self.client = None
 
-        self.bucket_name = "edusync-videos-c2se-01"
+        self.bucket_name = (
+            "edusync-videos-c2se-01"
+        )
 
     # =========================================================
     # GENERATE UPLOAD URL
     # =========================================================
 
-    def generate_signed_url(
+    def generate_upload_signed_url(
         self,
-        filename: str,
+        object_name: str,
         content_type: str = "video/mp4"
     ):
 
         if not self.client:
+
             raise RuntimeError(
                 "GCS credentials chưa sẵn sàng"
             )
@@ -65,11 +71,14 @@ class GCSClient:
             self.bucket_name
         )
 
-        # 🚀 FIX filename
-        # KHÔNG lưu filename gốc
-        # tránh lỗi khoảng trắng/unicode
+        # =====================================================
+        # FIX filename
+        # tránh unicode / khoảng trắng
+        # =====================================================
 
-        ext = os.path.splitext(filename)[1]
+        ext = os.path.splitext(
+            object_name
+        )[1]
 
         if not ext:
             ext = ".mp4"
@@ -82,16 +91,19 @@ class GCSClient:
             unique_filename
         )
 
-        upload_url = blob.generate_signed_url(
-            version="v4",
+        upload_url = (
+            blob.generate_signed_url(
 
-            expiration=timedelta(
-                minutes=15
-            ),
+                version="v4",
 
-            method="PUT",
+                expiration=timedelta(
+                    minutes=15
+                ),
 
-            content_type=content_type,
+                method="PUT",
+
+                content_type=content_type,
+            )
         )
 
         public_url = (
@@ -100,7 +112,9 @@ class GCSClient:
             f"{unique_filename}"
         )
 
-        print("✅ Upload signed URL generated")
+        print(
+            "✅ Upload signed URL generated"
+        )
 
         return {
 
@@ -110,6 +124,21 @@ class GCSClient:
 
             "storage_path": unique_filename,
         }
+
+    # =========================================================
+    # BACKWARD COMPATIBILITY
+    # =========================================================
+
+    def generate_signed_url(
+        self,
+        filename: str,
+        content_type: str = "video/mp4"
+    ):
+
+        return self.generate_upload_signed_url(
+            object_name=filename,
+            content_type=content_type
+        )
 
     # =========================================================
     # GENERATE READ URL
@@ -137,15 +166,17 @@ class GCSClient:
                 object_name
             )
 
-            signed_url = blob.generate_signed_url(
+            signed_url = (
+                blob.generate_signed_url(
 
-                version="v4",
+                    version="v4",
 
-                expiration=timedelta(
-                    minutes=expiration_minutes
-                ),
+                    expiration=timedelta(
+                        minutes=expiration_minutes
+                    ),
 
-                method="GET",
+                    method="GET",
+                )
             )
 
             print(
@@ -181,14 +212,29 @@ class GCSClient:
 
         if url.startswith(prefix):
 
-            return url[len(prefix):].split("?")[0]
+            return (
+                url[len(prefix):]
+                .split("?")[0]
+            )
 
         alt = (
-            f"https://{self.bucket_name}.storage.googleapis.com/"
+            f"https://"
+            f"{self.bucket_name}"
+            f".storage.googleapis.com/"
         )
 
         if url.startswith(alt):
 
-            return url[len(alt):].split("?")[0]
+            return (
+                url[len(alt):]
+                .split("?")[0]
+            )
 
         return None
+
+
+# =========================================================
+# INSTANCE
+# =========================================================
+
+gcs_client = GCSClient()
