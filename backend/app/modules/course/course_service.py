@@ -36,10 +36,12 @@ class CourseService:
 
     def map_status(self, status: str):
         return {
-            "DRAFT": "Draft",
-            "PENDING": "Pending",
-            "APPROVED": "Published",
-            "REJECTED": "Rejected",
+            "DRAFT": "draft",
+            "PENDING": "pending",
+            "APPROVED": "published",
+            "REJECTED": "rejected",
+            "BLOCKED": "suspended",
+            "UPDATED": "pending",
         }.get(status, status)
 
     def _category_display(self, cat_id: str):
@@ -974,7 +976,7 @@ class CourseService:
                 "thumbnail": course.get("image") or course.get("thumbnail"),
                 "category": course.get("category"),
                 "price": course.get("price"),
-                "status": (course_status or "DRAFT").upper(),
+                "status": self.map_status(course_status),
                 "actions": actions,
                 "instructor": instructor_name,
                 "has_new_update": course.get("has_pending_update", False)

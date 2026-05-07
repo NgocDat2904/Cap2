@@ -49,7 +49,6 @@ class VideoService:
 
         if str(course["instructor_id"]) != instructor_id:
             raise HTTPException(403, "Not your course")
-
     # =========================
     # CHECK EXISTING TRANSCRIPT
     # =========================
@@ -154,7 +153,6 @@ class VideoService:
         }
 
         except Exception as e:
-
             print("❌ Transcript generation failed:", e)
 
         db.videos.update_one(
