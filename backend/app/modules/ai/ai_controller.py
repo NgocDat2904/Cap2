@@ -18,7 +18,7 @@ async def _video_doc(video_id: str) -> dict:
     if not ObjectId.is_valid(video_id):
         raise HTTPException(400, "Invalid video_id")
 
-    video = await db.videos.find_one({"_id": ObjectId(video_id)})
+    video = db.videos.find_one({"_id": ObjectId(video_id)})
     if not video:
         raise HTTPException(404, "Video not found")
 
@@ -33,19 +33,21 @@ def _cache_get(video: dict, key: str):
     return (video.get("ai_cache") or {}).get(key)
 
 
-async def _cache_set(video_id: str, key: str, value):
-    await db.videos.update_one(
+def _cache_set(video_id: str, key: str, value):
+
+    db.videos.update_one(
         {"_id": ObjectId(video_id)},
         {
             "$set": {
                 f"ai_cache.{key}": value,
+                "ai_status": "completed",
                 "updated_at": datetime.utcnow(),
             }
         },
     )
 
-
 def _build_context(video: dict) -> LessonContext:
+    print("Video doc:", video)  # debug
     transcript = (video.get("transcript") or "").strip()
     if not transcript:
         raise HTTPException(409, "Transcript chưa sẵn sàng")
@@ -153,7 +155,7 @@ async def ai_chat_by_video(
 
             chat_items = chat_items[-200:]  # limit
 
-            await _cache_set(body.video_id, "chat_items", chat_items)
+            _cache_set(body.video_id, "chat_items", chat_items)
 
         return {"reply": text}
 
@@ -168,28 +170,21 @@ async def ai_summary_by_video(
 ):
     video = await _video_doc(body.video_id)
 
-    summary_cache = _cache_get(video, "summary") or {}
+    summary = (
+        video.get("ai_cache", {})
+        .get("summary")
+    )
 
-    if body.language in summary_cache:
-        return {"summary": summary_cache[body.language]}
+    # 🚀 chưa generate
+    if not summary:
+        raise HTTPException(
+            status_code=404,
+            detail="Summary chưa được generate"
+        )
 
-    context = _build_context(video)
-
-    try:
-        text = await gemini_service.summarize_lesson(context, body.language)
-
-        summary_cache[body.language] = text
-
-        # limit cache
-        if len(summary_cache) > 10:
-            summary_cache = dict(list(summary_cache.items())[-10:])
-
-        await _cache_set(body.video_id, "summary", summary_cache)
-
-        return {"summary": text}
-
-    except Exception as e:
-        _handle_ai_error(e)
+    return {
+        "summary": summary
+    }
 
 
 @router.post("/quiz-by-video")
@@ -219,7 +214,7 @@ async def ai_quiz_by_video(
         if len(quiz_cache) > 10:
             quiz_cache = dict(list(quiz_cache.items())[-10:])
 
-        await _cache_set(body.video_id, "quiz", quiz_cache)
+        _cache_set(body.video_id, "quiz", quiz_cache)
 
         return {"questions": items}
 
@@ -234,27 +229,17 @@ async def ai_mindmap_by_video(
 ):
     video = await _video_doc(body.video_id)
 
-    cache = _cache_get(video, "mindmap_markdown") or {}
+    mindmap = (
+        video.get("ai_cache", {})
+        .get("mindmap")
+    )
 
-    if body.language in cache:
-        return {"mindmap_markdown": cache[body.language]}
-
-    context = _build_context(video)
-
-    try:
-        markdown = await gemini_service.generate_mindmap_markdown(
-            context,
-            body.language,
+    if not mindmap:
+        raise HTTPException(
+            status_code=404,
+            detail="Mindmap chưa được generate"
         )
 
-        cache[body.language] = markdown
-
-        if len(cache) > 10:
-            cache = dict(list(cache.items())[-10:])
-
-        await _cache_set(body.video_id, "mindmap_markdown", cache)
-
-        return {"mindmap_markdown": markdown}
-
-    except Exception as e:
-        _handle_ai_error(e)
+    return {
+        "mindmap_markdown": mindmap
+    }

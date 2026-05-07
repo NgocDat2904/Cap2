@@ -11,6 +11,12 @@ from fastapi import HTTPException
 from bson.errors import InvalidId
 
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
+from app.modules.ai.gemini_service import (
+    summarize_lesson,
+    generate_mindmap_markdown,
+)
+
+from app.modules.ai.ai_schema import LessonContext
 
 
 
@@ -1097,6 +1103,48 @@ class CourseService:
         except Exception as e:
             print("❌ get_top_courses error:", e)
         raise e
+    
+    async def generate_ai_for_course(self, course_id: str):
+
+        lessons = list(db.lessons.find({
+            "course_id": ObjectId(course_id)
+    }))
+
+        for lesson in lessons:
+
+            video = db.videos.find_one({
+                "lesson_id": lesson["_id"]
+        })
+
+            if not video:
+                continue
+
+            transcript = video.get("transcript")
+
+            if not transcript:
+                continue
+
+            ctx = LessonContext(
+                title=video.get("title", ""),
+                description=video.get("description", ""),
+                transcript=transcript
+        )
+
+            summary = await summarize_lesson(ctx, "vi")
+            mindmap = await generate_mindmap_markdown(ctx, "vi")
+
+            db.videos.update_one(
+            {"_id": video["_id"]},
+            {
+                "$set": {
+                    "ai_cache.summary": summary,
+                    "ai_cache.mindmap": mindmap,
+                    "ai_status": "completed"
+                }
+            }
+        )
+    
+    
     
 
         

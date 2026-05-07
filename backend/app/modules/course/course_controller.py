@@ -12,6 +12,7 @@ from app.modules.course.course_service import course_service
 from datetime import datetime
 from bson import ObjectId
 from app.database.mongodb import db
+from fastapi import BackgroundTasks
 
 router = APIRouter(prefix="", tags=["Course"])
 
@@ -130,10 +131,29 @@ async def upload_course_thumbnail(
 @router.put("/instructor/courses/{course_id}/submit")
 async def submit_course(
     course_id: str,
+    background_tasks: BackgroundTasks,
     user=Depends(require_role(["instructor"])),
 ):
     try:
-        return await course_service.submit_course(course_id, user["id"])
+
+        # Submit course
+        result = await course_service.submit_course(
+            course_id,
+            user["id"]
+        )
+
+        # 🚀 AI chạy background
+        background_tasks.add_task(
+            course_service.generate_ai_for_course,
+            course_id
+        )
+
+        return {
+            "message": "Course submitted successfully",
+            "course": result,
+            "ai_processing": True
+        }
+
     except Exception as e:
         raise _http_from_exc(e)
     
@@ -320,6 +340,8 @@ async def resolve_pending_update(
         return await course_service.resolve_pending_update(course_id, price)
     except Exception as e:
         raise _http_from_exc(e)
+    
+
 
 
 

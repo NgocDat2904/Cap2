@@ -85,6 +85,8 @@ async def generate_transcript_from_video(video: Dict) -> str:
 
             text = " ".join(seg.text.strip() for seg in segments)
 
+            print(f"Transcript for video {video.get('title')}: {text.strip()}")  # debug
+
             return text.strip()
 
         except Exception:

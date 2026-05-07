@@ -4,6 +4,9 @@ import subprocess
 import tempfile
 import urllib.request
 from typing import Any, Dict, List, Tuple
+from urllib.parse import quote
+
+import requests
 
 from faster_whisper import WhisperModel
 
@@ -30,12 +33,41 @@ def _ensure_ffmpeg() -> None:
     raise RuntimeError("ffmpeg chưa được cài hoặc chưa có trong PATH")
 
 
-def _download_file(url: str, out_path: str) -> None:
-    try:
-        with urllib.request.urlopen(url) as resp, open(out_path, "wb") as f:
-            f.write(resp.read())
-    except Exception as e:
-        raise RuntimeError(f"Không tải được video/audio từ URL: {e}") from e
+def _download_file(
+    url: str,
+    output_path: str
+):
+
+    headers = {
+        "User-Agent": "Mozilla/5.0"
+    }
+
+    response = requests.get(
+        url,
+        stream=True,
+        headers=headers,
+    )
+
+    print("STATUS:", response.status_code)
+
+    if response.status_code != 200:
+
+        print(response.text)
+
+        raise RuntimeError(
+            f"Không tải được video/audio từ URL: HTTP Error {response.status_code}"
+        )
+
+    with open(output_path, "wb") as f:
+
+        for chunk in response.iter_content(
+            chunk_size=8192
+        ):
+
+            if chunk:
+                f.write(chunk)
+
+    print("✅ Downloaded file:", output_path)
 
 
 def _extract_audio(video_path: str, audio_path: str) -> None:
@@ -60,18 +92,71 @@ def _extract_audio(video_path: str, audio_path: str) -> None:
         raise RuntimeError(f"ffmpeg tách audio thất bại: {err[:300]}")
 
 
-def transcribe_from_video_url(video_url: str, language: str = "vi") -> Tuple[str, List[Dict[str, Any]]]:
+def transcribe_from_video_url(
+    video_url: str,
+    language: str = "vi"
+) -> Tuple[str, List[Dict[str, Any]]]:
+
     if not video_url:
-        raise RuntimeError("video_url trống, không thể tạo transcript")
+        raise RuntimeError(
+            "video_url trống, không thể tạo transcript"
+        )
 
-    with tempfile.TemporaryDirectory(prefix="edusync-stt-") as tmp_dir:
-        video_path = os.path.join(tmp_dir, "input_video")
-        audio_path = os.path.join(tmp_dir, "audio.wav")
+    # =========================
+    # FIX URL ENCODE
+    # =========================
+    video_url = quote(
+        video_url,
+        safe=":/?=&"
+    )
 
-        _download_file(video_url, video_path)
-        _extract_audio(video_path, audio_path)
+    print("✅ Encoded URL:", video_url)
 
+    with tempfile.TemporaryDirectory(
+        prefix="edusync-stt-"
+    ) as tmp_dir:
+
+        video_path = os.path.join(
+            tmp_dir,
+            "input_video.mp4"
+        )
+
+        audio_path = os.path.join(
+            tmp_dir,
+            "audio.wav"
+        )
+
+        # =========================
+        # DOWNLOAD VIDEO
+        # =========================
+        print("🚀 Downloading video...")
+
+        _download_file(
+            video_url,
+            video_path
+        )
+
+        print("✅ Video downloaded")
+
+        # =========================
+        # EXTRACT AUDIO
+        # =========================
+        print("🚀 Extracting audio...")
+
+        _extract_audio(
+            video_path,
+            audio_path
+        )
+
+        print("✅ Audio extracted")
+
+        # =========================
+        # LOAD MODEL
+        # =========================
         model = _get_model()
+
+        print("🚀 Transcribing audio...")
+
         segments, _info = model.transcribe(
             audio_path,
             language=language or "vi",
@@ -81,21 +166,43 @@ def transcribe_from_video_url(video_url: str, language: str = "vi") -> Tuple[str
 
         text_parts: List[str] = []
         seg_items: List[Dict[str, Any]] = []
+
         for seg in segments:
-            chunk = (seg.text or "").strip()
+
+            chunk = (
+                seg.text or ""
+            ).strip()
+
             if not chunk:
                 continue
+
             text_parts.append(chunk)
+
             seg_items.append(
                 {
-                    "start": round(float(seg.start), 2),
-                    "end": round(float(seg.end), 2),
+                    "start": round(
+                        float(seg.start),
+                        2
+                    ),
+
+                    "end": round(
+                        float(seg.end),
+                        2
+                    ),
+
                     "text": chunk,
                 }
             )
 
-        transcript = " ".join(text_parts).strip()
+        transcript = " ".join(
+            text_parts
+        ).strip()
+
         if not transcript:
-            raise RuntimeError("Không nhận diện được nội dung giọng nói")
+            raise RuntimeError(
+                "Không nhận diện được nội dung giọng nói"
+            )
+
+        print("✅ Transcript success")
 
         return transcript, seg_items

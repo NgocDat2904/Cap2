@@ -8,6 +8,7 @@ from app.database.mongodb import db
 from app.storage.gcs_client import GCSClient
 from app.modules.ai.stt_service import transcribe_from_video_url
 import cv2
+from urllib.parse import quote
 
 
 video_repository = VideoRepository()
@@ -18,53 +19,29 @@ class VideoService:
 
     # ===================== UPLOAD =====================
 
-    async def generate_upload_url(
+    async def generate_transcript(
         self,
-        filename: str,
-        content_type: str = "video/mp4",
-    ):
-        if not filename:
-            raise HTTPException(400, "filename is required")
+        video_id: str,
+        instructor_id: str,
+        language: str = "vi",
+        force: bool = False,
+):
 
-        try:
-            return gcs_client.generate_signed_url(
-                filename,
-                content_type,
-            )
-        except Exception as e:
-            print("🔥 GCS ERROR:", e)
-            raise HTTPException(500, str(e))
+        if not ObjectId.is_valid(video_id):
+            raise HTTPException(400, "Invalid video_id")
 
-    # ===================== CREATE =====================
-
-    async def save_video(self, data: VideoRequest, instructor_id: str):
-
-    # ===================== VALIDATE LESSON =====================
-        if not data.lesson_id:
-            raise HTTPException(400, "lesson_id is required")
-
-        if not ObjectId.is_valid(data.lesson_id):
-            raise HTTPException(400, "Invalid lesson_id")
-
-        lesson = db.lessons.find_one({
-            "_id": ObjectId(data.lesson_id)
+        video_doc = db.videos.find_one({
+            "_id": ObjectId(video_id)
     })
 
-        if not lesson:
-            raise HTTPException(404, "Lesson not found")
+        if not video_doc:
+            raise HTTPException(404, "Video not found")
 
-    # ===================== GET COURSE (NO SECTION) =====================
-        course_id = lesson.get("course_id")
-
-        if not course_id:
-            raise HTTPException(400, "Lesson chưa có course_id")
-
-    # 🔥 FIX kiểu dữ liệu
-        if isinstance(course_id, str):
-            course_id = ObjectId(course_id)
-
+    # =========================
+    # CHECK COURSE
+    # =========================
         course = db.courses.find_one({
-            "_id": course_id
+            "_id": video_doc["course_id"]
     })
 
         if not course:
@@ -73,71 +50,129 @@ class VideoService:
         if str(course["instructor_id"]) != instructor_id:
             raise HTTPException(403, "Not your course")
 
-    # ===================== VALIDATE VIDEO =====================
-        if not data.video_url and not data.storage_path:
-            raise HTTPException(400, "Cần url hoặc storage_path")
-    # ===================== 🔥 AUTO GET DURATION =====================
-        duration_str = "00:00"
+    # =========================
+    # CHECK EXISTING TRANSCRIPT
+    # =========================
+        current = (
+            video_doc.get("transcript") or ""
+        ).strip()
 
+        if current and not force:
+            return {
+                "video_id": video_id,
+                "status": "already_exists",
+                "message": "Transcript đã tồn tại. Dùng force=true để ghi đè.",
+        }
+
+    # =========================
+    # GET VIDEO URL
+    # =========================
+        video_url = (
+            video_doc.get("video_url") or ""
+        ).strip()
+
+    # ưu tiên signed URL từ GCS
+        if video_doc.get("storage_path"):
+
+            try:
+
+                raw_url = gcs_client.generate_read_signed_url(
+                    video_doc["storage_path"]
+            )
+
+            # ✅ FIX URL encode
+                video_url = quote(
+                   raw_url,
+                   safe=":/?=&"
+            )
+
+                print("✅ Encoded URL:", video_url)
+
+            except Exception as e:
+
+                print("❌ Signed URL error:", e)
+
+            video_url = ""
+
+        if not video_url:
+            raise HTTPException(
+            400,
+            "Video chưa có URL để STT"
+        )
+
+    # =========================
+    # UPDATE STATUS
+    # =========================
+        db.videos.update_one(
+            {"_id": ObjectId(video_id)},
+            {
+                "$set": {
+                    "transcript_status": "processing",
+                    "ai_status": "processing",
+                    "updated_at": datetime.utcnow(),
+            }
+        },
+    )
+
+    # =========================
+    # GENERATE TRANSCRIPT
+    # =========================
         try:
-            if data.storage_path:
-                bucket = gcs_client.client.bucket(gcs_client.bucket_name)
-                blob = bucket.blob(data.storage_path)
 
-                temp_file = f"temp_{ObjectId()}.mp4"
-                blob.download_to_filename(temp_file)
+            print("🚀 Start transcript generation")
 
-            # 👉 lấy duration
-                video = cv2.VideoCapture(temp_file)
-                fps = video.get(cv2.CAP_PROP_FPS)
-                frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+            transcript, segments = transcribe_from_video_url(
+                video_url,
+                language=language
+        )
 
-                seconds = int(frame_count / fps) if fps else 0
+            print("✅ Transcript generated")
 
-            # 👉 convert mm:ss
-                m = seconds // 60
-                s = seconds % 60
-                duration_str = f"{m}:{str(s).zfill(2)}"
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+            {
+                    "$set": {
+                        "transcript": transcript,
+                        "transcript_segments": segments,
 
-            # 👉 xoá file temp
-                import os
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
+                        "transcript_status": "completed",
+
+                    # AI
+                        "ai_status": "ready",
+                        "ai_cache": {},
+
+                        "updated_at": datetime.utcnow(),
+                }
+            },
+        )
+
+            return {
+                "video_id": video_id,
+                "status": "completed",
+                "transcript_length": len(transcript),
+                "segment_count": len(segments),
+        }
 
         except Exception as e:
-            print("❌ Cannot calculate video duration:", e)
 
-    # ===================== BUILD DATA =====================
-        doc = {
-        "lesson_id": lesson["_id"],
-        "course_id": course["_id"],
+            print("❌ Transcript generation failed:", e)
 
-        "video_url": (data.video_url or "").strip(),
-        "storage_path": (data.storage_path or "").strip(),
+        db.videos.update_one(
+            {"_id": ObjectId(video_id)},
+            {
+                "$set": {
+                    "transcript_status": "failed",
+                    "ai_status": "failed",
+                    "ai_error": str(e),
+                    "updated_at": datetime.utcnow(),
+                }
+            },
+        )
 
-        # UI
-        "title": data.title or lesson.get("title"),
-        "description": data.description,
-
-        "thumbnail_url": data.thumbnail_url,
-        "image": data.image or data.thumbnail_url,
-
-        "duration": duration_str,
-        "views": data.views or 0,
-
-        # AI
-        "transcript": data.transcript,
-        "transcript_segments": [],
-        "ai_status": "ready" if (data.transcript and data.transcript.strip()) else "pending",
-        "ai_cache": {},
-
-        # 🔥 NEW
-        "is_approved": True,
-
-        "created_at": datetime.utcnow(),
-    }
-
-        return video_repository.create(doc)
+        raise HTTPException(
+            500,
+            f"Transcript generation failed: {e}"
+        )
 
     # ===================== TRANSCRIPT =====================
 
@@ -147,76 +182,189 @@ class VideoService:
         instructor_id: str,
         language: str = "vi",
         force: bool = False,
-    ):
+):
+
+    # =====================================================
+    # VALIDATE VIDEO ID
+    # =====================================================
+
         if not ObjectId.is_valid(video_id):
-            raise HTTPException(400, "Invalid video_id")
+            raise HTTPException(
+                400,
+                "Invalid video_id"
+        )
 
-        video_doc = db.videos.find_one({"_id": ObjectId(video_id)})
+        video_doc = db.videos.find_one(
+            {"_id": ObjectId(video_id)}
+    )
+
         if not video_doc:
-            raise HTTPException(404, "Video not found")
+            raise HTTPException(
+                404,
+               "Video not found"
+        )
 
-        # Ownership check: instructor chỉ xử lý video của khóa mình
-        course = db.courses.find_one({"_id": video_doc["course_id"]})
+    # =====================================================
+    # CHECK COURSE OWNERSHIP
+    # =====================================================
+
+        course = db.courses.find_one(
+            {"_id": video_doc["course_id"]}
+    )
+
         if not course:
-            raise HTTPException(404, "Course not found")
+            raise HTTPException(
+                404,
+                "Course not found"
+        )
+
         if str(course["instructor_id"]) != instructor_id:
-            raise HTTPException(403, "Not your course")
+            raise HTTPException(
+                403,
+               "Not your course"
+        )
 
-        current = (video_doc.get("transcript") or "").strip()
+    # =====================================================
+    # CHECK EXISTING TRANSCRIPT
+    # =====================================================
+
+        current = (
+            video_doc.get("transcript") or ""
+    ).strip()
+
         if current and not force:
-            return {
-                "video_id": video_id,
-                "status": "already_exists",
-                "message": "Transcript đã tồn tại. Dùng force=true để ghi đè.",
-            }
 
-        video_url = video_doc.get("video_url")
-        if not video_url and video_doc.get("storage_path"):
+            return {
+            "video_id": video_id,
+            "status": "already_exists",
+            "message": (
+                "Transcript đã tồn tại. "
+                "Dùng force=true để ghi đè."
+            ),
+        }
+
+    # =====================================================
+    # 🚀 ALWAYS USE SIGNED URL
+    # =====================================================
+
+        video_url = None
+
+        if video_doc.get("storage_path"):
+
             try:
-                video_url = gcs_client.generate_read_signed_url(video_doc["storage_path"])
-            except Exception:
+
+                video_url = (
+                    gcs_client.generate_read_signed_url(
+                        video_doc["storage_path"]
+                )
+            )
+
+                print("✅ USING SIGNED URL")
+
+                print(video_url)
+
+            except Exception as e:
+
+                print(
+                "❌ Signed URL error:",
+                str(e)
+            )
+
                 video_url = None
 
         if not video_url:
-            raise HTTPException(400, "Video chưa có URL để STT")
+
+            raise HTTPException(
+                400,
+                "Video chưa có signed URL"
+        )
+
+    # =====================================================
+    # UPDATE STATUS
+    # =====================================================
 
         db.videos.update_one(
             {"_id": ObjectId(video_id)},
-            {"$set": {"ai_status": "processing", "updated_at": datetime.utcnow()}},
-        )
+            {
+                "$set": {
+                    "ai_status": "processing",
+                    "updated_at": datetime.utcnow(),
+            }
+        },
+    )
+
+    # =====================================================
+    # GENERATE TRANSCRIPT
+    # =====================================================
 
         try:
-            transcript, segments = transcribe_from_video_url(video_url, language=language)
+
+            transcript, segments = (
+                transcribe_from_video_url(
+                    video_url,
+                    language=language,
+            )
+        )
+
+        # =================================================
+        # SAVE RESULT
+        # =================================================
+
             db.videos.update_one(
                 {"_id": ObjectId(video_id)},
                 {
                     "$set": {
+
                         "transcript": transcript,
+
                         "transcript_segments": segments,
+
+                        "transcript_status": "completed",
+
                         "ai_status": "ready",
+
                         "ai_cache": {},
+
                         "updated_at": datetime.utcnow(),
-                    }
-                },
-            )
+                }
+            },
+        )
+
             return {
+
                 "video_id": video_id,
+
                 "status": "ready",
+
                 "transcript_length": len(transcript),
+
                 "segment_count": len(segments),
             }
+
         except Exception as e:
+
+            print("❌ TRANSCRIPT ERROR:", str(e))
+
             db.videos.update_one(
                 {"_id": ObjectId(video_id)},
                 {
                     "$set": {
+
                         "ai_status": "failed",
+
+                        "transcript_status": "failed",
+
                         "ai_error": str(e),
+
                         "updated_at": datetime.utcnow(),
-                    }
-                },
-            )
-            raise HTTPException(500, f"Transcript generation failed: {e}")
+                }
+            },
+        )
+
+            raise HTTPException(
+                500,
+                f"Transcript generation failed: {e}"
+        )
         
     def get_video_duration(file_path):
         video = cv2.VideoCapture(file_path)
