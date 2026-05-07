@@ -1107,9 +1107,12 @@ class CourseService:
                 description=video.get("description", ""),
                 transcript=transcript
         )
-
+        try:
             summary = await summarize_lesson(ctx, "vi")
+            print("SUMMARY =", summary)
+            
             mindmap = await generate_mindmap_markdown(ctx, "vi")
+            print("MINDMAP =", mindmap)
 
             db.videos.update_one(
             {"_id": video["_id"]},
@@ -1118,9 +1121,23 @@ class CourseService:
                     "ai_cache.summary": summary,
                     "ai_cache.mindmap": mindmap,
                     "ai_status": "completed"
-                }
             }
-        )
+        }
+    )
+
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+
+            db.videos.update_one(
+                {"_id": video["_id"]},
+                {
+                    "$set": {
+                        "ai_status": "failed",
+                        "ai_error": str(e)
+            }
+        }
+    )
     
     
     
