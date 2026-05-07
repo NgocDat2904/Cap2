@@ -73,3 +73,13 @@ export const deleteCourseAPI = async (courseId, token) => {
   });
   return response.data;
 };
+
+// 7. LẤY DỮ LIỆU DASHBOARD
+export const getInstructorDashboardAPI = async (token) => {
+  const response = await axios.get(`${API_URL}/dashboard`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
