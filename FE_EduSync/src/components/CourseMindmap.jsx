@@ -1,79 +1,247 @@
-import React, { useRef, useEffect, useState } from "react";
-import { Transformer } from "markmap-lib";
-import { Markmap } from "markmap-view";
-import { aiMindmapAPI, aiMindmapByVideoAPI } from "../services/aiAPI";
+import React, {
+  useRef,
+  useEffect,
+  useState,
+} from "react";
 
-const transformer = new Transformer();
+import { Transformer }
+from "markmap-lib";
 
-const CourseMindmap = ({ lessonContext, videoId }) => {
-  const svgRef = useRef(null);
-  const [mindmapMd, setMindmapMd] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+import { Markmap }
+from "markmap-view";
+
+import {
+
+  aiMindmapAPI,
+  aiMindmapByVideoAPI,
+
+} from "../ai/aiAPI";
+
+const transformer =
+  new Transformer();
+
+const CourseMindmap = ({
+
+  lessonContext,
+  videoId,
+
+}) => {
+
+  const svgRef =
+    useRef(null);
+
+  const [mindmapMd, setMindmapMd] =
+    useState("");
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState("");
+
+  // =========================================
+  // LOAD MINDMAP
+  // =========================================
 
   useEffect(() => {
+
     let cancelled = false;
+
     const run = async () => {
-      const token = localStorage.getItem("access_token");
+
+      const token =
+        localStorage.getItem(
+          "access_token"
+        );
+
       if (!token) {
-        setError("Please sign in to view the AI mindmap.");
+
+        setError(
+          "Please sign in to use AI."
+        );
+
         setLoading(false);
+
         return;
       }
+
       setLoading(true);
+
       setError("");
+
       setMindmapMd("");
+
       try {
-        const data = videoId
-          ? await aiMindmapByVideoAPI(token, videoId, "vi")
-          : await aiMindmapAPI(token, lessonContext, "vi");
-        if (!cancelled) {
-          setMindmapMd(data.mindmap_markdown || "");
+
+        let data;
+
+        // =========================
+        // BY VIDEO
+        // =========================
+
+        if (videoId) {
+
+          data =
+            await aiMindmapByVideoAPI(
+
+              token,
+
+              videoId,
+
+              "vi"
+            );
         }
-      } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load mindmap.");
+
+        // =========================
+        // NORMAL
+        // =========================
+
+        else {
+
+          data =
+            await aiMindmapAPI(
+
+              token,
+
+              lessonContext,
+
+              "vi"
+            );
+        }
+
+        if (!cancelled) {
+
+          setMindmapMd(
+
+            data?.mindmap_markdown || ""
+          );
+        }
+
+      } catch (err) {
+
+        console.error(
+          "MINDMAP ERROR:",
+          err
+        );
+
+        if (!cancelled) {
+
+          setError(
+
+            err?.response?.data?.detail ||
+
+            err?.message ||
+
+            "Failed to generate AI mindmap."
+          );
+        }
+
       } finally {
-        if (!cancelled) setLoading(false);
+
+        if (!cancelled) {
+
+          setLoading(false);
+        }
       }
     };
+
     run();
+
     return () => {
+
       cancelled = true;
     };
+
   }, [
+
     lessonContext?.title,
+
     lessonContext?.description,
+
     lessonContext?.transcript,
+
     videoId,
   ]);
 
+  // =========================================
+  // RENDER MARKMAP
+  // =========================================
+
   useEffect(() => {
-    if (svgRef.current && mindmapMd) {
-      const { root } = transformer.transform(mindmapMd);
+
+    if (
+      svgRef.current &&
+      mindmapMd
+    ) {
+
+      const { root } =
+        transformer.transform(
+          mindmapMd
+        );
+
       svgRef.current.innerHTML = "";
-      Markmap.create(svgRef.current, null, root);
+
+      Markmap.create(
+
+        svgRef.current,
+
+        null,
+
+        root
+      );
     }
+
   }, [mindmapMd]);
 
   return (
+
     <div className="w-full h-[400px] bg-slate-50 rounded-xl border border-slate-200 overflow-hidden relative">
+
+      {/* =========================================
+          LOADING
+      ========================================= */}
+
       {loading && (
+
         <p className="absolute inset-0 flex items-center justify-center text-sm text-slate-500 bg-slate-50/90 z-10">
-          Generating mindmap from video content...
+
+          Generating AI mindmap...
+
         </p>
       )}
+
+      {/* =========================================
+          ERROR
+      ========================================= */}
+
       {error && !loading && (
+
         <p className="absolute inset-0 flex items-center justify-center text-sm text-red-600 bg-red-50/90 z-10 px-4 text-center">
+
           {error}
+
         </p>
       )}
+
+      {/* =========================================
+          SVG
+      ========================================= */}
+
       <svg
         ref={svgRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
       />
+
+      {/* =========================================
+          FOOTER
+      ========================================= */}
+
       <p className="absolute bottom-2 left-0 w-full text-center text-[10px] font-semibold text-slate-400 pointer-events-none">
-        * Scroll to Zoom In/Out - Drag to Pan the diagram
+
+        * Scroll to zoom - Drag to move
+
       </p>
+
     </div>
   );
 };

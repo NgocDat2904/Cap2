@@ -66,28 +66,33 @@ const CourseLearningWorkspace = () => {
   const playlist = useMemo(() => {
     const lessons = courseDetail?.lessons || [];
 
-    return lessons.map((lesson) => ({
-      id: lesson.id,
-      title: lesson.title || "Untitled lesson",
-      duration: lesson.duration || "00:00",
-      description: lesson.description || "",
-      transcript: lesson.transcript || "",
-      image: lesson.image || courseDetail?.thumbnail || "",
+    return lessons.map((lesson) => {
+
+      console.log("LESSON =", JSON.stringify(lesson,null,2));
+      return{
+      
+        id: lesson.id || lesson._id,
+        videoId: lesson.id || lesson._id,
+        title: lesson.title || "Untitled lesson",
+        duration: lesson.duration || "00:00",
+        description: lesson.description || "",
+        transcript: lesson.transcript || "",
+        image: lesson.image || courseDetail?.thumbnail || "",
 
       // 🔥 QUAN TRỌNG NHẤT
-      videoUrl:
-        lesson.videoUrl ||
-        lesson.video_url ||
-        lesson.play_url ||
-        (lesson.videos && lesson.videos[0]?.video_url) ||  // 🔥 FIX CHÍNH
+        videoUrl:
+          lesson.videoUrl ||
+          lesson.video_url ||
+          lesson.play_url ||
+          (lesson.videos && lesson.videos[0]?.video_url) ||  // 🔥 FIX CHÍNH
         "",
 
 
-      completed: false,
-      locked: false,
-      timeline: [],
-      views: lesson.views || 0,
-    }));
+        completed: false,
+        locked: false,
+        timeline: [],
+        views: lesson.views || 0,};
+    });
   }, [courseDetail]);
 
   useEffect(() => {
@@ -99,8 +104,19 @@ const CourseLearningWorkspace = () => {
     const nextLesson = matched || playlist[0];
 
     console.log("🔥 SET ACTIVE LESSON:", nextLesson);
+    
+    const activeVideoId =
+      activeLesson?._id ||
+      activeLesson?.id;
 
-    setActiveLesson(matched || playlist[0]);
+    console.log(
+        "ACCTIVE VIDEO ID =",
+        activeVideoId
+);
+
+
+
+    setActiveLesson(nextLesson);
   }, [playlist, lessonId]);
 
   const lessonContext = useMemo(
@@ -116,6 +132,8 @@ const CourseLearningWorkspace = () => {
     ],
   );
   const activeVideoId = activeLesson?._id || activeLesson?.id;
+  
+  console.log( "ACCTIVE VIDEO ID =",activeVideoId);
 
   const handleSelectLesson = (lesson) => {
     if (lesson.locked && !isPremiumUser) {
