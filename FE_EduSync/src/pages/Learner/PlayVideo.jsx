@@ -231,6 +231,7 @@ const CourseLearningWorkspace = () => {
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
             {activeLesson.videoUrl ? (
               <video
+                key={activeLesson.videoUrl}
                 ref={playerRef}
                 src={activeLesson.videoUrl}
                 controls

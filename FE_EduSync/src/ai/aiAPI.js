@@ -1,7 +1,8 @@
 import axios from "axios";
 
 const API_BASE =
-  "http://localhost:8000/learner/ai";
+  import.meta.env.VITE_API_URL ||
+  "http://localhost:8000/learner/ai"; 
 
 // =========================================CHAT NORMAL=========================================
 
@@ -60,13 +61,14 @@ export const aiChatByVideoAPI =
 
     console.log("CHAT PAYLOAD =",payload);
 
+    console.log(
+      "API URL =",
+      `${API_BASE}/chat-by-video`
+    );
     const response =
       await axios.post(
 
-        `${API_URL}/chat-by-video`, payload,
-
-       
-
+        `${API_BASE}/chat-by-video`, payload,
         {
           headers: {
 
