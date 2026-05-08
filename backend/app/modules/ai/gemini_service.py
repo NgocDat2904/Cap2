@@ -257,7 +257,7 @@ class GeminiService:
     # CHAT ABOUT LESSON
     # =========================
 
-    def chat_about_lesson(
+    async def chat_about_lesson(
         self,
         lesson_content: str,
         question: str

@@ -5,7 +5,9 @@ import re
 
 from app.middleware.auth_middleware import require_role
 from app.modules.ai.ai_schema import *
-from app.modules.ai import gemini_service
+from app.modules.ai.gemini_service import(
+    gemini_service
+)
 from app.database.mongodb import db
 
 router = APIRouter(prefix="/learner/ai", tags=["learner-ai"])

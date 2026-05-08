@@ -128,7 +128,7 @@ async def upload_course_thumbnail(
         raise HTTPException(500, str(e))
 
 
-@router.put("/instructor/courses/{course_id}/submit")
+@router.post("/instructor/courses/{course_id}/submit")
 async def submit_course(
     course_id: str,
     background_tasks: BackgroundTasks,

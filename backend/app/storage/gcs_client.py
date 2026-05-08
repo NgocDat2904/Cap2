@@ -11,7 +11,7 @@ class GCSClient:
 
         key_path = os.getenv(
             "GCS_KEY_PATH",
-            "C:\\Users\\ADMIN\\Key\\edusync-491910-856293ef86ce.json"
+            "E:\\Keys\\edusync-491910-0a7be5d8fd86.json"
         )
 
         self.client = None

@@ -13,8 +13,8 @@ from fastapi import HTTPException
 from bson.errors import InvalidId
 
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
-from app.modules.ai.gemini_service import gemini_service
-
+from app.modules.ai.gemini_service import (gemini_service
+)
 
 from app.modules.ai.ai_schema import LessonContext
 
@@ -1108,10 +1108,10 @@ class CourseService:
                 transcript=transcript
         )
         try:
-            summary = await summarize_lesson(ctx, "vi")
+            summary = await gemini_service.summarize_lesson(ctx, "vi")
             print("SUMMARY =", summary)
             
-            mindmap = await generate_mindmap_markdown(ctx, "vi")
+            mindmap = await gemini_service.generate_mindmap_markdown(ctx, "vi")
             print("MINDMAP =", mindmap)
 
             db.videos.update_one(
