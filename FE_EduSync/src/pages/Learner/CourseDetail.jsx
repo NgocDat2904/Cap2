@@ -108,10 +108,15 @@ const CourseDetailPage = () => {
               {courseDetail.category}
             </span>
 
-            {/* Tiêu đề & Subtitle */}
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-4">
+            {/* Tiêu đề */}
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-3">
               {courseDetail.title}
             </h1>
+
+            {/* ✅ MỚI THÊM: Mô tả khóa học (Description) */}
+            <p className="text-white/80 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mb-8">
+              {courseDetail.description || "No description available for this course."}
+            </p>
 
             {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
             <Link
