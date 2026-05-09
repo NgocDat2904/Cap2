@@ -450,6 +450,12 @@ const AdminCourseDetail = () => {
             <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
               {course.title}
             </h1>
+            
+            {/* ✅ MỚI THÊM: Mô tả khóa học (Course Description) */}
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mt-3">
+              {course.description || "No description available for this course."}
+            </p>
+            
           </div>
         </div>
       </div>

@@ -3,40 +3,41 @@ import axios from "axios";
 const BASE_URL = "http://localhost:8000";
 
 // Ảnh bìa khóa học (Cloudinary) — dùng chung cho từng bài giảng
-export const uploadCourseThumbnailAPI = async (file, token) => {
-  const fd = new FormData();
-  fd.append("file", file);
-  const response = await axios.post(`${BASE_URL}/instructor/courses/thumbnail`, fd, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) {
-    let detail = "Failed to upload thumbnail to Cloudinary";
-    try {
-      const err = await response.json();
-      if (typeof err.detail === "string") detail = err.detail;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(detail);
+export async function uploadCourseThumbnailAPI(file, token) {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const { data } = await axios.post(`${BASE_URL}/instructor/courses/thumbnail`, formData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    
+    return data;
+  } catch (error) {
+    console.error('Upload thumbnail error:', error.response?.data || error.message);
+    throw new Error(error.response?.data?.detail || 'Failed to upload thumbnail to Cloudinary');
   }
-  return response.json();
-};
+}
 
-// 1. Tạo khóa học mới (Nháp)
+// Tạo khóa học mới (Nháp)
 export const createCourseAPI = async (courseData, token) => {
-  const response = await axios.post(`${BASE_URL}/instructor/courses`, courseData, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-  if (!response.ok) throw new Error("Failed to create course");
-  return await response.json(); // Backend trả về { id: "..." }
+  try {
+    const response = await axios.post(`${BASE_URL}/instructor/courses`, courseData, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data; // Backend trả về { id: "..." }
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || "Failed to create course");
+  }
 };
 
-// 2. Xin link mây (Presigned URL) từ Backend
+// Xin link mây (Presigned URL) từ Backend
 export const getPresignedUrlAPI = async (courseId, fileName, contentType, token) => {
   
   // ĐÃ SỬA CHUẨN 100% THEO POSTMAN: Ép tên file lên thẳng thanh địa chỉ URL
@@ -45,58 +46,57 @@ export const getPresignedUrlAPI = async (courseId, fileName, contentType, token)
   const ct = encodeURIComponent(contentType || "video/mp4");
   const urlVideo = `${BASE_URL}/instructor/videos/upload-url?filename=${safeFileName}&content_type=${ct}`;
   
-  const response = await axios.post(urlVideo, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    // Backend đã lấy filename từ URL rồi, nhưng con vẫn gửi courseId kèm theo cho ổng dễ quản lý
-    data: { 
+  try {
+    const response = await axios.post(
+      urlVideo,
+      {
+        // Backend đã lấy filename từ URL rồi, nhưng vẫn gửi courseId để backend tiện quản lý
         course_id: courseId,
-        content_type: contentType 
-    },
-  });
-
-  if (!response.ok) throw new Error("Failed to get Google Cloud upload token");
-  return await response.json(); 
-};
-// 3. Đẩy Video thẳng lên Google Cloud (KHÔNG GỌI BACKEND MÀ GỌI THẲNG GOOGLE)
-export const uploadVideoToGCS = async (presignedUrl, file) => {
-  const response = await axios.put(presignedUrl, file, {
-    headers: {
-      "Content-Type": file.type, // Phải truyền đúng chuẩn video/mp4
-    },
-    body: file, // Bơm trực tiếp file, không dùng FormData
-  });
-  if (!response.ok) throw new Error("Failed to upload video to Google Cloud");
-  return true;
-};
-
-// 4. Báo Backend lưu Video vào Database
-export const saveVideoToDBAPI = async (courseId, videoData, token) => {
-  const response = await axios.post(`${BASE_URL}/instructor/videos`, videoData, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(videoData),
-  });
-  
-  if (!response.ok) {
-    let detail = "Failed to save video info to database";
-    try {
-      const err = await response.json();
-      if (Array.isArray(err.detail)) {
-        detail = err.detail.map((d) => d.msg || JSON.stringify(d)).join("; ");
-      } else if (typeof err.detail === "string") {
-        detail = err.detail;
-      }
-    } catch {
-      /* ignore */
-    }
-    throw new Error(detail);
+        content_type: contentType,
+      },
+      {
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || "Failed to get Google Cloud upload token");
   }
-  return await response.json();
+};
+// Đẩy Video thẳng lên Google Cloud (KHÔNG GỌI BACKEND MÀ GỌI THẲNG GOOGLE)
+export const uploadVideoToGCS = async (presignedUrl, file) => {
+  try {
+    await axios.put(presignedUrl, file, {
+      headers: {
+        "Content-Type": file.type, // Phải truyền đúng chuẩn video/mp4
+      },
+    });
+    return true;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || "Failed to upload video to Google Cloud");
+  }
+};
+
+// Báo Backend lưu Video vào Database
+export const saveVideoToDBAPI = async (courseId, videoData, token) => {
+  try {
+    const response = await axios.post(`${BASE_URL}/instructor/videos`, videoData, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    const detail = error.response?.data?.detail;
+    if (Array.isArray(detail)) {
+      throw new Error(detail.map((d) => d.msg || JSON.stringify(d)).join("; "));
+    }
+    throw new Error(detail || "Failed to save video info to database");
+  }
 };
 
 // export const createSectionAPI = async (sectionData, token) => {
@@ -127,34 +127,29 @@ export const saveVideoToDBAPI = async (courseId, videoData, token) => {
 // };
 
 export const createLessonAPI = async (lessonData, token) => {
-  const response = await axios.post(`${BASE_URL}/instructor/lessons`, lessonData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!response.ok) {
-    let detail = "Failed to create lesson";
-    try {
-      const err = await response.json();
-      if (typeof err.detail === "string") detail = err.detail;
-    } catch {
-      /* ignore */
-    }
-    throw new Error(detail);
+  try {
+    const response = await axios.post(`${BASE_URL}/instructor/lessons`, lessonData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || "Failed to create lesson");
   }
-
-  return response.json();
 };
 
-// 5. Gửi duyệt khóa học
+// Gửi duyệt khóa học
 export const submitCourseAPI = async (courseId, token) => {
-  const response = await axios.put(`${BASE_URL}/instructor/courses/${courseId}/submit`, null, {
-    headers: {
-      "Authorization": `Bearer ${token}`,
-    },
-  });
-  if (!response.ok) throw new Error("Lỗi khi gửi duyệt khóa học");
-  return await response.json();
+  try {
+    const response = await axios.put(`${BASE_URL}/instructor/courses/${courseId}/submit`, null, {
+      headers: {
+        "Authorization": `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(error.response?.data?.detail || "Lỗi khi gửi duyệt khóa học");
+  }
 };
