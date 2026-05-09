@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLaptopCode,
@@ -17,6 +17,9 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const EduSyncHome = () => {
+  const navigate = useNavigate();
+  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
+
   // =========================================================================
   // MOCK DATA
   // =========================================================================
@@ -119,12 +122,23 @@ const EduSyncHome = () => {
           </p>
 
           <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-2">
-            <button className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors duration-300 shadow-md hover:shadow-xl hover:shadow-blue-600/20 active:scale-95">
-              Start learning now
+            <button
+              type="button"
+              onClick={() =>
+                navigate(isLoggedIn ? "/courses" : "/login", {
+                  state: { from: "/home" },
+                })
+              }
+              className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors duration-300 shadow-md hover:shadow-xl hover:shadow-blue-600/20 active:scale-95"
+            >
+              {isLoggedIn ? "Start learning now" : "Sign in to start learning"}
             </button>
-            <button className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors active:scale-95">
+            <Link
+              to="/courses"
+              className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors active:scale-95 text-center"
+            >
               Explore courses
-            </button>
+            </Link>
           </div>
         </div>
 

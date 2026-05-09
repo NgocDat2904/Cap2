@@ -172,12 +172,21 @@ const AdminUserManagement = () => {
     setCurrentPage(1);
   };
 
+  // =========================================================================
+  // HÀM REFRESH/RESET (Giống hệt trang AdminCourseManagement)
+  // =========================================================================
   const handleRefresh = () => {
+    // 1. Đưa tất cả các filters về rỗng (trạng thái mặc định)
+    setSearchTerm("");
+    setRoleFilter("");
+    setStatusFilter("");
     setCurrentPage(1);
+    
+    // 2. Fetch API ngay lập tức với các thông số rỗng
     fetchUsers({
-      q: searchTerm,
-      role: roleFilter,
-      status: statusFilter,
+      q: "",
+      role: "",
+      status: "",
       page: 1,
       limit: pagination.limit,
     });
@@ -245,19 +254,25 @@ const AdminUserManagement = () => {
             Monitor, assign roles and manage accounts across the platform.
           </p>
         </div>
+        
+        {/* NÚT REFRESH (Thêm trạng thái loading & khóa nút) */}
         <button
           onClick={handleRefresh}
-          className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center gap-2 active:scale-95"
+          disabled={loading}
+          className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          <FontAwesomeIcon icon={faRotateRight} />
-          Refresh
+          <FontAwesomeIcon 
+            icon={faRotateRight} 
+            className={loading ? "animate-spin" : ""} 
+          />
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
       {/* WIDGETS THỐNG KÊ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Users",      value: stats.totalUsers ?? 0,    icon: faUsers,               color: "text-blue-600",    bg: "bg-blue-100" },
+          { label: "Total Users",      value: stats.totalUsers ?? 0,    icon: faUsers,             color: "text-blue-600",    bg: "bg-blue-100" },
           { label: "Learners",          value: stats.learners ?? 0,      icon: faUserGraduate,        color: "text-emerald-600", bg: "bg-emerald-100" },
           { label: "Instructors",       value: stats.instructors ?? 0,   icon: faChalkboardTeacher,   color: "text-purple-600", bg: "bg-purple-100" },
           { label: "Blocked Accounts",  value: stats.blocked ?? 0,       icon: faBan,                 color: "text-red-600",    bg: "bg-red-100" },
@@ -342,7 +357,7 @@ const AdminUserManagement = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
               <FontAwesomeIcon
-                icon={faSpinner}
+                icon={faRotateRight}
                 className="text-3xl text-blue-500 animate-spin"
               />
               <p className="font-semibold text-sm">Loading data...</p>
@@ -388,7 +403,7 @@ const AdminUserManagement = () => {
                     >
 
                     {/* ID */}
-                     <td className="p-5 text-center">
+                      <td className="p-5 text-center">
     <div className="relative group/id flex items-center justify-center">
       <span
         className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
@@ -525,7 +540,7 @@ const AdminUserManagement = () => {
                 ) : (
                   <tr>
                     <td
-                      colSpan="5"
+                      colSpan="6"
                       className="p-10 text-center text-slate-500 font-medium"
                     >
                       No users found matching your criteria.

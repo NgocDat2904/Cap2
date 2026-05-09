@@ -110,15 +110,15 @@ const InstructorCreateCourse = () => {
   // =========================================================================
   const handleSaveCourse = async (actionType) => {
     if (courseInfo.title.length < 5) {
-      alert("Tiêu đề khóa học phải có ít nhất 5 ký tự nha má!");
+      alert("Course title must be at least 5 characters long!");
       return;
     }
     if (!courseInfo.category) {
-      alert("Má quên chọn Chuyên ngành rồi kìa!");
+      alert("Please select a category!");
       return;
     }
     if (actionType === "pending" && uploadedVideos.length === 0) {
-      alert("Khóa học phải có ít nhất 1 video mới được gửi duyệt nhé!");
+      alert("The course must have at least 1 video to be submitted for approval!");
       return;
     }
 
@@ -136,7 +136,7 @@ const InstructorCreateCourse = () => {
       }
 
       // BƯỚC 1: TẠO KHÓA HỌC
-      setUploadProgressText("Đang tạo khóa học mới...");
+      setUploadProgressText("Creating new course...");
       const coursePayload = {
         title: courseInfo.title,
         description: courseInfo.description,
@@ -190,7 +190,7 @@ const InstructorCreateCourse = () => {
           const video = uploadedVideos[i];
           const duration = await getVideoDuration(video.file);
           console.log("Duration:", duration);
-          setUploadProgressText(`Đang xử lý Video ${i + 1}/${uploadedVideos.length}...`);
+          setUploadProgressText(`Processing Video ${i + 1}/${uploadedVideos.length}...`);
 
           // 2. Xin vé thông hành GCS
           const urlData = await getPresignedUrlAPI(newCourseId, video.file.name, video.file.type, token);
@@ -199,14 +199,14 @@ const InstructorCreateCourse = () => {
           }
 
           // 3. Up thẳng lên mây Google
-          setUploadProgressText(`Đang đẩy Video ${i + 1} lên đám mây... (Chờ chút nha)`);
+          setUploadProgressText(`Uploading Video ${i + 1} to the cloud... (Please wait)`);
           await uploadVideoToGCS(urlData.upload_url, video.file);
 
           // Mỗi video tạo một lesson rồi mới gắn video vào lesson đó
           const lessonRes = await createLessonAPI(
             {
               course_id: newCourseId,
-              title: video.title || `Bài ${i + 1}`,
+              title: video.title || `Lesson ${i + 1}`,
               order_index: i + 1,
             },
             token,
@@ -238,7 +238,7 @@ const InstructorCreateCourse = () => {
         setUploadProgressText("Sending course approval request...");
         await submitCourseAPI(newCourseId, token);
 
-        alert("Đã gửi khóa học lên Trung tâm! Vui lòng chờ Admin định giá và xuất bản.");
+        alert("Course submitted successfully! Please wait for Admin pricing and publication.");
         // Reset form cho sạch sẽ
         setCourseInfo({ title: "", description: "", category: "", prerequisites: "", enableQA: true, visibility: "public" });
         setUploadedVideos([]);
@@ -250,8 +250,8 @@ const InstructorCreateCourse = () => {
       }
 
     } catch (error) {
-      alert(`Lỗi: ${error.message}`);
-      console.error("Chi tiết lỗi:", error);
+      alert(`Error: ${error.message}`);
+      console.error("Error details:", error);
     } finally {
       setIsLoading(false);
       setUploadProgressText(""); // Xóa text trạng thái
@@ -276,9 +276,9 @@ const InstructorCreateCourse = () => {
   );
 
   const getSelectedCategoryName = () => {
-    if (!courseInfo.category) return "Tìm và chọn chuyên ngành...";
+    if (!courseInfo.category) return "Search and select a category...";
     const found = categories.find((c) => c.id === courseInfo.category);
-    return found ? found.name : "Tìm và chọn chuyên ngành...";
+    return found ? found.name : "Search and select a category...";
   };
 
   return (
@@ -288,22 +288,22 @@ const InstructorCreateCourse = () => {
       {isLoading && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex flex-col items-center justify-center text-white">
           <FontAwesomeIcon icon={faSpinner} spin className="text-5xl text-blue-400 mb-4" />
-          <h2 className="text-xl font-bold mb-2">Hệ thống đang làm việc</h2>
+          <h2 className="text-xl font-bold mb-2">System is processing</h2>
           <p className="text-blue-200 animate-pulse">{uploadProgressText}</p>
           <p className="text-xs text-slate-400 mt-4 max-w-sm text-center">Please do not close the browser or refresh the page to avoid data loss!</p>
         </div>
       )}
 
       <div className="max-w-4xl mx-auto mb-8">
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Tạo Khóa Học Mới</h1>
-        <p className="text-slate-500 mt-2 font-medium">Cung cấp thông tin chi tiết và tải lên nội dung bài giảng của bạn.</p>
+        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Create New Course</h1>
+        <p className="text-slate-500 mt-2 font-medium">Provide details and upload your course content.</p>
       </div>
 
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div className="flex bg-slate-200/70 p-1 rounded-xl w-full sm:w-auto">
-            <button onClick={() => setActiveTab("basic")} className={`flex-1 sm:w-40 py-2.5 px-4 font-bold rounded-lg text-sm transition-all ${activeTab === "basic" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:bg-slate-200/50"}`}>Thông tin cơ bản</button>
-            <button onClick={() => setActiveTab("settings")} className={`flex-1 sm:w-40 py-2.5 px-4 font-bold rounded-lg text-sm transition-all ${activeTab === "settings" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:bg-slate-200/50"}`}>Cài đặt (Setting)</button>
+            <button onClick={() => setActiveTab("basic")} className={`flex-1 sm:w-40 py-2.5 px-4 font-bold rounded-lg text-sm transition-all ${activeTab === "basic" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:bg-slate-200/50"}`}>Basic Information</button>
+            <button onClick={() => setActiveTab("settings")} className={`flex-1 sm:w-40 py-2.5 px-4 font-bold rounded-lg text-sm transition-all ${activeTab === "settings" ? "bg-white text-blue-700 shadow-sm" : "text-slate-600 hover:bg-slate-200/50"}`}>Settings</button>
           </div>
 
           <div className="hidden sm:flex items-center gap-3">
@@ -312,7 +312,7 @@ const InstructorCreateCourse = () => {
               disabled={isLoading}
               className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition duration-300 flex items-center gap-2 disabled:opacity-50"
             >
-              <FontAwesomeIcon icon={faSave} /> Lưu nháp
+              <FontAwesomeIcon icon={faSave} /> Save Draft
             </button>
 
             <button
@@ -320,7 +320,7 @@ const InstructorCreateCourse = () => {
               disabled={isLoading}
               className="px-6 py-2.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95 flex items-center gap-2 disabled:opacity-50"
             >
-              <FontAwesomeIcon icon={faPaperPlane} /> Gửi duyệt
+              <FontAwesomeIcon icon={faPaperPlane} /> Submit for Approval
             </button>
           </div>
         </div>
@@ -329,17 +329,17 @@ const InstructorCreateCourse = () => {
           <div className="space-y-6 animate-fade-slide-up">
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">1</span> Thông tin Khóa học
+                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">1</span> Course Information
               </h2>
               <div className="space-y-5">
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Tiêu đề khóa học <span className="text-red-500">*</span></label>
-                  <input type="text" name="title" placeholder="Vd: Lập trình ReactJS từ cơ bản đến nâng cao..." value={courseInfo.title} onChange={handleCourseInfoChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium" />
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Course Title <span className="text-red-500">*</span></label>
+                  <input type="text" name="title" placeholder="Ex: ReactJS Programming from Basic to Advanced..." value={courseInfo.title} onChange={handleCourseInfoChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div ref={dropdownRef} className="relative sm:col-span-2 md:col-span-1">
-                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Chuyên ngành <span className="text-red-500">*</span></label>
+                    <label className="block text-sm font-bold text-slate-700 mb-1.5">Category <span className="text-red-500">*</span></label>
                     <div onClick={() => setIsCategoryOpen(!isCategoryOpen)} className={`w-full px-4 py-3 bg-slate-50 border rounded-xl flex items-center justify-between cursor-pointer transition-colors ${isCategoryOpen ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200 hover:border-blue-300"}`}>
                       <span className={`font-medium truncate ${courseInfo.category ? "text-slate-800" : "text-slate-400"}`}>{getSelectedCategoryName()}</span>
                       <FontAwesomeIcon icon={faChevronDown} className={`text-slate-400 transition-transform duration-300 ml-2 ${isCategoryOpen ? "rotate-180" : ""}`} />
@@ -350,7 +350,7 @@ const InstructorCreateCourse = () => {
                         <div className="p-3 border-b border-slate-100 bg-slate-50/50 sticky top-0 z-10">
                           <div className="relative">
                             <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-3 text-slate-400 text-sm" />
-                            <input type="text" placeholder="Tìm chuyên ngành..." value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} onClick={(e) => e.stopPropagation()} className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
+                            <input type="text" placeholder="Search category..." value={categorySearch} onChange={(e) => setCategorySearch(e.target.value)} onClick={(e) => e.stopPropagation()} className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors" />
                           </div>
                         </div>
                         <div className="max-h-64 overflow-y-auto p-2 scrollbar-hide">
@@ -358,7 +358,7 @@ const InstructorCreateCourse = () => {
                             <div key={cat.id} onClick={() => { setCourseInfo({ ...courseInfo, category: cat.id }); setIsCategoryOpen(false); setCategorySearch(""); }} className={`px-3 py-2.5 mb-1 rounded-lg cursor-pointer text-sm font-medium transition-colors ${courseInfo.category === cat.id ? "bg-blue-50 text-blue-700 font-bold" : "text-slate-700 hover:bg-slate-100"}`}>
                               {cat.name}
                             </div>
-                          )) : <div className="p-4 text-center text-sm text-slate-500 font-medium">No majors found.</div>}
+                          )) : <div className="p-4 text-center text-sm text-slate-500 font-medium">No categories found.</div>}
                         </div>
                       </div>
                     )}
@@ -366,14 +366,14 @@ const InstructorCreateCourse = () => {
                 </div>
 
                 <div className="mt-4">
-                  <label className="block text-sm font-bold text-slate-700 mb-2">Ảnh bìa khóa học (Thumbnail)</label>
+                  <label className="block text-sm font-bold text-slate-700 mb-2">Course Thumbnail</label>
                   <div className="relative group border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer" onClick={() => thumbnailInputRef.current.click()}>
                     <input type="file" ref={thumbnailInputRef} onChange={handleThumbnailChange} accept="image/*" className="hidden" />
                     {thumbnailPreview ? (
                       <div className="relative aspect-video w-full sm:w-1/2 mx-auto">
                         <img src={thumbnailPreview} alt="Course Thumbnail" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                          <span className="text-white font-semibold flex items-center gap-2"><FontAwesomeIcon icon={faImage} /> Thay đổi ảnh bìa</span>
+                          <span className="text-white font-semibold flex items-center gap-2"><FontAwesomeIcon icon={faImage} /> Change cover image</span>
                         </div>
                       </div>
                     ) : (
@@ -381,7 +381,7 @@ const InstructorCreateCourse = () => {
                         <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
                           <FontAwesomeIcon icon={faImage} className="text-2xl" />
                         </div>
-                        <p className="text-slate-700 font-bold mb-1">Kéo thả ảnh hoặc click để duyệt</p>
+                        <p className="text-slate-700 font-bold mb-1">Drag & drop image or click to browse</p>
                         <p className="text-slate-500 text-sm">Supported formats: PNG, JPG. Standard aspect ratio 16:9.</p>
                       </div>
                     )}
@@ -393,39 +393,39 @@ const InstructorCreateCourse = () => {
             {/* KHỐI 2: UPLOAD VIDEO */}
             <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-slate-200/60">
               <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">2</span> Nội dung Bài giảng (Video)
+                <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">2</span> Course Content (Video)
               </h2>
               <div onClick={handleVideoUploadClick} className="border-2 border-dashed border-blue-300 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-400 rounded-2xl p-10 text-center cursor-pointer transition-all group">
                 <input type="file" multiple accept="video/*" className="hidden" ref={fileInputRef} onChange={handleVideoFileChange} />
                 <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-105 transition-transform group-hover:shadow-md">
                   <FontAwesomeIcon icon={faCloudArrowUp} className="text-4xl text-blue-600" />
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-2">Kéo thả các video vào đây hoặc click để duyệt file</h3>
-                <p className="text-slate-500 text-sm mb-6">Hỗ trợ MP4, WebM. Tối đa 5GB/file.</p>
-                <button className="px-6 py-2.5 bg-blue-100 text-blue-800 font-bold rounded-xl pointer-events-none group-hover:bg-blue-200 transition-colors">Chọn file Video</button>
+                <h3 className="text-lg font-bold text-slate-800 mb-2">Drag & drop videos here or click to browse files</h3>
+                <p className="text-slate-500 text-sm mb-6">Supports MP4, WebM. Max 5GB/file.</p>
+                <button className="px-6 py-2.5 bg-blue-100 text-blue-800 font-bold rounded-xl pointer-events-none group-hover:bg-blue-200 transition-colors">Select Video file</button>
               </div>
 
               {uploadedVideos.length > 0 && (
                 <div className="mt-8 space-y-6">
-                  <h3 className="font-bold text-slate-800 text-lg border-b border-slate-200 pb-3">Chi tiết {uploadedVideos.length} bài giảng:</h3>
+                  <h3 className="font-bold text-slate-800 text-lg border-b border-slate-200 pb-3">Details of {uploadedVideos.length} lessons:</h3>
                   {uploadedVideos.map((video, index) => (
                     <div key={video.id} className="relative bg-slate-50 border border-slate-200 rounded-xl p-5 pt-8 shadow-sm animate-fade-slide-up">
-                      <div className="absolute top-0 left-0 bg-blue-600 text-white font-bold text-xs px-3 py-1 rounded-br-lg rounded-tl-xl">Bài {index + 1}</div>
-                      <button onClick={() => removeVideo(video.id)} className="absolute top-3 right-3 text-slate-400 hover:text-red-600 hover:bg-red-50 w-8 h-8 rounded-lg flex items-center justify-center transition-colors" title="Xóa video"><FontAwesomeIcon icon={faTimes} /></button>
+                      <div className="absolute top-0 left-0 bg-blue-600 text-white font-bold text-xs px-3 py-1 rounded-br-lg rounded-tl-xl">Lesson {index + 1}</div>
+                      <button onClick={() => removeVideo(video.id)} className="absolute top-3 right-3 text-slate-400 hover:text-red-600 hover:bg-red-50 w-8 h-8 rounded-lg flex items-center justify-center transition-colors" title="Delete video"><FontAwesomeIcon icon={faTimes} /></button>
                       <div className="flex items-center gap-3 mb-5 pb-4 border-b border-slate-200/60">
                         <div className="w-10 h-10 bg-slate-200 rounded-lg flex items-center justify-center text-slate-500 shrink-0"><FontAwesomeIcon icon={faVideo} /></div>
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-bold text-slate-800 truncate">{video.originalName}</p>
-                          <p className="text-xs text-slate-500 font-medium">Kích thước: {video.size} MB</p>
+                          <p className="text-xs text-slate-500 font-medium">Size: {video.size} MB</p>
                         </div>
                       </div>
                       <div className="space-y-4">
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1.5">Tiêu đề bài giảng</label>
+                          <label className="block text-sm font-bold text-slate-700 mb-1.5">Lesson Title</label>
                           <input type="text" value={video.title} onChange={(e) => handleVideoDetailChange(video.id, "title", e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium text-sm" />
                         </div>
                         <div>
-                          <label className="block text-sm font-bold text-slate-700 mb-1.5">Mô tả ngắn gọn (Tùy chọn)</label>
+                          <label className="block text-sm font-bold text-slate-700 mb-1.5">Short description (Optional)</label>
                           <textarea rows="2" value={video.description} onChange={(e) => handleVideoDetailChange(video.id, "description", e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium text-sm resize-y"></textarea>
                         </div>
                       </div>
@@ -453,10 +453,10 @@ const InstructorCreateCourse = () => {
 
         <div className="mt-8 sm:hidden flex flex-col gap-3">
           <button onClick={() => handleSaveCourse("pending")} disabled={isLoading} className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95 disabled:opacity-50">
-            {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPaperPlane} />} Gửi duyệt
+            {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPaperPlane} />} Submit for Approval
           </button>
           <button onClick={() => handleSaveCourse("draft")} disabled={isLoading} className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition duration-300 disabled:opacity-50">
-            {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />} Lưu nháp
+            {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faSave} />} Save Draft
           </button>
         </div>
       </div>

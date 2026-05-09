@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams, Link } from "react-router-dom";
+import { useNavigate, useParams, Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
@@ -16,6 +16,8 @@ import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
 
 const CourseDetailPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
   // Lấy courseId từ URL hiện tại (ví dụ: đang ở trang /courses/123 thì courseId = 123)
   const { courseId } = useParams();
 
@@ -221,9 +223,20 @@ const CourseDetailPage = () => {
             </span>
           </div>
 
-          {/* Nút Mua ngay: Giảm py-4 xuống py-3.5 */}
-          <button className="w-full py-3.5 bg-[#1dbf54] hover:bg-[#19a347] text-white font-extrabold rounded-xl transition-colors shadow-lg shadow-[#1dbf54]/30 flex items-center justify-center gap-2 text-lg active:scale-95">
-            <FontAwesomeIcon icon={faCartShopping} /> Buy Now
+          {/* Nút Mua ngay: khách → đăng nhập */}
+          <button
+            type="button"
+            onClick={() =>
+              isLoggedIn
+                ? navigate("/checkout", {
+                    state: { courseId },
+                  })
+                : navigate("/login", { state: { from: location.pathname } })
+            }
+            className="w-full py-3.5 bg-[#1dbf54] hover:bg-[#19a347] text-white font-extrabold rounded-xl transition-colors shadow-lg shadow-[#1dbf54]/30 flex items-center justify-center gap-2 text-lg active:scale-95"
+          >
+            <FontAwesomeIcon icon={faCartShopping} />{" "}
+            {isLoggedIn ? "Buy Now" : "Sign in to purchase"}
           </button>
 
           {/* Text hoàn tiền: Giảm mt-4 xuống mt-3, text-xs */}
@@ -254,7 +267,12 @@ const CourseDetailPage = () => {
             // Lưu ý: Nếu URL hiện tại chưa có courseId thật, tạm thời dùng số 1 để test.
             <Link
               key={lesson.id}
-              to={`/courses/${courseId || "1"}/lessons/${lesson.id}`}
+              to={
+                isLoggedIn
+                  ? `/courses/${courseId || "1"}/lessons/${lesson.id}`
+                  : "/login"
+              }
+              state={!isLoggedIn ? { from: location.pathname } : undefined}
               className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer block"
             >
               {/* Thumbnail Bài giảng (Nhỏ gọn) */}

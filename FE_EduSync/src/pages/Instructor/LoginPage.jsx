@@ -191,7 +191,7 @@ const InstructorLoginPage = () => {
                     icon={faCircleNotch}
                     className="animate-spin text-lg"
                   />
-                  Authenticating...
+                  Signing in...
                 </>
               ) : (
                 <>Sign in</>
