@@ -74,6 +74,21 @@ def _fallback_mindmap(ctx: LessonContext):
 """
 
 
+def _fallback_timeline(ctx: LessonContext):
+    return [
+        {
+            "time": "00:00",
+            "seconds": 0,
+            "label": f"Bắt đầu bài học: {ctx.title}"
+        },
+        {
+            "time": "01:00",
+            "seconds": 60,
+            "label": "Nội dung chính"
+        }
+    ]
+
+
 # =========================
 # HELPER
 # =========================
@@ -242,3 +257,53 @@ Nội dung:
 
     result = await _call_gemini(prompt)
     return result or _fallback_mindmap(ctx)
+
+
+async def generate_timeline_json(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+):
+    prompt = f"""
+Tạo các mốc thời gian quan trọng (timeline) cho bài học bằng {language}.
+Dựa vào transcript hoặc mô tả, hãy trích xuất các khoảnh khắc (key moments).
+Nếu transcript không có timestamp, hãy tự ước lượng khoảng thời gian hợp lý (ví dụ mỗi ý chính cách nhau vài phút).
+
+YÊU CẦU:
+- Trả về JSON array
+- KHÔNG thêm text ngoài JSON
+- Format:
+
+[
+  {{
+    "time": "00:00",
+    "seconds": 0,
+    "label": "Giới thiệu"
+  }},
+  {{
+    "time": "01:30",
+    "seconds": 90,
+    "label": "Khái niệm chính"
+  }}
+]
+
+Nội dung:
+Tiêu đề: {ctx.title}
+Mô tả: {ctx.description}
+Transcript: {ctx.transcript}
+"""
+
+    result = await _call_gemini(prompt)
+
+    if not result:
+        return _fallback_timeline(ctx)
+
+    clean_json = _extract_json(result)
+
+    if not clean_json:
+        return _fallback_timeline(ctx)
+
+    try:
+        return json.loads(clean_json)
+    except Exception as e:
+        print("⚠️ JSON parse lỗi:", e)
+        return _fallback_timeline(ctx)
