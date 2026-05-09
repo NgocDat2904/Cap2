@@ -15,7 +15,7 @@ import ProtectedRoute from "./ProtectedRoute";
 const InstructorRoutes = () => {
   return (
     <Routes>
-      <Route element={<ProtectedRoute />}>
+      <Route element={<ProtectedRoute allowedRoles={["instructor"]} />}>
         <Route element={<InstructorLayout />}>
           {/* Đường dẫn thực tế sẽ là /instructor/dashboard */}
           <Route path="dashboard" element={<InstructorDashboardPage />} />
