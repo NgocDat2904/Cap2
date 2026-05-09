@@ -398,9 +398,15 @@ const InstructorCourseDetailPage = () => {
             <h1 className="text-3xl sm:text-4xl font-extrabold leading-tight mb-2 tracking-tight">
               Course Management
             </h1>
-            <p className="text-white/90 text-lg mb-10 font-medium">
+
+            {/* ✅ ĐÃ CẬP NHẬT: Thêm Description ngay bên dưới Title */}
+            <h2 className="text-white/90 text-xl font-bold mb-3">
               {courseDetail.title}
+            </h2>
+            <p className="text-white/80 text-sm mb-10 leading-relaxed max-w-3xl line-clamp-3">
+              {courseDetail.description || "No description available for this course."}
             </p>
+
             <div className="flex flex-wrap items-center gap-8">
               <div className="flex flex-col items-start gap-1">
                 <div className="flex items-center gap-2 text-white/80">

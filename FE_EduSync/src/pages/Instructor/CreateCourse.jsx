@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSave, faCloudArrowUp, faTimes, faVideo, faImage, faPaperPlane,
-  faGraduationCap, faChevronDown, faSearch, faSpinner
+  faGraduationCap, faChevronDown, faSearch, faSpinner, faAlignLeft
 } from "@fortawesome/free-solid-svg-icons";
 
 // IMPORT 5 API SIÊU CẤP TỪ SERVICE 
@@ -145,25 +145,6 @@ const InstructorCreateCourse = () => {
       };
       const createResponse = await createCourseAPI(coursePayload, token);
       const newCourseId = createResponse.id;
-
-      // Tạo section mặc định để chứa danh sách video upload ở màn này
-      // let defaultSectionId = null;
-      // if (uploadedVideos.length > 0) {
-      //   setUploadProgressText("Đang tạo section nội dung...");
-      //   const sectionRes = await createSectionAPI(
-      //     {
-      //       course_id: newCourseId,
-      //       title: "Nội dung khóa học",
-      //       order_index: 1,
-      //     },
-      //     token,
-      //   );
-      //   defaultSectionId = sectionRes?.id;
-      //   if (!defaultSectionId) {
-      //     throw new Error("Không tạo được section cho khóa học");
-      //   }
-      // }
-
 
       // BƯỚC 2 + 3 + 4: XỬ LÝ UP TỪNG VIDEO
       if (uploadedVideos.length > 0) {
@@ -332,12 +313,14 @@ const InstructorCreateCourse = () => {
                 <span className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-sm">1</span> Course Information
               </h2>
               <div className="space-y-5">
+                {/* TÊN KHÓA HỌC */}
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-1.5">Course Title <span className="text-red-500">*</span></label>
                   <input type="text" name="title" placeholder="Ex: ReactJS Programming from Basic to Advanced..." value={courseInfo.title} onChange={handleCourseInfoChange} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* DANH MỤC */}
                   <div ref={dropdownRef} className="relative sm:col-span-2 md:col-span-1">
                     <label className="block text-sm font-bold text-slate-700 mb-1.5">Category <span className="text-red-500">*</span></label>
                     <div onClick={() => setIsCategoryOpen(!isCategoryOpen)} className={`w-full px-4 py-3 bg-slate-50 border rounded-xl flex items-center justify-between cursor-pointer transition-colors ${isCategoryOpen ? "border-blue-500 ring-2 ring-blue-500/20" : "border-slate-200 hover:border-blue-300"}`}>
@@ -365,6 +348,22 @@ const InstructorCreateCourse = () => {
                   </div>
                 </div>
 
+                {/* ✅ MÔ TẢ KHÓA HỌC ĐÃ ĐƯỢC THÊM VÀO ĐÂY */}
+                <div>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5 flex items-center gap-2">
+                    Course Description
+                  </label>
+                  <textarea 
+                    name="description" 
+                    rows="4" 
+                    placeholder="Provide a detailed description of what students will learn from this course..." 
+                    value={courseInfo.description} 
+                    onChange={handleCourseInfoChange} 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium resize-y"
+                  ></textarea>
+                </div>
+
+                {/* ẢNH BÌA */}
                 <div className="mt-4">
                   <label className="block text-sm font-bold text-slate-700 mb-2">Course Thumbnail</label>
                   <div className="relative group border-2 border-dashed border-slate-300 rounded-2xl overflow-hidden bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer" onClick={() => thumbnailInputRef.current.click()}>

@@ -3,7 +3,7 @@ import axios from "axios";
 
 const API_URL = "http://127.0.0.1:8000/user";
 
-// 1. Hàm lấy Profile
+// Hàm lấy Profile
 export const getProfileAPI = async (token) => {
   const response = await axios.get(`${API_URL}/profile`, {
     headers: {
@@ -13,7 +13,7 @@ export const getProfileAPI = async (token) => {
   return response.data;
 };
 
-// 2. Hàm cập nhật Profile
+// Hàm cập nhật Profile
 export const updateProfileAPI = async (profileData, token) => {
   const response = await axios.put(`${API_URL}/update-profile`, profileData, {
     headers: {
@@ -23,13 +23,13 @@ export const updateProfileAPI = async (profileData, token) => {
   return response.data;
 };
 
-// 3. API UPLOAD AVATAR
+// API UPLOAD AVATAR
 export const uploadAvatarAPI = async (file, token) => {
   // Đóng gói file vào FormData
   const formData = new FormData();
   formData.append("file", file); 
 
-  const response = await axios.post("http://localhost:8000/user/upload-avatar", formData, {
+  const response = await axios.post("${API_URL}/upload-avatar", formData, {
     headers: {
       Authorization: `Bearer ${token}`,
       // KHÔNG set Content-Type ở đây, trình duyệt sẽ tự động xử lý
