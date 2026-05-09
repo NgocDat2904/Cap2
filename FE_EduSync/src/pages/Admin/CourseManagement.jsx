@@ -14,7 +14,8 @@ import {
   faClockRotateLeft,
   faTimesCircle,
   faBell,
-  faRotateRight, // <-- Sử dụng icon đồng bộ với trang User
+  faRotateRight, 
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 
@@ -152,7 +153,7 @@ const AdminCourseManagement = () => {
         return (
           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-emerald-200">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-            Active
+            Published
           </span>
         );
       case "pending":
@@ -223,7 +224,7 @@ const AdminCourseManagement = () => {
         {[
           { label: "Total Courses", value: stats.total, icon: faBookOpen, color: "text-blue-600", bg: "bg-blue-100" },
           { label: "Pending Review & Pricing", value: stats.pending, icon: faClockRotateLeft, color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Active", value: stats.published, icon: faCheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Published", value: stats.published, icon: faCheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
           { label: "Draft / Rejected / Banned", value: stats.others, icon: faBan, color: "text-slate-600", bg: "bg-slate-200" },
         ].map((stat, idx) => (
           <div
@@ -285,7 +286,7 @@ const AdminCourseManagement = () => {
               <option value="all">All statuses</option>
               <option value="pending">Pending Review (New)</option>
               <option value="has_update">🔔 Has content update</option>
-              <option value="published">Active</option>
+              <option value="published">Published</option>
               <option value="rejected">Rejected</option>
               <option value="draft">Draft</option>
             </select>
@@ -494,8 +495,15 @@ const AdminCourseManagement = () => {
                               onClick={() => deleteCourse(course.id)}
                               className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
                             >
-                              <FontAwesomeIcon icon={faTrash} className="w-4" />{" "}
+                              <FontAwesomeIcon icon={faXmark} className="w-4" />{" "}
                               Reject / Disable
+                            </button>
+                            <button
+                              
+                              className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
+                            >
+                              <FontAwesomeIcon icon={faTrash} className="w-4" />{" "}
+                              Delete
                             </button>
                           </div>
                         </>
