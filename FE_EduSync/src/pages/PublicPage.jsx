@@ -51,7 +51,7 @@ const PublicPage = () => {
 
   return (
     <div className="animate-fade-slide-up min-h-screen bg-white font-sans text-gray-800">
-      {/* 1. HEADER */}
+      {/* HEADER */}
       <header className="w-full bg-white shadow-md">
         <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -85,7 +85,7 @@ const PublicPage = () => {
         </div>
       </header>
 
-      {/* 2. HERO SECTION */}
+      {/* HERO SECTION */}
       <section className="max-w-7xl mx-auto px-8 py-16 grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
         {/* Cột trái: Text & Buttons */}
         <div>
@@ -135,7 +135,7 @@ const PublicPage = () => {
         <hr className="border-gray-300 my-8" />
       </div>
 
-      {/* 3. AI FEATURES SECTION */}
+      {/* AI FEATURES SECTION */}
       <section className="max-w-7xl mx-auto px-8 py-8">
         <h2 className="text-3xl font-bold text-gray-900 mb-10">
           Powerful AI Features
@@ -165,7 +165,7 @@ const PublicPage = () => {
         <hr className="border-gray-300 my-12" />
       </div>
 
-      {/* 4. CALL TO ACTION (Kêu gọi hành động) */}
+      {/* CALL TO ACTION (Kêu gọi hành động) */}
       <section className="max-w-7xl mx-auto px-8 py-12 text-center">
         <h2 className="text-4xl font-bold text-gray-900 mb-4">
           Start Your Journey Today
