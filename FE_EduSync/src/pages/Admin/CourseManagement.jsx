@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -14,6 +14,7 @@ import {
   faClockRotateLeft,
   faTimesCircle,
   faBell,
+  faRotateRight, // <-- Sử dụng icon đồng bộ với trang User
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 
@@ -41,21 +42,31 @@ const AdminCourseManagement = () => {
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  React.useEffect(() => {
-    const loadCourses = async () => {
-      try {
-        const token = localStorage.getItem("access_token");
-        const data = await fetchAllAdminCoursesAPI(token, { limit: 1000 });
-        setCourses(data.courses || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadCourses();
+  const fetchCourses = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("access_token");
+      const data = await fetchAllAdminCoursesAPI(token, { limit: 1000 });
+      setCourses(data.courses || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
+  useEffect(() => {
+    fetchCourses();
+  }, [fetchCourses]);
+
+  // ==================== HÀM REFRESH/RESET ====================
+  const handleRefresh = () => {
+    setSearchTerm("");
+    setCategoryFilter("all");
+    setStatusFilter("all");
+    fetchCourses();
+  };
+  // ===========================================================
 
   const stats = {
     total: courses.length,
@@ -95,30 +106,41 @@ const AdminCourseManagement = () => {
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
-  const toggleCourseSuspension = (id, currentStatus) => {
+  const toggleCourseSuspension = async (id, currentStatus) => {
     const newStatus = currentStatus === "suspended" ? "published" : "suspended";
+
     const confirmMsg =
       newStatus === "suspended"
         ? "Suspend this course? It will be removed from the homepage immediately."
         : "Restore this course to the platform?";
 
     if (window.confirm(confirmMsg)) {
-      setCourses(
-        courses.map((course) =>
-          course.id === id ? { ...course, status: newStatus } : course,
-        ),
-      );
+      try {
+        const token = localStorage.getItem("access_token");
+        const { moderateCourseAPI } = await import("../../services/adminCourseAPI");
+        await moderateCourseAPI(id, newStatus, token);
+        fetchCourses();
+      } catch (err) {
+        alert("Action failed: " + err.message);
+      }
       setOpenActionMenuId(null);
     }
   };
 
-  const deleteCourse = (id) => {
+  const deleteCourse = async (id) => {
     if (
       window.confirm(
         "Warning: Are you sure you want to permanently delete this course from the system?",
       )
     ) {
-      setCourses(courses.filter((course) => course.id !== id));
+      const token = localStorage.getItem("access_token");
+      try {
+        const { moderateCourseAPI } = await import("../../services/adminCourseAPI");
+        await moderateCourseAPI(id, "REJECTED", token);
+        fetchCourses();
+      } catch (err) {
+        alert("Action failed: " + err.message);
+      }
       setOpenActionMenuId(null);
     }
   };
@@ -126,6 +148,7 @@ const AdminCourseManagement = () => {
   const renderStatusBadge = (status) => {
     switch (status) {
       case "published":
+      case "approved":
         return (
           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-emerald-200">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
@@ -162,7 +185,6 @@ const AdminCourseManagement = () => {
   };
 
   return (
-    // Bỏ min-h-screen để thanh cuộn hoạt động mượt hơn
     <div className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up h-full">
       {/* HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -174,9 +196,26 @@ const AdminCourseManagement = () => {
             Approve new courses, set pricing and handle content violations.
           </p>
         </div>
-        <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition shadow-sm flex items-center gap-2">
-          <FontAwesomeIcon icon={faFileExport} /> Export Report
-        </button>
+        
+        {/* BUTTON GROUP: Refresh & Export */}
+        <div className="flex items-center gap-3">
+          {/* NÚT REFRESH ĐÃ ĐƯỢC CHỈNH GIỐNG TRANG USER */}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <FontAwesomeIcon 
+              icon={faRotateRight} 
+              className={loading ? "animate-spin" : ""} 
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+
+          <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition shadow-sm flex items-center gap-2">
+            <FontAwesomeIcon icon={faFileExport} /> <span className="hidden sm:inline">Export Report</span>
+          </button>
+        </div>
       </div>
 
       {/* WIDGETS THỐNG KÊ */}
@@ -209,9 +248,9 @@ const AdminCourseManagement = () => {
         ))}
       </div>
 
-      {/* 🚨 KHU VỰC DANH SÁCH KHÓA HỌC (Đã chia ra ToolBar và Table riêng) */}
+      {/*KHU VỰC DANH SÁCH KHÓA HỌC */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
-        {/* 🚨 TOOLBAR TÌM KIẾM (Được dán chặt ở trên cùng nhờ sticky) */}
+        {/*TOOLBAR TÌM KIẾM */}
         <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
           <div className="relative w-full md:w-96">
             <FontAwesomeIcon
@@ -253,7 +292,7 @@ const AdminCourseManagement = () => {
           </div>
         </div>
 
-        {/* 🚨 KHU VỰC BẢNG NỘI DUNG (Phần này sẽ tự do cuộn lên xuống) */}
+        {/*KHU VỰC BẢNG NỘI DUNG */}
         <div className="overflow-y-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
             <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
@@ -267,7 +306,14 @@ const AdminCourseManagement = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredCourses.length > 0 ? (
+              {loading ? (
+                <tr>
+                  <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">
+                    <FontAwesomeIcon icon={faRotateRight} className="animate-spin mr-2 text-blue-500" />
+                    Loading courses...
+                  </td>
+                </tr>
+              ) : filteredCourses.length > 0 ? (
                 filteredCourses.map((course) => (
                   <tr
                     key={course.id}
@@ -275,15 +321,12 @@ const AdminCourseManagement = () => {
                   >
                     <td className="p-5 text-center">
                       <div className="relative group/id flex items-center justify-center">
-                        {/* Text bị cắt với dấu 3 chấm */}
                         <span
                           className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
                           title={course.id}
                         >
                           {course.id}
                         </span>
-
-                        {/* Tooltip hiện full ID khi hover */}
                         <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
                           <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
                             <span className="select-all">{course.id}</span>
@@ -299,7 +342,6 @@ const AdminCourseManagement = () => {
                               Copy
                             </button>
                           </div>
-                          {/* Mũi tên nhỏ */}
                           <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
                         </div>
                       </div>
@@ -415,7 +457,7 @@ const AdminCourseManagement = () => {
                                   : "View Details"}
                             </button>
 
-                            {course.status === "published" && (
+                            {(course.status === "published" || course.status === "approved") && (
                               <button
                                 onClick={() =>
                                   toggleCourseSuspension(
@@ -453,7 +495,7 @@ const AdminCourseManagement = () => {
                               className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
                             >
                               <FontAwesomeIcon icon={faTrash} className="w-4" />{" "}
-                              Delete permanently
+                              Reject / Disable
                             </button>
                           </div>
                         </>

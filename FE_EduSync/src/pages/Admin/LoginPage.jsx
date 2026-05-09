@@ -143,7 +143,7 @@ const AdminLoginPage = () => {
                   : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-[0.98]"
               }`}
           >
-            {isLoading ? "Authenticating..." : <>Sign in</>}
+            {isLoading ? "Signing in..." : <>Sign in</>}
           </button>
         </form>
 

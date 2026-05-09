@@ -9,20 +9,14 @@ import AdminRevenueReport from "../pages/Admin/RevenueReport";
 import AdminProfile from "../pages/Admin/Profile";
 import AdminSettings from "../pages/Admin/SystemSetting";
 import AdminApprovalQueue from "../pages/Admin/ApprovalQueue";
+import AdminDashboard from "../pages/Admin/Dashboard";
 
 const AdminRoutes = () => {
   return (
     <Routes>
       <Route element={<ProtectedRoute />}>
         <Route element={<AdminLayout />}>
-          <Route
-            path="dashboard"
-            element={
-              <div className="p-4 text-xl">
-                Admin Dashboard Overview
-              </div>
-            }
-          />
+          <Route path="dashboard" element={<AdminDashboard />} />
           <Route path="users" element={<AdminUserManagement />} />
           <Route path="courses" element={<AdminCourseManagement />} />
           <Route path="courses/:id/approval" element={<AdminCourseDetail />} />

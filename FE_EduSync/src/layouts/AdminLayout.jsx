@@ -66,7 +66,7 @@ const AdminLayout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ✅ USE EFFECT ĐỂ CALL API LẤY SỐ LƯỢNG CẦN XỬ LÝ (Chỉ lấy limit=1 cho nhẹ)
+  // USE EFFECT ĐỂ CALL API LẤY SỐ LƯỢNG CẦN XỬ LÝ (Chỉ lấy limit=1 cho nhẹ)
   useEffect(() => {
     const loadPendingCount = async () => {
       try {

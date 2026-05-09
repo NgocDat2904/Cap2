@@ -16,10 +16,10 @@ import InstructorPublicProfile from "../pages/Learner/InstructorProfile";
 const LearnerRoutes = () => {
   return (
     <Routes>
-      {/* 1. CỤM CÓ LAYOUT (Bị bọc bởi khung LearnerLayout) */}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />
-      {/* 2. Vùng có thể vào để xem ngay cả khi chưa có tài khoản */}
+
+      {/* Khách: vào được layout + xem Home / Courses / chi tiết khóa / hồ sơ giảng viên công khai */}
       <Route element={<LearnerLayout />}>
         <Route path="home" element={<EduSyncHome />} />
         <Route path="courses" element={<LearnerCoursesPage />} />
@@ -30,7 +30,7 @@ const LearnerRoutes = () => {
         />
       </Route>
 
-      {/* 3. Vùng tính năng: bắt buộc đăng nhập */}
+      {/* Đã đăng nhập: học bài, giỏ hàng, profile, yêu thích, thông báo, khóa của tôi */}
       <Route element={<ProtectedRoute />}>
         <Route element={<LearnerLayout />}>
           <Route path="my-courses" element={<LearnerMyCoursesPage />} />

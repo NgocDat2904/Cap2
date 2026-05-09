@@ -1,92 +1,145 @@
+import axios from "axios";
+
 const BASE_URL = "http://localhost:8000";
 
-async function parseErrorMessage(res, fallback) {
-  try {
-    const j = await res.json();
-    if (j.detail != null) {
-      return typeof j.detail === "string" ? j.detail : JSON.stringify(j.detail);
-    }
-  } catch {
-    /* ignore */
-  }
+function authHeaders(token) {
+  return { Authorization: `Bearer ${token}` };
+}
+
+function parseAxiosError(error, fallback) {
+  const detail = error?.response?.data?.detail;
+  if (typeof detail === "string") return detail;
+  if (detail != null) return JSON.stringify(detail);
   return fallback;
 }
 
 export async function fetchAllAdminCoursesAPI(token, params = {}) {
-  const query = new URLSearchParams(params).toString();
-  const res = await fetch(`${BASE_URL}/admin/courses?${query}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Failed to load all courses"));
+  try {
+    const response = await axios.get(`${BASE_URL}/admin/courses`, {
+      params,
+      headers: authHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Failed to load all courses"));
   }
-  return res.json();
 }
 
 export async function fetchPendingCoursesAPI(token, page = 1, limit = 50) {
-  const res = await fetch(
-    `${BASE_URL}/admin/courses/pending?page=${page}&limit=${limit}`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Failed to load approval queue"));
+  try {
+    const response = await axios.get(`${BASE_URL}/admin/courses/pending`, {
+      params: { page, limit },
+      headers: authHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Failed to load approval queue"));
   }
-  return res.json();
+}
+
+export async function fetchAdminCoursesAPI(
+  token,
+  search = "",
+  category = "",
+  status = "",
+  page = 1,
+  limit = 50,
+) {
+  try {
+    const params = { page, limit };
+    if (search) params.q = search;
+    if (category && category !== "All") params.category = category;
+    if (status && status !== "all") params.status = status;
+
+    const response = await axios.get(`${BASE_URL}/admin/courses`, {
+      params,
+      headers: authHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Failed to load courses"));
+  }
 }
 
 export async function fetchAdminCourseDetailAPI(courseId, token) {
-  const res = await fetch(`${BASE_URL}/admin/courses/${courseId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  if (res.status === 404) {
-    throw new Error("Course not found");
+  try {
+    const response = await axios.get(`${BASE_URL}/admin/courses/${courseId}`, {
+      headers: authHeaders(token),
+    });
+    return response.data;
+  } catch (error) {
+    if (error?.response?.status === 404) {
+      throw new Error("Course not found");
+    }
+    throw new Error(parseAxiosError(error, "Error loading course details"));
   }
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Error loading course details"));
-  }
-  return res.json();
 }
 
 export async function approveCourseAPI(courseId, price, token) {
-  const q = encodeURIComponent(String(price));
-  const res = await fetch(
-    `${BASE_URL}/admin/courses/${courseId}/approve?price=${q}`,
-    { method: "PUT", headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Approval failed"));
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/admin/courses/${courseId}/approve`,
+      null,
+      {
+        params: { price: String(price) },
+        headers: authHeaders(token),
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Approval failed"));
   }
-  return res.json();
 }
 
 export async function rejectCourseAPI(courseId, reason, token) {
-  const q = encodeURIComponent(reason || "");
-  const res = await fetch(
-    `${BASE_URL}/admin/courses/${courseId}/reject?reason=${q}`,
-    { method: "PUT", headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Từ chối thất bại"));
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/admin/courses/${courseId}/reject`,
+      null,
+      {
+        params: { reason: reason || "" },
+        headers: authHeaders(token),
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Từ chối thất bại"));
   }
-  return res.json();
 }
 
-/**
- * Admin xác nhận review xong bản cập nhật của khóa học đang PUBLISHED.
- * - Approve tất cả lesson đang chờ duyệt
- * - Tắt cờ has_pending_update
- * - Cập nhật giá nếu newPrice được truyền vào (null = giữ nguyên)
- */
 export async function resolveUpdateAPI(courseId, newPrice, token) {
-  const params = newPrice !== null && newPrice !== undefined
-    ? `?price=${encodeURIComponent(newPrice)}`
-    : "";
-  const res = await fetch(
-    `${BASE_URL}/admin/courses/${courseId}/resolve-update${params}`,
-    { method: "PUT", headers: { Authorization: `Bearer ${token}` } },
-  );
-  if (!res.ok) {
-    throw new Error(await parseErrorMessage(res, "Xử lý cập nhật thất bại"));
+  try {
+    const params = {};
+    if (newPrice !== null && newPrice !== undefined) {
+      params.price = newPrice;
+    }
+
+    const response = await axios.put(
+      `${BASE_URL}/admin/courses/${courseId}/resolve-update`,
+      null,
+      {
+        params,
+        headers: authHeaders(token),
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Xử lý cập nhật thất bại"));
   }
-  return res.json();
+}
+
+export async function moderateCourseAPI(courseId, status, token) {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/admin/courses/${courseId}/moderate`,
+      null,
+      {
+        params: { status },
+        headers: authHeaders(token),
+      },
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Cập nhật trạng thái thất bại"));
+  }
 }

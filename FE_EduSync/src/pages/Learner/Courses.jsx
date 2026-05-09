@@ -294,17 +294,22 @@ const LearnerCoursesPage = () => {
                   {/* Số lượng video */}
                   <span className="absolute bottom-3 right-3 px-2 py-1 bg-slate-900/80 backdrop-blur-md text-white text-xs font-bold rounded flex items-center gap-1.5">
                     <FontAwesomeIcon icon={faPlayCircle} /> {course.videoCount}{" "}
-                   
                   </span>
                 </div>
 
                 {/* Nội dung Card */}
                 <div className="p-5 flex-1 flex flex-col">
                   {/* Tác giả */}
-                  <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs mb-3">
+                  <div className="flex items-center gap-4 text-sm mt-auto mb-3 ">
+                    {/* <div className="flex items-center gap-1 text-amber-500 font-bold">
+                      <FontAwesomeIcon icon={faStar} />
+                      <span className="text-slate-700">{course.rating}</span>
+                    </div> */}
+                    <div className="flex items-center gap-1.5 text-slate-500 font-medium text-xs">
                       <FontAwesomeIcon icon={faUsers} />
-                      {course.students.toLocaleString()}
+                      {course.students.toLocaleString()} 
                     </div>
+                  </div>
 
                   {/* Tiêu đề */}
                   <h3 className="font-bold text-[17px] text-slate-800 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors mb-3">
@@ -312,9 +317,8 @@ const LearnerCoursesPage = () => {
                   </h3>
 
                   {/* Thống kê (Rating & Students) */}
-                  <div className="flex items-center gap-4 text-sm mt-auto pt-4">
-                    
-                    <div className="flex items-center gap-2 ">
+                  
+                   <div className="flex items-center gap-2 mb-3">
                     <img
                       src={course.instructor_avatar || "https://i.pravatar.cc/150?img=11"}
                       alt="Avatar"
@@ -328,7 +332,6 @@ const LearnerCoursesPage = () => {
                       className="text-blue-500 text-[10px]"
                       title="Verified"
                     />
-                  </div>
                   </div>
 
                   {/* Giá tiền */}
