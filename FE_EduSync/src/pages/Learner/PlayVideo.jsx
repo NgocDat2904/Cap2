@@ -20,6 +20,7 @@ import CourseSummary from "../../components/CourseSummary";
 import CourseQuiz from "../../components/CourseQuiz";
 import CourseChatbot from "../../components/CourseChatbot";
 import CourseDiscussion from "../../components/CourseDiscussion";
+import { aiTimelineAPI, aiTimelineByVideoAPI } from "../../services/aiAPI";
 
 const CourseLearningWorkspace = () => {
   const { courseId, lessonId } = useParams();
@@ -35,6 +36,10 @@ const CourseLearningWorkspace = () => {
   const [activeLesson, setActiveLesson] = useState(null);
   const [videoDuration, setVideoDuration] = useState("00:00");
   const playerRef = React.useRef(null);
+
+  const [aiTimeline, setAiTimeline] = useState([]);
+  const [loadingTimeline, setLoadingTimeline] = useState(false);
+  const [timelineError, setTimelineError] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -116,6 +121,35 @@ const CourseLearningWorkspace = () => {
     ],
   );
   const activeVideoId = activeLesson?._id || activeLesson?.id;
+
+  useEffect(() => {
+    if (!activeLesson) return;
+    let cancelled = false;
+    const run = async () => {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      setLoadingTimeline(true);
+      setTimelineError("");
+      setAiTimeline([]);
+
+      try {
+        const data = activeVideoId
+          ? await aiTimelineByVideoAPI(token, activeVideoId, "vi")
+          : await aiTimelineAPI(token, lessonContext, "vi");
+
+        if (!cancelled) setAiTimeline(data.timeline || []);
+      } catch (err) {
+        if (!cancelled) setTimelineError(err.message || "Failed to load timeline from AI");
+      } finally {
+        if (!cancelled) setLoadingTimeline(false);
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeVideoId, lessonContext?.transcript]);
 
   const handleSelectLesson = (lesson) => {
     if (lesson.locked && !isPremiumUser) {
@@ -356,11 +390,17 @@ const CourseLearningWorkspace = () => {
                     icon={faClockRotateLeft}
                     className="text-blue-600"
                   />{" "}
-                  Key Moments
+                  Key Moments (AI)
                 </h4>
-                {activeLesson.timeline && activeLesson.timeline.length > 0 ? (
+                {loadingTimeline && (
+                  <p className="text-sm text-slate-500 italic text-center mt-6">Generating key moments...</p>
+                )}
+                {timelineError && (
+                  <p className="text-sm text-red-600 text-center mt-6 bg-red-50 p-2 rounded-lg">{timelineError}</p>
+                )}
+                {!loadingTimeline && !timelineError && aiTimeline && aiTimeline.length > 0 ? (
                   <div className="relative border-l-2 border-slate-100 ml-3 space-y-6 mt-6">
-                    {activeLesson.timeline.map((point, index) => (
+                    {aiTimeline.map((point, index) => (
                       <div
                         key={index}
                         className="relative pl-6 cursor-pointer group"
@@ -378,13 +418,14 @@ const CourseLearningWorkspace = () => {
                       </div>
                     ))}
                   </div>
-                ) : (
+                ) : !loadingTimeline && !timelineError && (
                   <p className="text-sm text-slate-500 text-center mt-10 italic">
-                    Chưa có dữ liệu timeline.
+                    Chưa có dữ liệu timeline AI cho video này.
                   </p>
                 )}
               </div>
             )}
+
 
             {activeRightTab === "videos" && (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 bg-white animate-fade-slide-up">

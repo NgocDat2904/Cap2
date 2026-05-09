@@ -95,7 +95,7 @@ const InstructorProfilePage = () => {
             : data.specializations || "",
         }));
       } catch (error) {
-        console.error("Lỗi lấy dữ liệu:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -138,7 +138,7 @@ const InstructorProfilePage = () => {
 
       alert("Profile updated successfully!");
     } catch (error) {
-      console.error("Lỗi lưu hồ sơ:", error);
+      console.error("Error saving profile:", error);
       alert("Save failed! Please check your network connection.");
     } finally {
       setIsSaving(false);
@@ -332,7 +332,7 @@ const InstructorProfilePage = () => {
                         icon={faUserCircle}
                         className="text-blue-500"
                       />{" "}
-                      Thông tin cơ bản
+                      Basic Information
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                       <div className="sm:col-span-2">
@@ -353,7 +353,7 @@ const InstructorProfilePage = () => {
                             icon={faPhone}
                             className="text-slate-400"
                           />{" "}
-                          Số điện thoại
+                          Phone Number
                         </label>
                         <input
                           type="tel"
@@ -369,7 +369,7 @@ const InstructorProfilePage = () => {
                             icon={faVenusMars}
                             className="text-slate-400"
                           />{" "}
-                          Giới tính
+                          Gender
                         </label>
                         <select
                           name="gender"
@@ -388,7 +388,7 @@ const InstructorProfilePage = () => {
                             icon={faBirthdayCake}
                             className="text-slate-400"
                           />{" "}
-                          Ngày sinh
+                          Date of Birth
                         </label>
                         <input
                           type="date"
@@ -404,7 +404,7 @@ const InstructorProfilePage = () => {
                             icon={faMapMarkerAlt}
                             className="text-slate-400"
                           />{" "}
-                          Địa chỉ
+                          Address
                         </label>
                         <input
                           type="text"
@@ -423,7 +423,7 @@ const InstructorProfilePage = () => {
                         icon={faBriefcase}
                         className="text-blue-500"
                       />{" "}
-                      Hồ sơ Chuyên môn
+                      Professional Profile
                     </h3>
                     <div className="space-y-6">
                       <div>
@@ -435,12 +435,11 @@ const InstructorProfilePage = () => {
                           name="headline"
                           value={profileData.headline}
                           onChange={handleInputChange}
-                          placeholder="Ví dụ: Senior AI Engineer | Giảng viên Python"
+                          placeholder="Example: Senior AI Engineer | Python Instructor"
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
                         />
                         <p className="text-xs text-slate-400 mt-2">
-                          Dòng này sẽ hiển thị ngay dưới tên của bạn trên mọi
-                          khóa học. Viết ngắn gọn, súc tích và ấn tượng.
+                          This line will appear right below your name on all courses. Keep it short, concise, and impactful.
                         </p>
                       </div>
                       <div>
@@ -452,7 +451,7 @@ const InstructorProfilePage = () => {
                           value={profileData.bio}
                           onChange={handleInputChange}
                           rows="5"
-                          placeholder="Kể cho học viên nghe về kinh nghiệm..."
+                          placeholder="Tell students about your experience..."
                           className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:ring-2 focus:ring-blue-500 resize-y"
                         ></textarea>
                       </div>
@@ -462,14 +461,14 @@ const InstructorProfilePage = () => {
                             icon={faGraduationCap}
                             className="text-slate-400"
                           />{" "}
-                          Lĩnh vực giảng dạy chính
+                          Main Teaching Specializations
                         </label>
                         <input
                           type="text"
                           name="specializations"
                           value={profileData.specializations}
                           onChange={handleInputChange}
-                          placeholder="Ví dụ: Python, Machine Learning, UI/UX..."
+                          placeholder="Example: Python, Machine Learning, UI/UX..."
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
                         />
                       </div>
@@ -484,12 +483,11 @@ const InstructorProfilePage = () => {
                     Social Links & Portfolio
                   </h3>
                   <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8">
-                    Thêm các liên kết để học viên có thể tìm hiểu thêm về kinh
-                    nghiệm thực tế và các dự án của bạn.
+                    Add links so students can learn more about your practical experience and projects.
                   </p>
                   {[
                     { name: "linkedin", icon: faLinkedin, color: "text-[#0077B5]", label: "LinkedIn Profile",          placeholder: "https://linkedin.com/in/yourprofile" },
-                    { name: "github",   icon: faGithub,   color: "text-[#181717]", label: "GitHub Account",             placeholder: "https://github.com/yourusername" },
+                    { name: "github",   icon: faGithub,   color: "text-[#181717]", label: "GitHub Account",            placeholder: "https://github.com/yourusername" },
                     { name: "youtube",  icon: faYoutube,  color: "text-[#FF0000]", label: "YouTube Channel (Optional)", placeholder: "https://youtube.com/@yourchannel" },
                     { name: "website",  icon: faUserCircle,color: "text-blue-600", label: "Personal Website / Portfolio",placeholder: "https://yourwebsite.com" },
                   ].map((link) => (
@@ -524,7 +522,7 @@ const InstructorProfilePage = () => {
                         icon={faKey}
                         className="text-amber-500"
                       />{" "}
-                      Thay đổi mật khẩu
+                      Change Password
                     </h3>
                     <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                       <div className="sm:col-span-2">

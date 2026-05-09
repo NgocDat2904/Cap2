@@ -65,3 +65,13 @@ class MindmapRequest(BaseModel):
 class VideoMindmapRequest(BaseModel):
     video_id: str
     language: str = Field(default="vi")
+
+
+class TimelineRequest(BaseModel):
+    context: LessonContext
+    language: str = Field(default="vi")
+
+
+class VideoTimelineRequest(BaseModel):
+    video_id: str
+    language: str = Field(default="vi")
