@@ -27,11 +27,9 @@ export const updateProfileAPI = async (profileData, token) => {
 export const uploadAvatarAPI = async (file, token) => {
   // Đóng gói file vào FormData
   const formData = new FormData();
-  formData.append("file", file); // Chữ "file" này phải khớp với biến backend
+  formData.append("file", file); 
 
-  // Gọi API (Nhớ đổi URL cho đúng với port Backend của mẹ nhé)
-  const response = await fetch("http://localhost:8000/user/upload-avatar", {
-    method: "POST",
+  const response = await axios.post("http://localhost:8000/user/upload-avatar", formData, {
     headers: {
       Authorization: `Bearer ${token}`,
       // KHÔNG set Content-Type ở đây, trình duyệt sẽ tự động xử lý

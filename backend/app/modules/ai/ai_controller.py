@@ -10,8 +10,11 @@ from app.modules.ai.ai_schema import (
     VideoChatRequest,
     VideoSummaryRequest,
     VideoQuizRequest,
+    VideoQuizRequest,
     MindmapRequest,
     VideoMindmapRequest,
+    TimelineRequest,
+    VideoTimelineRequest,
     LessonContext,
 )
 from app.modules.ai import gemini_service
@@ -129,7 +132,23 @@ async def ai_mindmap(
         _handle_ai_error(e)
 
 
+@router.post("/timeline")
+async def ai_timeline(
+    body: TimelineRequest,
+    user=Depends(require_role(["learner"]))
+):
+    try:
+        items = await gemini_service.generate_timeline_json(
+            body.context,
+            body.language,
+        )
+        return {"timeline": items}
+    except Exception as e:
+        _handle_ai_error(e)
+
+
 # =========================
+
 # VIDEO APIs (CÓ CACHE)
 # =========================
 @router.post("/chat-by-video")
@@ -263,3 +282,32 @@ async def ai_mindmap_by_video(
 
     except Exception as e:
         _handle_ai_error(e)
+
+
+@router.post("/timeline-by-video")
+async def ai_timeline_by_video(
+    body: VideoTimelineRequest,
+    user=Depends(require_role(["learner"]))
+):
+    video = await _video_doc(body.video_id)
+
+    cache = _cache_get(video, "timeline") or {}
+
+    if body.language in cache:
+        return {"timeline": cache[body.language]}
+
+    context = await _context_from_video(body.video_id)
+
+    try:
+        items = await gemini_service.generate_timeline_json(
+            context,
+            body.language,
+        )
+
+        cache[body.language] = items
+        await _cache_set(body.video_id, "timeline", cache)
+
+        return {"timeline": items}
+
+    except Exception as e:
+        _handle_ai_error(e)

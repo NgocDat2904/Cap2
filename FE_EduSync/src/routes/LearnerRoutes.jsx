@@ -19,29 +19,29 @@ const LearnerRoutes = () => {
       {/* 1. CỤM CÓ LAYOUT (Bị bọc bởi khung LearnerLayout) */}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />
-      {/* ========================================== */}
-      {/* VÙNG CẤM: Bắt buộc phải đăng nhập mới được vào */}
-      {/* ========================================== */}
-      {/* 2. Dùng ProtectedRoute để khóa nguyên cái khu vực này lại */}
+      {/* 2. Vùng có thể vào để xem ngay cả khi chưa có tài khoản */}
+      <Route element={<LearnerLayout />}>
+        <Route path="home" element={<EduSyncHome />} />
+        <Route path="courses" element={<LearnerCoursesPage />} />
+        <Route path="courses/:courseId" element={<CourseDetailPage />} />
+        <Route
+          path="instructors/:instructorId"
+          element={<InstructorPublicProfile />}
+        />
+      </Route>
+
+      {/* 3. Vùng tính năng: bắt buộc đăng nhập */}
       <Route element={<ProtectedRoute />}>
         <Route element={<LearnerLayout />}>
-          {/* Đường dẫn thực tế sẽ là /learner/home */}
-          <Route path="home" element={<EduSyncHome />} />
-          <Route path="courses" element={<LearnerCoursesPage />} />
           <Route path="my-courses" element={<LearnerMyCoursesPage />} />
           <Route path="checkout" element={<LearnerCheckoutPage />} />
           <Route path="profile" element={<LearnerProfilePage />} />
-          <Route path="courses/:courseId" element={<CourseDetailPage />} />
           <Route
             path="courses/:courseId/lessons/:lessonId"
             element={<CourseLearningWorkspace />}
           />
           <Route path="favorites" element={<LearnerFavoritesPage />} />
           <Route path="notifications" element={<LearnerNotifications />} />
-          <Route
-            path="instructors/:instructorId"
-            element={<InstructorPublicProfile />}
-          />
         </Route>
       </Route>
     </Routes>
