@@ -13,9 +13,10 @@ import {
   faSpinner,
   faExclamationTriangle,
   faFolderOpen,
+  faEllipsisVertical,
+  faEye
 } from "@fortawesome/free-solid-svg-icons";
-import { getInstructorCoursesAPI } from "../../services/instructorAPI";
-import { deleteCourseAPI } from "../../services/instructorAPI";
+import { getInstructorCoursesAPI, deleteCourseAPI } from "../../services/instructorAPI";
 
 const InstructorMyCourses = () => {
   // ==================== STATES ====================
@@ -32,7 +33,6 @@ const InstructorMyCourses = () => {
     fetchCourses();
   }, []);
 
-  // Khi allCourses hoặc filter/search thay đổi, cập nhật filteredCourses
   useEffect(() => {
     applyFilters();
   }, [allCourses, searchQuery, activeFilter]);
@@ -61,14 +61,12 @@ const InstructorMyCourses = () => {
   const applyFilters = () => {
     let result = allCourses;
 
-    // Lọc theo status
     if (activeFilter !== "all") {
       result = result.filter(
         (course) => course.status.toLowerCase() === activeFilter.toLowerCase()
       );
     }
 
-    // Lọc theo search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
@@ -92,7 +90,6 @@ const InstructorMyCourses = () => {
         return;
       }
       await deleteCourseAPI(courseId, token);
-      // Cập nhật UI ngay, không cần fetch lại
       setAllCourses(prev => prev.filter(c => c.id !== courseId));
     } catch (err) {
       setError(err.message || "Error deleting course");
@@ -102,40 +99,49 @@ const InstructorMyCourses = () => {
     }
   };
 
-  const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+  // ==================== HELPER COMPONENTS ====================
+  // Format tiền chuyên nghiệp
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
   };
 
-  const handleFilterClick = (filter) => {
-    setActiveFilter(filter);
-  };
+  // Status Badge chuẩn UI/UX Dashboard
+  const StatusBadge = ({ status }) => {
+    const normalizedStatus = status?.toLowerCase() || "draft";
+    let styles = {
+      published: "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/20",
+      dot_published: "bg-emerald-500",
+      pending: "bg-amber-50 text-amber-700 border-amber-200 ring-amber-500/20",
+      dot_pending: "bg-amber-500",
+      draft: "bg-slate-100 text-slate-700 border-slate-200 ring-slate-500/20",
+      dot_draft: "bg-slate-500"
+    };
 
-  // ==================== HELPER FUNCTION ====================
-  const getStatusBadgeClasses = (status) => {
-    const normalizedStatus = status.toLowerCase();
-    switch (normalizedStatus) {
-      case "published":
-        return "bg-emerald-500/95 text-white shadow-lg shadow-emerald-500/30";
-      case "pending":
-        return "bg-amber-500/95 text-white shadow-lg shadow-amber-500/30";
-      case "draft":
-        return "bg-slate-500/95 text-white shadow-lg shadow-slate-500/30";
-      default:
-        return "bg-gray-500/95 text-white shadow-lg shadow-gray-500/30";
-    }
+    const currentStyle = styles[normalizedStatus] || styles.draft;
+    const dotStyle = styles[`dot_${normalizedStatus}`] || styles.dot_draft;
+
+    return (
+      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${currentStyle}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${dotStyle}`}></span>
+        <span className="capitalize">{status}</span>
+      </span>
+    );
   };
 
   // ==================== SKELETON LOADER ====================
   const CourseSkeleton = () => (
-    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-lg shadow-blue-900/5 animate-pulse">
-      <div className="aspect-video bg-slate-200"></div>
-      <div className="p-6 space-y-4">
-        <div className="h-4 bg-slate-200 rounded w-24"></div>
-        <div className="h-6 bg-slate-200 rounded w-3/4"></div>
-        <div className="grid grid-cols-3 gap-2 pt-4">
-          <div className="h-16 bg-slate-100 rounded"></div>
-          <div className="h-16 bg-slate-100 rounded"></div>
-          <div className="h-16 bg-slate-100 rounded"></div>
+    <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm animate-pulse flex flex-col">
+      <div className="aspect-[4/3] bg-slate-100"></div>
+      <div className="p-5 flex-1 space-y-4">
+        <div className="flex justify-between">
+          <div className="h-3 bg-slate-200 rounded w-1/4"></div>
+          <div className="h-4 bg-slate-200 rounded-md w-1/5"></div>
+        </div>
+        <div className="h-5 bg-slate-200 rounded w-full"></div>
+        <div className="h-5 bg-slate-200 rounded w-2/3"></div>
+        <div className="pt-4 flex gap-4">
+          <div className="h-8 bg-slate-100 rounded flex-1"></div>
+          <div className="h-8 bg-slate-100 rounded flex-1"></div>
         </div>
       </div>
     </div>
@@ -143,239 +149,195 @@ const InstructorMyCourses = () => {
 
   // ==================== RENDER ====================
   return (
-    <main className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-blue-50/50 font-sans min-h-screen">
-      {/* HEADER */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-gray-200">
-        <div>
-          <h1 className="text-3xl font-extrabold text-slate-950 tracking-tight">
-            My Courses
-          </h1>
-          <p className="text-slate-600 mt-1.5 text-base font-medium">
-            Manage, edit, and create your educational content here.
-          </p>
-        </div>
-        <Link
-          to="/instructor/courses/create"
-          className="flex items-center gap-2.5 px-6 py-3.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-lg shadow-blue-500/20 active:scale-95"
-        >
-          <FontAwesomeIcon icon={faPlus} />
-          Create Course
-        </Link>
-      </div>
-
-      {/* SEARCH & FILTER */}
-      <div className="flex flex-col lg:flex-row lg:items-center gap-6 mb-10">
-        <div className="relative flex-1">
-          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-            <FontAwesomeIcon icon={faSearch} className="text-slate-400" />
+    <main className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-[#fafafa] font-sans min-h-screen">
+      <div className="max-w-7xl mx-auto space-y-8">
+        
+        {/* ================= HEADER ================= */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-6 border-b border-slate-200/80">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
+              Course Management
+            </h1>
+            <p className="text-slate-500 mt-1 text-sm font-medium">
+              Create, edit, and monitor the performance of your courses.
+            </p>
           </div>
-          <input
-            type="search"
-            placeholder="Search by course title or category..."
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="block w-full pl-12 pr-4 py-4 border border-slate-200 rounded-full bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400 outline-none transition text-base"
-          />
-        </div>
-
-        <div className="flex items-center gap-2.5 p-1.5 bg-white border border-slate-100 rounded-full shadow-inner w-full lg:w-auto justify-center sm:justify-start">
-          <button
-            onClick={() => handleFilterClick("all")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "all"
-                ? "text-blue-800 bg-blue-100"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => handleFilterClick("published")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "published"
-                ? "text-emerald-800 bg-emerald-100"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Published
-          </button>
-          <button
-            onClick={() => handleFilterClick("draft")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "draft"
-                ? "text-slate-800 bg-slate-200"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Draft
-          </button>
-          <button
-            onClick={() => handleFilterClick("pending")}
-            className={`px-6 py-2.5 rounded-full font-semibold text-sm transition duration-300 ${
-              activeFilter === "pending"
-                ? "text-amber-800 bg-amber-100"
-                : "text-slate-600 hover:bg-slate-50"
-            }`}
-          >
-            Pending
-          </button>
-        </div>
-      </div>
-
-      {/* LOADING STATE */}
-      {isLoading && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {[1, 2, 3, 4, 5, 6].map((i) => (
-            <CourseSkeleton key={i} />
-          ))}
-        </div>
-      )}
-
-      {/* ERROR STATE */}
-      {error && !isLoading && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center">
-          <FontAwesomeIcon
-            icon={faExclamationTriangle}
-            className="text-red-600 text-3xl mb-3"
-          />
-          <p className="text-red-700 font-semibold">{error}</p>
-          <button
-            onClick={fetchCourses}
-            className="mt-4 px-6 py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition"
-          >
-            Try Again
-          </button>
-        </div>
-      )}
-
-      {/* EMPTY STATE */}
-      {!isLoading && !error && filteredCourses.length === 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center">
-          <FontAwesomeIcon
-            icon={faFolderOpen}
-            className="text-slate-300 text-5xl mb-4"
-          />
-          <h3 className="text-xl font-bold text-slate-800 mb-2">
-            {searchQuery || activeFilter !== "all"
-              ? "No courses found"
-              : "No courses yet"}
-          </h3>
-          <p className="text-slate-600 mb-6">
-            {searchQuery || activeFilter !== "all"
-              ? "Try adjusting your search or filters"
-              : "Get started by creating your first course!"}
-          </p>
           <Link
             to="/instructor/courses/create"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-all duration-300 shadow-sm active:scale-95"
           >
             <FontAwesomeIcon icon={faPlus} />
             Create Course
           </Link>
         </div>
-      )}
 
-      {/* COURSES GRID */}
-      {!isLoading && !error && filteredCourses.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredCourses.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white rounded-3xl border border-gray-100 shadow-lg shadow-blue-900/5 hover:shadow-2xl hover:shadow-blue-900/10 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group"
-            >
-              {/* IMAGE */}
-              <div className="relative aspect-video overflow-hidden cursor-pointer">
-                <img
-                  src={course.image || "https://via.placeholder.com/400x225?text=No+Image"}
-                  alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 bg-slate-200"
-                />
-                <span
-                  className={`absolute top-4 right-4 px-4 py-1.5 rounded-full text-xs font-bold tracking-wider uppercase backdrop-blur-md ${getStatusBadgeClasses(
-                    course.status
-                  )}`}
-                >
-                  {course.status}
-                </span>
-              </div>
-
-              {/* CONTENT */}
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-blue-600 uppercase tracking-widest">
-                  <FontAwesomeIcon icon={faTag} />
-                  <span className="line-clamp-1">{course.category}</span>
-                </div>
-
-                <h3 className="font-bold text-xl text-slate-950 mt-2.5 line-clamp-2 leading-tight group-hover:text-blue-700 transition cursor-pointer">
-                  {course.title}
-                </h3>
-
-                <div className="grid grid-cols-3 gap-2 text-center bg-gray-50 rounded-2xl p-4 mt-6 border border-gray-100 shadow-inner">
-                  <div>
-                    <div className="flex items-center justify-center gap-1.5 text-blue-600">
-                      <FontAwesomeIcon icon={faUserGroup} className="text-sm" />
-                      <span className="font-extrabold text-2xl text-slate-950">
-                        {course.students || 0}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1">
-                      Students
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-center gap-1.5 text-purple-600">
-                      <FontAwesomeIcon icon={faBookOpen} className="text-sm" />
-                      <span className="font-extrabold text-2xl text-slate-950">
-                        {course.lessons || 0}
-                      </span>
-                    </div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1">
-                      Lessons
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-extrabold text-2xl text-green-700">
-                      ${parseFloat(course.price || 0).toFixed(2)}
-                    </div>
-                    <div className="text-xs text-slate-500 font-semibold mt-1">
-                      Price
-                    </div>
-                  </div>
-                </div>
-
-                <hr className="my-6 border-gray-100" />
-
-                <div className="mt-auto pt-1 flex items-center justify-between">
-                  <Link
-                    to={`/instructor/courses/${course.id}/edit`}
-                    className="text-slate-500 hover:text-blue-600 p-2.5 rounded-lg hover:bg-blue-50 transition active:scale-90"
-                    title="Edit course"
-                  >
-                    <FontAwesomeIcon icon={faEdit} className="text-lg" />
-                  </Link>
-                  <Link
-                    to={`/instructor/courses/${course.id || course._id}`}
-                    className="font-bold text-sm text-slate-800 hover:text-blue-700 transition hover:underline"
-                  >
-                    View Details
-                  </Link>
-                  <button
-                    className="text-slate-500 hover:text-red-600 p-2.5 rounded-lg hover:bg-red-50 transition active:scale-90 disabled:opacity-40 disabled:cursor-not-allowed"
-                    title="Delete course"
-                    disabled={deletingId === course.id}
-                    onClick={() => handleDeleteCourse(course.id)}
-                  >
-                    <FontAwesomeIcon
-                      icon={deletingId === course.id ? faSpinner : faTrash}
-                      className={`text-lg ${deletingId === course.id ? "animate-spin" : ""}`}
-                    />
-                  </button>
-                </div>
-              </div>
+        {/* ================= SEARCH & FILTER BAR ================= */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+          {/* Search Input chuẩn SaaS */}
+          <div className="relative w-full md:max-w-md">
+            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+              <FontAwesomeIcon icon={faSearch} className="text-slate-400 text-sm" />
             </div>
-          ))}
+            <input
+              type="search"
+              placeholder="Search courses..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="block w-full pl-10 pr-4 py-2 bg-white border border-slate-200/80 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-800 outline-none shadow-sm placeholder:text-slate-400"
+            />
+          </div>
+
+          {/* Segmented Control Filter (Đẳng cấp hơn dạng nút rời rạc) */}
+          <div className="inline-flex bg-slate-100/80 p-1 rounded-lg border border-slate-200/50 w-full md:w-auto">
+            {["all", "published", "pending", "draft"].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 capitalize ${
+                  activeFilter === filter
+                    ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        {/* ================= STATES ================= */}
+        {isLoading && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((i) => <CourseSkeleton key={i} />)}
+          </div>
+        )}
+
+        {error && !isLoading && (
+          <div className="bg-red-50/50 border border-red-100 rounded-xl p-5 flex items-start gap-4">
+            <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-xl mt-0.5" />
+            <div>
+              <h4 className="text-red-800 font-bold text-sm">Failed to load courses</h4>
+              <p className="text-red-600/80 text-sm mt-1 mb-3">{error}</p>
+              <button
+                onClick={fetchCourses}
+                className="px-4 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-md hover:bg-red-50 transition-colors shadow-sm"
+              >
+                Try Again
+              </button>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && !error && filteredCourses.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 px-4 bg-white border border-dashed border-slate-300 rounded-2xl">
+            <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+              <FontAwesomeIcon icon={faFolderOpen} className="text-slate-400 text-2xl" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-800 mb-1">
+              {searchQuery || activeFilter !== "all" ? "No matches found" : "No courses created yet"}
+            </h3>
+            <p className="text-slate-500 text-sm mb-6 text-center max-w-sm">
+              {searchQuery || activeFilter !== "all"
+                ? "We couldn't find any courses matching your current filters. Try adjusting them."
+                : "Your dashboard is looking a bit empty. Start creating your first course to share your knowledge!"}
+            </p>
+            {!(searchQuery || activeFilter !== "all") && (
+              <Link
+                to="/instructor/courses/create"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-sm"
+              >
+                <FontAwesomeIcon icon={faPlus} />
+                Create First Course
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* ================= COURSES GRID ================= */}
+        {!isLoading && !error && filteredCourses.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredCourses.map((course) => (
+              <div
+                key={course.id}
+                className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-300 transition-all duration-300 overflow-hidden flex flex-col group relative"
+              >
+                {/* IMAGE & BADGE */}
+                <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
+                  <img
+                    src={course.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"} // Dùng ảnh placeholder xịn hơn
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
+                  />
+                  <div className="absolute top-3 left-3">
+                    <StatusBadge status={course.status} />
+                  </div>
+                </div>
+
+                {/* CONTENT */}
+                <div className="p-5 flex-1 flex flex-col">
+                  <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-2">
+                    <FontAwesomeIcon icon={faTag} />
+                    <span className="line-clamp-1">{course.category}</span>
+                  </div>
+
+                  <h3 className="font-bold text-base text-slate-900 leading-snug line-clamp-2 mb-4 group-hover:text-blue-600 transition-colors">
+                    {course.title}
+                  </h3>
+
+                  {/* MINI STATS ROW - Clean & Minimal */}
+                  <div className="flex items-center gap-4 mt-auto text-sm text-slate-600 font-medium pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-1.5" title="Students enrolled">
+                      <FontAwesomeIcon icon={faUserGroup} className="text-slate-400 text-xs" />
+                      {course.students || 0}
+                    </div>
+                    <div className="w-1 h-1 rounded-full bg-slate-300"></div>
+                    <div className="flex items-center gap-1.5" title="Total lessons">
+                      <FontAwesomeIcon icon={faBookOpen} className="text-slate-400 text-xs" />
+                      {course.lessons || 0}
+                    </div>
+                  </div>
+
+                  {/* FOOTER ACTIONS */}
+                  <div className="flex items-center justify-between pt-4">
+                    <span className="font-extrabold text-slate-900">
+                      {formatCurrency(course.price)}
+                    </span>
+                    
+                    {/* Action Toolbar */}
+                    <div className="flex items-center gap-1">
+                      <Link
+                        to={`/instructor/courses/${course.id || course._id}`}
+                        className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="View details"
+                      >
+                        <FontAwesomeIcon icon={faEye} className="text-sm" />
+                      </Link>
+                      <Link
+                        to={`/instructor/courses/${course.id}/edit`}
+                        className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
+                        title="Edit course"
+                      >
+                        <FontAwesomeIcon icon={faEdit} className="text-sm" />
+                      </Link>
+                      <button
+                        onClick={() => handleDeleteCourse(course.id)}
+                        disabled={deletingId === course.id}
+                        className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                        title="Delete course"
+                      >
+                        <FontAwesomeIcon
+                          icon={deletingId === course.id ? faSpinner : faTrash}
+                          className={`text-sm ${deletingId === course.id ? "animate-spin" : ""}`}
+                        />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </main>
   );
 };

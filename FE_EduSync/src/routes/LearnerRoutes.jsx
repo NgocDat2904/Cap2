@@ -16,32 +16,32 @@ import InstructorPublicProfile from "../pages/Learner/InstructorProfile";
 const LearnerRoutes = () => {
   return (
     <Routes>
-      {/* 1. CỤM CÓ LAYOUT (Bị bọc bởi khung LearnerLayout) */}
       <Route path="login" element={<LearnerAuthPage />} />
       <Route path="register" element={<LearnerAuthPage />} />
-      {/* ========================================== */}
-      {/* VÙNG CẤM: Bắt buộc phải đăng nhập mới được vào */}
-      {/* ========================================== */}
-      {/* 2. Dùng ProtectedRoute để khóa nguyên cái khu vực này lại */}
+
+      {/* Khách: vào được layout + xem Home / Courses / chi tiết khóa / hồ sơ giảng viên công khai */}
+      <Route element={<LearnerLayout />}>
+        <Route path="home" element={<EduSyncHome />} />
+        <Route path="courses" element={<LearnerCoursesPage />} />
+        <Route path="courses/:courseId" element={<CourseDetailPage />} />
+        <Route
+          path="instructors/:instructorId"
+          element={<InstructorPublicProfile />}
+        />
+      </Route>
+
+      {/* Đã đăng nhập: học bài, giỏ hàng, profile, yêu thích, thông báo, khóa của tôi */}
       <Route element={<ProtectedRoute />}>
         <Route element={<LearnerLayout />}>
-          {/* Đường dẫn thực tế sẽ là /learner/home */}
-          <Route path="home" element={<EduSyncHome />} />
-          <Route path="courses" element={<LearnerCoursesPage />} />
           <Route path="my-courses" element={<LearnerMyCoursesPage />} />
           <Route path="checkout" element={<LearnerCheckoutPage />} />
           <Route path="profile" element={<LearnerProfilePage />} />
-          <Route path="courses/:courseId" element={<CourseDetailPage />} />
           <Route
             path="courses/:courseId/lessons/:lessonId"
             element={<CourseLearningWorkspace />}
           />
           <Route path="favorites" element={<LearnerFavoritesPage />} />
           <Route path="notifications" element={<LearnerNotifications />} />
-          <Route
-            path="instructors/:instructorId"
-            element={<InstructorPublicProfile />}
-          />
         </Route>
       </Route>
     </Routes>
