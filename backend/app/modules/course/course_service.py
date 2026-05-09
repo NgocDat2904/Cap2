@@ -218,14 +218,20 @@ class CourseService:
             }).sort("order_index", 1))
 
             print("👉 lessons:", lessons_db)
-
             lessons_list = []
+            total_seconds = 0
             for lesson in lessons_db:
+                lesson_id = lesson.get("_id")
+                videos = video_repository.get_by_lesson(lesson_id)
+                video = videos[0] if videos else {}
+                duration = video.get("duration", "00:00")
+                total_seconds += self._duration_to_seconds(duration)
                 lessons_list.append({
                     "id": str(lesson.get("_id", "")),  # ✅ SAFE
                     "title": lesson.get("title", ""),
                     "description": lesson.get("description", ""),
-                    "duration": lesson.get("duration", "00:00"),
+                    "duration": duration,
+                    "thumbnail_url": video.get("thumbnail_url", ""),
                     "is_published": lesson.get("is_published", True),
                     "isPublished": lesson.get("is_published", True),
                     "is_approved": lesson.get("is_approved", True),
@@ -240,7 +246,7 @@ class CourseService:
                 "instructor": instructor_name,
                 "students": students,
                 "students_enrolled": students,
-                "duration": "0h",
+                "duration": self._seconds_to_hhmm(total_seconds),
                 "lessonCount": len(lessons_list),
                 "price": course.get("price", 0),
                 "thumbnail": course.get("image", ""),
@@ -298,7 +304,6 @@ class CourseService:
                 lesson_id = str(lesson.get("_id") or lesson.get("id"))
                 videos = video_repository.get_by_lesson(lesson_id)
                 video = videos[0] if videos else {}
-                print("🔥 video duration:", video.get("duration"))
 
                 duration = video.get("duration", "00:00")
                 if not duration:

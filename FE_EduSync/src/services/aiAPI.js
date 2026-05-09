@@ -128,6 +128,32 @@ export async function aiMindmapByVideoAPI(token, videoId, language = "vi") {
   return res.json();
 }
 
+export async function aiTimelineAPI(token, context, language = "vi") {
+  const res = await fetch(`${BASE_URL}/learner/ai/timeline`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ context, language }),
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create timeline"));
+  return res.json();
+}
+
+export async function aiTimelineByVideoAPI(token, videoId, language = "vi") {
+  const res = await fetch(`${BASE_URL}/learner/ai/timeline-by-video`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ video_id: videoId, language }),
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Failed to create timeline"));
+  return res.json();
+}
+
 export async function generateVideoTranscriptAPI(
   token,
   videoId,
