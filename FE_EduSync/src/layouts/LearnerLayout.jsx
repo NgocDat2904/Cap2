@@ -16,8 +16,7 @@ import {
   faUser,
   faGear,
   faArrowRightFromBracket,
-  faRobot,
-  faChevronRight,
+  faRightToBracket,
 } from "@fortawesome/free-solid-svg-icons";
 
 const LearnerLayout = () => {
@@ -27,6 +26,7 @@ const LearnerLayout = () => {
   const profileMenuRef = useRef(null);
 
   const [userProfile, setUserProfile] = useState(null);
+  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
 
   // Gọi API lấy thông tin User ngay khi Layout load lên
   useEffect(() => {
@@ -61,8 +61,16 @@ const LearnerLayout = () => {
   const navLinks = [
     { name: "Home", icon: faHouse, path: "/home" },
     { name: "Courses", icon: faBook, path: "/courses" },
-    { name: "My Courses", icon: faBookOpen, path: "/my-courses" },
-    { name: "Favorites", icon: faHeart, path: "/favorites" },
+    {
+      name: "My Courses",
+      icon: faBookOpen,
+      path: isLoggedIn ? "/my-courses" : "/login",
+    },
+    {
+      name: "Favorites",
+      icon: faHeart,
+      path: isLoggedIn ? "/favorites" : "/login",
+    },
   ];
 
   const handleLogout = async (e) => {
@@ -106,135 +114,135 @@ const LearnerLayout = () => {
 
           {/* Thanh tìm kiếm */}
           <div className="flex-1 max-w-3xl mx-2 sm:mx-8">
-            <div className="relative">
+            <div
+              className={`relative ${!isLoggedIn ? "cursor-pointer" : ""}`}
+              onClick={
+                !isLoggedIn
+                  ? () => navigate("/login", { state: { from: location.pathname } })
+                  : undefined
+              }
+              role={!isLoggedIn ? "button" : undefined}
+              tabIndex={!isLoggedIn ? 0 : undefined}
+              onKeyDown={
+                !isLoggedIn
+                  ? (e) => {
+                      if (e.key === "Enter" || e.key === " ")
+                        navigate("/login", { state: { from: location.pathname } });
+                    }
+                  : undefined
+              }
+            >
               <input
                 type="text"
-                placeholder="Search..."
-                className="w-full pl-4 sm:pl-6 pr-10 py-2 rounded-full border border-blue-900 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 text-sm text-gray-700"
+                readOnly={!isLoggedIn}
+                placeholder={
+                  isLoggedIn ? "Search..." : "Sign in to search courses..."
+                }
+                className={`w-full pl-4 sm:pl-6 pr-10 py-2 rounded-full border border-blue-900 focus:outline-none focus:border-blue-900 focus:ring-1 focus:ring-blue-900 text-sm text-gray-700 ${!isLoggedIn ? "bg-slate-50 text-slate-500" : ""}`}
               />
-              <button className="absolute right-3 sm:right-4 top-2 text-gray-500 hover:text-blue-900 transition-colors">
+              <span className="absolute right-3 sm:right-4 top-2 text-gray-500 pointer-events-none">
                 <FontAwesomeIcon icon={faSearch} />
-              </button>
+              </span>
             </div>
           </div>
 
           {/* User Actions */}
           <div className="flex items-center gap-4 sm:gap-6 text-gray-600 shrink-0">
-            <NotificationDropdown />
+            {isLoggedIn ? (
+              <>
+                <NotificationDropdown />
 
-            {/* BỘ PHẬN AVATAR VÀ DROPDOWN CHUYÊN NGHIỆP */}
-            <div className="relative" ref={profileMenuRef}>
-              <button
-                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="hover:opacity-80 transition-opacity flex items-center focus:outline-none relative"
-              >
-                {/* Hiển thị Avatar thật nếu có, nếu không có thì dùng Icon mặc định */}
-                {userProfile && userProfile.avatarUrl ? (
-                  <img
-                    src={userProfile.avatarUrl}
-                    alt="User Avatar"
-                    className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-slate-200 shadow-sm"
-                  />
-                ) : (
-                  <FontAwesomeIcon
-                    icon={faUserCircle}
-                    className="text-3xl text-slate-700"
-                  />
-                )}
-
-                {/* Chấm đỏ ở Avatar */}
-                <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white">
-                  <span className="absolute inline-flex w-full h-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
-                </span>
-              </button>
-
-              {isDropdownOpen && (
-                <div
-                  className="fixed inset-0 z-40 md:hidden"
-                  onClick={() => setIsDropdownOpen(false)}
-                ></div>
-              )}
-
-              {/* Menu thả xuống */}
-              {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 transition-all origin-top-right animate-fade-slide-up">
-                  {/* Widget Gamification */}
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 mx-2 mb-2 rounded-xl border border-blue-100/50 shadow-sm">
-                    <div className="flex justify-between items-end mb-2">
-                      <h4 className="font-bold text-gray-800 text-sm line-clamp-1">
-                        Hello, {userProfile?.fullName || "Learner"}!
-                      </h4>
-                      <span className="text-blue-600 font-black text-sm">
-                        60%
-                      </span>
-                    </div>
-                    <div className="w-full h-1.5 bg-blue-200/50 rounded-full overflow-hidden mb-2.5">
-                      <div
-                        className="h-full bg-blue-500 rounded-full"
-                        style={{ width: "60%" }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                      Complete your{" "}
-                      <span className="font-bold text-gray-800">Profile</span>{" "}
-                      so EduSync can personalize your learning journey!
-                      <FontAwesomeIcon
-                        icon={faRobot}
-                        className="text-blue-600 ml-0.5"
-                      />
-                    </p>
-                    <Link
-                      to="/profile"
-                      onClick={() => setIsDropdownOpen(false)}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold text-blue-600 hover:text-blue-800 transition-colors"
-                    >
-                      Update now{" "}
-                      <FontAwesomeIcon
-                        icon={faChevronRight}
-                        className="text-[10px]"
-                      />
-                    </Link>
-                  </div>
-
-                  <Link
-                    to="/profile"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faUser}
-                      className="w-4 h-4 text-slate-400"
-                    />{" "}
-                    My Profile
-                  </Link>
-
-                  <Link
-                    to="/settings"
-                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <FontAwesomeIcon
-                      icon={faGear}
-                      className="w-4 h-4 text-slate-400"
-                    />{" "}
-                    Settings
-                  </Link>
-
-                  <div className="border-t border-gray-100 my-1"></div>
-
+                <div className="relative" ref={profileMenuRef}>
                   <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left focus:outline-none"
+                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                    className="hover:opacity-80 transition-opacity flex items-center focus:outline-none relative"
                   >
-                    <FontAwesomeIcon
-                      icon={faArrowRightFromBracket}
-                      className="w-4 h-4"
-                    />{" "}
-                    Sign out
+                    {userProfile && userProfile.avatarUrl ? (
+                      <img
+                        src={userProfile.avatarUrl}
+                        alt="User Avatar"
+                        className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover border-2 border-slate-200 shadow-sm"
+                      />
+                    ) : (
+                      <FontAwesomeIcon
+                        icon={faUserCircle}
+                        className="text-3xl text-slate-700"
+                      />
+                    )}
+
+                    <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white">
+                      <span className="absolute inline-flex w-full h-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
+                    </span>
                   </button>
+
+                  {isDropdownOpen && (
+                    <div
+                      className="fixed inset-0 z-40 md:hidden"
+                      onClick={() => setIsDropdownOpen(false)}
+                    ></div>
+                  )}
+
+                  {isDropdownOpen && (
+                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50 transition-all origin-top-right animate-fade-slide-up">
+
+                      <Link
+                        to="/profile"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faUser}
+                          className="w-4 h-4 text-slate-400"
+                        />{" "}
+                        My Profile
+                      </Link>
+
+                      <Link
+                        to="/settings"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faGear}
+                          className="w-4 h-4 text-slate-400"
+                        />{" "}
+                        Settings
+                      </Link>
+
+                      <div className="border-t border-gray-100 my-1"></div>
+
+                      <button
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left focus:outline-none"
+                      >
+                        <FontAwesomeIcon
+                          icon={faArrowRightFromBracket}
+                          className="w-4 h-4"
+                        />{" "}
+                        Sign out
+                      </button>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            ) : (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <Link
+                  to="/login"
+                  state={{ from: location.pathname }}
+                  className="inline-flex items-center gap-2 rounded-lg border border-blue-700 px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 transition-colors"
+                >
+                  <FontAwesomeIcon icon={faRightToBracket} />
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="inline-flex items-center rounded-lg bg-blue-700 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-800 transition-colors"
+                >
+                  Create account
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 

@@ -176,7 +176,7 @@ const PublicPage = () => {
         </p>
         <div className="flex items-center justify-center gap-4">
           <Link
-            to="/register"
+            to="/home"
             className="px-8 py-3 bg-blue-900 text-white rounded-md font-semibold hover:bg-blue-800 transition-colors shadow-md"
           >
             Get Started Free

@@ -919,6 +919,13 @@ class CourseService:
 
             else:
                 actions = []
+                
+            instructor_name = "Giảng viên EduSync"
+            iid = course.get("instructor_id")
+            if iid:
+                u = get_user_by_id(str(iid))
+                if u:
+                    instructor_name = u.get("fullName") or u.get("email") or instructor_name
 
             instructor_name = "Giảng viên EduSync"
             iid = course.get("instructor_id")
@@ -930,6 +937,7 @@ class CourseService:
             result.append({
                 "id": str(course["_id"]),
                 "title": course.get("title"),
+
                 "thumbnail": course.get("image") or course.get("thumbnail"),
                 "category": course.get("category"),
                 "price": course.get("price"),
@@ -937,6 +945,7 @@ class CourseService:
                 "actions": actions,
                 "instructor": instructor_name,
                 "has_new_update": course.get("has_pending_update", False)
+
             })
 
         return {
