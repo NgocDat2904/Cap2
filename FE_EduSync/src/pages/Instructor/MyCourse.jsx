@@ -13,7 +13,6 @@ import {
   faSpinner,
   faExclamationTriangle,
   faFolderOpen,
-  faEllipsisVertical,
   faEye
 } from "@fortawesome/free-solid-svg-icons";
 import { getInstructorCoursesAPI, deleteCourseAPI } from "../../services/instructorAPI";

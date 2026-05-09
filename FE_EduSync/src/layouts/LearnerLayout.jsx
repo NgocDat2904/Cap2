@@ -24,7 +24,6 @@ const LearnerLayout = () => {
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const profileMenuRef = useRef(null);
-  const isLoggedIn = Boolean(localStorage.getItem("access_token"));
 
   const [userProfile, setUserProfile] = useState(null);
   const isLoggedIn = Boolean(localStorage.getItem("access_token"));
