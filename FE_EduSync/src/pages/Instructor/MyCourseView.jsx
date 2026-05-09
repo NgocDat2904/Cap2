@@ -23,9 +23,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";
 
-
 // =========================================================================
-// 1. MOCK DATA 
+// 1. MOCK DATA
 // =========================================================================
 
 // Mock Data Q&A
@@ -60,9 +59,10 @@ const mockCourseDetail = {
   students: 1250,
   duration: "12h 30m",
   price: 49.99,
-  thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
+  thumbnail:
+    "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
   instructor: "Nguyễn Văn A",
-  avatar: "https://i.pravatar.cc/150?img=11"
+  avatar: "https://i.pravatar.cc/150?img=11",
 };
 
 // Mock Data Danh sách bài giảng (Có đầy đủ videoStats và quizStats)
@@ -74,28 +74,30 @@ const mockLessonsList = [
     description: "What is React and why should you use it?",
     duration: "10:00",
     quizStatus: "none",
-    videoStats: { views: 1250, completion: "95%" }
+    videoStats: { views: 1250, completion: "95%" },
   },
   {
     id: 2,
     order: "02",
     title: "JSX and Rendering Elements",
-    description: "Understanding JSX syntax and how React renders elements to the DOM.",
+    description:
+      "Understanding JSX syntax and how React renders elements to the DOM.",
     duration: "15:30",
     quizStatus: "published",
     videoStats: { views: 1100, completion: "88%" },
-    quizStats: { passRate: "92%", avgScore: "8.5" }
+    quizStats: { passRate: "92%", avgScore: "8.5" },
   },
   {
     id: 3,
     order: "03",
     title: "State and Props",
-    description: "Managing data in React components and passing data between them.",
+    description:
+      "Managing data in React components and passing data between them.",
     duration: "25:00",
     quizStatus: "draft",
     videoStats: { views: 850, completion: "70%" },
-    quizStats: { questions: 10 } // Bản nháp nên chỉ có số lượng câu hỏi
-  }
+    quizStats: { questions: 10 }, // Bản nháp nên chỉ có số lượng câu hỏi
+  },
 ];
 
 // =========================================================================
@@ -112,10 +114,12 @@ const LessonAccordion = ({ lesson }) => {
         className="flex items-start gap-4 p-5 cursor-pointer bg-white"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <div
-          className={`flex-shrink-0 w-12 h-12 flex items-center justify-center font-bold rounded-xl text-lg transition-colors ${isOpen ? "bg-blue-600 text-white shadow-md" : "bg-slate-100 text-slate-500"}`}
-        >
-          {lesson.order}
+        <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-slate-100">
+          <img
+            src={lesson.thumbnail_url || "https://via.placeholder.com/150"}
+            alt={lesson.title}
+            className="w-full h-full object-cover"
+          />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="font-extrabold text-slate-900 text-lg leading-snug group-hover:text-blue-600 transition-colors">
@@ -260,6 +264,33 @@ const LessonAccordion = ({ lesson }) => {
   );
 };
 
+const parseDuration = (duration) => {
+  if (!duration) return 0;
+
+  const parts = duration.split(":").map(Number);
+
+  if (parts.length === 2) {
+    return parts[0] * 60 + parts[1];
+  }
+
+  if (parts.length === 3) {
+    return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  }
+
+  return 0;
+};
+
+const formatDuration = (seconds) => {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+
+  if (h > 0) {
+    return `${h}h ${m}m`;
+  }
+
+  return `${m}m`;
+};
+
 // =========================================================================
 // 3. MAIN PAGE
 // =========================================================================
@@ -274,6 +305,12 @@ const InstructorCourseDetailPage = () => {
   const [error, setError] = useState(null);
   const [isPublished, setIsPublished] = useState(false);
 
+  const totalSeconds = lessonsList.reduce((total, lesson) => {
+    return total + parseDuration(lesson.duration);
+  }, 0);
+
+  const totalDuration = formatDuration(totalSeconds);
+
   // Fetch course detail giả lập
 
   useEffect(() => {
@@ -285,11 +322,7 @@ const InstructorCourseDetailPage = () => {
         const token = localStorage.getItem("access_token");
 
         const data = await getInstructorCourseDetailAPI(courseId, token);
-        console.log("🔥 API DATA:", data);
-
-
-        console.log("DATA:", data); // debug
-
+        console.log("LESSONS:", data.lessonsList);
         setCourseDetail({
           ...data.courseDetail,
           price: data.courseDetail.price || 0,
@@ -297,7 +330,6 @@ const InstructorCourseDetailPage = () => {
         });
 
         setLessonsList(data.lessonsList || []);
-
       } catch (err) {
         console.error(err);
         setError("Error loading course details");
@@ -305,7 +337,6 @@ const InstructorCourseDetailPage = () => {
         setIsLoading(false);
       }
     };
-
 
     if (courseId) fetchCourseDetail();
   }, [courseId]);
@@ -327,7 +358,9 @@ const InstructorCourseDetailPage = () => {
   if (error || !courseDetail) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
-        <p className="font-bold text-red-600 mb-4">{error || "No data available"}</p>
+        <p className="font-bold text-red-600 mb-4">
+          {error || "No data available"}
+        </p>
         <button
           type="button"
           onClick={() => navigate("/instructor/courses")}
@@ -438,16 +471,14 @@ const InstructorCourseDetailPage = () => {
                     Course Curriculum
                   </h2>
                   <p className="text-slate-500 text-sm font-medium">
-                    {lessonsList.length} Lessons • Total duration {courseDetail.duration}
+                    {lessonsList.length} Lessons • Total duration{" "}
+                    {totalDuration}
                   </p>
                 </div>
               </div>
               <div className="space-y-4">
                 {lessonsList.map((lesson) => (
-                  <LessonAccordion
-                    key={lesson.id}
-                    lesson={lesson}
-                  />
+                  <LessonAccordion key={lesson.id} lesson={lesson} />
                 ))}
               </div>
             </div>
