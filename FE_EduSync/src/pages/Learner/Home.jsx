@@ -13,7 +13,6 @@ import {
   faServer,
   faDatabase,
   faChartLine,
-  faStar, // Đã thêm icon ngôi sao cho rating
 } from "@fortawesome/free-solid-svg-icons";
 
 const EduSyncHome = () => {

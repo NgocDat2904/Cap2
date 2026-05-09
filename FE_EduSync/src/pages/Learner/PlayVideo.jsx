@@ -3,14 +3,10 @@ import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlayCircle,
-  faBrain,
   faCircleQuestion,
   faCheckCircle,
-  faLock,
   faClockRotateLeft,
   faPlay,
-  faCrown,
-  faUnlock,
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
 import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
@@ -27,7 +23,6 @@ const CourseLearningWorkspace = () => {
 
   const [activeLeftTab, setActiveLeftTab] = useState("summary");
   const [activeRightTab, setActiveRightTab] = useState("videos");
-  const [isPremiumUser, setIsPremiumUser] = useState(false);
   const [likedVideos, setLikedVideos] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [courseDetail, setCourseDetail] = useState(null);
@@ -79,17 +74,15 @@ const CourseLearningWorkspace = () => {
       transcript: lesson.transcript || "",
       image: lesson.image || courseDetail?.thumbnail || "",
 
-      // 🔥 QUAN TRỌNG NHẤT
+      // Lấy link video
       videoUrl:
         lesson.videoUrl ||
         lesson.video_url ||
         lesson.play_url ||
-        (lesson.videos && lesson.videos[0]?.video_url) ||  // 🔥 FIX CHÍNH
+        (lesson.videos && lesson.videos[0]?.video_url) || 
         "",
 
-
       completed: false,
-      locked: false,
       timeline: [],
       views: lesson.views || 0,
     }));
@@ -103,9 +96,7 @@ const CourseLearningWorkspace = () => {
     const matched = playlist.find((lesson) => String(lesson.id) === String(lessonId));
     const nextLesson = matched || playlist[0];
 
-    console.log("🔥 SET ACTIVE LESSON:", nextLesson);
-
-    setActiveLesson(matched || playlist[0]);
+    setActiveLesson(nextLesson);
   }, [playlist, lessonId]);
 
   const lessonContext = useMemo(
@@ -152,10 +143,6 @@ const CourseLearningWorkspace = () => {
   }, [activeVideoId, lessonContext?.transcript]);
 
   const handleSelectLesson = (lesson) => {
-    if (lesson.locked && !isPremiumUser) {
-      alert("Bạn cần thanh toán khóa học để xem video này nhé!");
-      return;
-    }
     setActiveLesson(lesson);
     setActiveRightTab("timeline");
     setIsPlaying(true);
@@ -204,44 +191,8 @@ const CourseLearningWorkspace = () => {
     }
   };
 
-  const renderPaywall = (featureName) => (
-    <div className="flex flex-col items-center justify-center h-[350px] bg-slate-50 border border-slate-200 rounded-xl text-center p-6 relative overflow-hidden animate-fade-slide-up">
-      <div className="w-16 h-16 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mb-4 shadow-inner">
-        <FontAwesomeIcon icon={faLock} className="text-2xl" />
-      </div>
-      <h3 className="text-xl font-bold text-slate-800 mb-2">
-        Tính năng Premium
-      </h3>
-      <p className="text-sm text-slate-600 mb-6 max-w-md">
-        Nâng cấp khóa học để mở khóa <strong>{featureName}</strong> và toàn bộ
-        video bị khóa nhé!
-      </p>
-      <button
-        onClick={() => setIsPremiumUser(true)}
-        className="px-6 py-3 bg-[#2da44e] text-white font-bold rounded-xl shadow-md hover:bg-[#268c41] transition-colors hover:scale-105 active:scale-95 duration-200"
-      >
-        <FontAwesomeIcon icon={faCrown} className="mr-2 text-yellow-300" />{" "}
-        Thanh toán $10 để mở khóa
-      </button>
-    </div>
-  );
-
   return (
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 animate-fade-slide-up pb-20">
-      <div className="mb-4 flex justify-end">
-        <button
-          onClick={() => setIsPremiumUser(!isPremiumUser)}
-          className="text-xs font-bold text-slate-500 border px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 shadow-sm flex items-center gap-2"
-        >
-          <FontAwesomeIcon
-            icon={isPremiumUser ? faUnlock : faLock}
-            className={isPremiumUser ? "text-green-500" : "text-amber-500"}
-          />
-          [Nút Test] Đổi quyền:{" "}
-          {isPremiumUser ? "Đã thanh toán (Mở full)" : "Dùng thử (Bị khóa)"}
-        </button>
-      </div>
-
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         <div className="w-full lg:flex-1 flex flex-col min-w-0">
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
@@ -266,7 +217,6 @@ const CourseLearningWorkspace = () => {
 
                   setVideoDuration(formatted);
                 }}
-
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
               />
@@ -316,19 +266,7 @@ const CourseLearningWorkspace = () => {
                     onClick={() => setActiveLeftTab(tab.toLowerCase())}
                     className={`px-6 py-3.5 text-sm font-bold capitalize transition-all border-b-2 whitespace-nowrap ${activeLeftTab === tab.toLowerCase() ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
                   >
-                    {tab === "Mindmap" || tab === "Quiz" ? (
-                      <span className="flex items-center gap-1.5">
-                        {tab}{" "}
-                        {!isPremiumUser && (
-                          <FontAwesomeIcon
-                            icon={faLock}
-                            className="text-[10px] text-amber-500 mb-1"
-                          />
-                        )}
-                      </span>
-                    ) : (
-                      tab
-                    )}
+                    {tab}
                   </button>
                 ),
               )}
@@ -338,30 +276,25 @@ const CourseLearningWorkspace = () => {
               {activeLeftTab === "summary" && (
                 <CourseSummary lessonContext={lessonContext} videoId={activeVideoId} />
               )}
-              {activeLeftTab === "mindmap" &&
-                (!isPremiumUser ? (
-                  renderPaywall("Sơ đồ tư duy AI")
-                ) : (
-                  <CourseMindmap
-                    lessonContext={lessonContext}
-                    videoId={activeVideoId}
-                  />
-                ))}
-              {activeLeftTab === "quiz" &&
-                (!isPremiumUser ? (
-                  renderPaywall("Bài tập trắc nghiệm AI")
-                ) : (
-                  <CourseQuiz
-                    lessonContext={lessonContext}
-                    videoId={activeVideoId}
-                    onSwitchToDiscussion={() => setActiveLeftTab("discussion")}
-                  />
-                ))}
+              {activeLeftTab === "mindmap" && (
+                <CourseMindmap
+                  lessonContext={lessonContext}
+                  videoId={activeVideoId}
+                />
+              )}
+              {activeLeftTab === "quiz" && (
+                <CourseQuiz
+                  lessonContext={lessonContext}
+                  videoId={activeVideoId}
+                  onSwitchToDiscussion={() => setActiveLeftTab("discussion")}
+                />
+              )}
               {activeLeftTab === "chatbot" && (
                 <CourseChatbot lessonContext={lessonContext} videoId={activeVideoId} />
               )}
-              {(activeLeftTab === "discussion" ||
-                activeLeftTab === "review") && <CourseDiscussion />}
+              {(activeLeftTab === "discussion" || activeLeftTab === "review") && (
+                <CourseDiscussion />
+              )}
             </div>
           </div>
         </div>
@@ -426,12 +359,10 @@ const CourseLearningWorkspace = () => {
               </div>
             )}
 
-
             {activeRightTab === "videos" && (
               <div className="flex-1 overflow-y-auto custom-scrollbar p-3 space-y-2 bg-white animate-fade-slide-up">
                 {playlist.map((lesson) => {
                   const isCurrent = activeLesson.id === lesson.id;
-                  const isActuallyLocked = lesson.locked && !isPremiumUser;
                   const isLiked = likedVideos.includes(lesson.id);
 
                   return (
@@ -441,15 +372,10 @@ const CourseLearningWorkspace = () => {
                     >
                       <button
                         onClick={() => handleSelectLesson(lesson)}
-                        className={`w-full flex items-center gap-3.5 p-3 rounded-xl transition-all text-left group-hover:bg-slate-50 border ${isCurrent ? "bg-blue-50/50 border-blue-200 shadow-sm" : isActuallyLocked ? "opacity-60 cursor-not-allowed border-transparent" : "border-transparent cursor-pointer"}`}
+                        className={`w-full flex items-center gap-3.5 p-3 rounded-xl transition-all text-left group-hover:bg-slate-50 border cursor-pointer ${isCurrent ? "bg-blue-50/50 border-blue-200 shadow-sm" : "border-transparent"}`}
                       >
                         <div className="flex-shrink-0 w-5 flex justify-center">
-                          {isActuallyLocked ? (
-                            <FontAwesomeIcon
-                              icon={faLock}
-                              className="text-slate-400 text-sm"
-                            />
-                          ) : lesson.completed ? (
+                          {lesson.completed ? (
                             <FontAwesomeIcon
                               icon={faCheckCircle}
                               className="text-green-500 text-[16px]"
@@ -500,39 +426,6 @@ const CourseLearningWorkspace = () => {
               </div>
             )}
           </div>
-
-          {!isPremiumUser && (
-            <div className="bg-slate-100/80 border border-slate-200 rounded-2xl p-5 shadow-sm animate-fade-slide-up">
-              <p className="text-sm text-slate-700 font-medium leading-relaxed mb-5">
-                Thanh toán khóa học ngay để có thể xem nhiều video và sử dụng
-                được các tính năng như gen ra mindmap và các câu hỏi trắc nghiệm
-                từ bài giảng nhé!
-              </p>
-              <div className="space-y-3 mb-6">
-                <div className="w-full bg-white border border-blue-200 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm">
-                  <FontAwesomeIcon icon={faBrain} className="text-blue-500" />{" "}
-                  Sơ đồ tư duy AI
-                </div>
-                <div className="w-full bg-white border border-blue-200 text-blue-800 font-bold text-sm py-2 px-4 rounded-lg flex items-center gap-2 shadow-sm">
-                  <FontAwesomeIcon
-                    icon={faCircleQuestion}
-                    className="text-blue-500"
-                  />{" "}
-                  Bài tập Trắc nghiệm (Quiz)
-                </div>
-              </div>
-              <button
-                onClick={() => setIsPremiumUser(true)}
-                className="w-full bg-[#2da44e] hover:bg-[#268c41] text-white font-bold py-3.5 rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center text-[15px]"
-              >
-                <FontAwesomeIcon
-                  icon={faCrown}
-                  className="mr-2 text-yellow-300"
-                />{" "}
-                Thanh toán ngay $10
-              </button>
-            </div>
-          )}
         </aside>
       </div>
     </div>
