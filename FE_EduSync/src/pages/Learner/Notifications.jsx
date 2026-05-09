@@ -52,7 +52,7 @@ const initialNotifications = [
   {
     id: 4,
     type: "gamification",
-    title: "Đừng bỏ cuộc nhé! Hào quang đang chờ đón 🔥",
+    title: "Đừng bỏ cuộc nhé! Hào quang đang chờ đón",
     content:
       "Đã 3 ngày bạn chưa vào hệ thống học tập. Tiếp tục bài học đang dang dở ngay thôi nào!",
     time: "3 ngày trước",

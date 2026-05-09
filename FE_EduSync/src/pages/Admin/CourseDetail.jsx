@@ -383,7 +383,7 @@ const AdminCourseDetail = () => {
       return (
         <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-emerald-200">
           <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-          Active
+          Published
         </span>
       );
     if (status === "pending")

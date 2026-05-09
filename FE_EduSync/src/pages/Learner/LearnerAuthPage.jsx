@@ -124,7 +124,7 @@ const LearnerAuthPage = () => {
     setIsRegLoading(true);
 
     try {
-      // 3. GỌI HÀM API TỪ SERVICE
+      // GỌI HÀM API TỪ SERVICE
       const data = await registerAPI(
         regName,
         regEmail,
