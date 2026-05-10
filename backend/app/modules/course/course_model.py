@@ -92,6 +92,7 @@ class LessonResponse(BaseModel):
     title: str
 
     duration: Optional[str] = None
+    video_id: Optional[str] = None
     views: Optional[int] = 0
     image: Optional[str] = None
     play_url: Optional[str] = None

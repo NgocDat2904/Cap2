@@ -162,6 +162,7 @@ class VideoRepository:
         video_url = doc.get("video_url") or doc.get("storage_path") or ""
 
         return {
+            "_id": str(doc.get("_id")),
             "id": str(doc.get("_id")),
             "lesson_id": str(doc.get("lesson_id")) if doc.get("lesson_id") else None,
             "course_id": str(doc.get("course_id")) if doc.get("course_id") else None,

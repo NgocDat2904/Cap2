@@ -40,3 +40,16 @@ async def generate_video_transcript(
         language=body.language or "vi",
         force=body.force,
     )
+
+@router.post("/videos/{video_id}/track-view")
+async def track_view(
+    video_id: str,
+    payload: dict,
+    user=Depends(require_role(["learner"]))
+):
+
+    return await video_service.track_view(
+        video_id=video_id,
+        user_id=user["id"],
+        payload=payload
+    )

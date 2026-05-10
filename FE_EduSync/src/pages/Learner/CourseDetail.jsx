@@ -14,6 +14,21 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
 
+const formatTimeAgo = (date) => {
+  if (!date) return "Recently";
+  const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+  let interval = Math.floor(seconds / 31536000);
+  if (interval >= 1) return `${interval} year ago`;
+  interval = Math.floor(seconds / 2592000);
+  if (interval >= 1) return `${interval} month ago`;
+  interval = Math.floor(seconds / 86400);
+  if (interval >= 1) return `${interval} day ago`;
+  interval = Math.floor(seconds / 3600);
+  if (interval >= 1) return `${interval} hour ago`;
+  interval = Math.floor(seconds / 60);
+  if (interval >= 1) return `${interval} minute ago`;
+  return "Just now";
+};
 const CourseDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -32,6 +47,8 @@ const CourseDetailPage = () => {
       setError("");
       try {
         const data = await getCourseDetailAPI(courseId);
+        console.log("COURSE DETAIL:", data);
+        console.log("LESSONS:", data.lessons);
         if (!cancelled) setCourseDetail(data);
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load course details");
@@ -49,15 +66,16 @@ const CourseDetailPage = () => {
     if (!courseDetail?.lessons) return [];
 
     return courseDetail.lessons.map((lesson) => {
-      const video = lesson.videos?.[0] || {};
-
+      // const video = lesson.videos?.[0] || {};
       return {
         id: lesson.id,
+        video_id: lesson.video_id || "",
         title: lesson.title,
         duration: lesson.duration || "--:--",
         views: lesson.views || 0,
-        timeAgo: "Mới cập nhật",
-        image: video.thumbnail_url || courseDetail.thumbnail,
+        timeAgo: formatTimeAgo(lesson.updated_at),
+        image: lesson.image || lesson.thumbnail_url || courseDetail.thumbnail,
+        videoUrl: lesson.videoUrl || lesson.video_url || lesson.play_url || "",
       };
     });
   }, [courseDetail]);
@@ -80,7 +98,11 @@ const CourseDetailPage = () => {
   }
 
   if (error || !courseDetail) {
-    return <div className="w-full py-24 text-center text-red-600">{error || "No data available"}</div>;
+    return (
+      <div className="w-full py-24 text-center text-red-600">
+        {error || "No data available"}
+      </div>
+    );
   }
 
   return (
@@ -115,7 +137,8 @@ const CourseDetailPage = () => {
 
             {/* ✅ MỚI THÊM: Mô tả khóa học (Description) */}
             <p className="text-white/80 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mb-8">
-              {courseDetail.description || "No description available for this course."}
+              {courseDetail.description ||
+                "No description available for this course."}
             </p>
 
             {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
@@ -124,7 +147,10 @@ const CourseDetailPage = () => {
               className="flex items-center gap-4 mb-10 group w-max cursor-pointer"
             >
               <img
-                src={courseDetail.instructor?.avatar || "https://i.pravatar.cc/150?img=11"}
+                src={
+                  courseDetail.instructor?.avatar ||
+                  "https://i.pravatar.cc/150?img=11"
+                }
                 alt="Instructor"
                 className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover group-hover:border-blue-400 transition-colors shadow-sm"
               />
@@ -195,15 +221,15 @@ const CourseDetailPage = () => {
       {/* Trên PC: Nó nằm nổi lên góc phải màn hình. Trên Mobile: Nó rớt xuống dưới. */}
       {/* ===================================================================== */}
       <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
-
-
         {/* Đã giảm p-6 thành p-5 và giảm bo góc xuống 28px cho cân đối với chiều cao mới */}
         <div className="bg-white rounded-[28px] p-5 shadow-2xl shadow-black/40 border border-slate-100 flex flex-col h-fit">
-
           {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
           <div className="relative aspect-video rounded-xl overflow-hidden mb-4 group cursor-pointer border border-slate-100">
             <img
-              src={courseDetail.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"}
+              src={
+                courseDetail.thumbnail ||
+                "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"
+              }
               alt="Preview"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
