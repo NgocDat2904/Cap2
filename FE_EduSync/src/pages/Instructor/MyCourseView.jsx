@@ -178,7 +178,7 @@ const LessonAccordion = ({ lesson }) => {
                   </span>
                   <span className="font-black text-slate-900">
                     {/* Đã thêm dấu ?. để tránh crash nếu videoStats bị undefined */}
-                    {lesson.videoStats?.views || 0}
+                    {lesson.views || 0}
                   </span>
                 </div>
                 <div className="flex justify-between items-center bg-white p-3 rounded-lg border border-slate-100 shadow-sm">
@@ -187,7 +187,7 @@ const LessonAccordion = ({ lesson }) => {
                   </span>
                   <span className="font-black text-green-600">
                     {/* Đã thêm dấu ?. */}
-                    {lesson.videoStats?.completion || "0%"}
+                    {lesson.completion || "0%"}
                   </span>
                 </div>
               </div>
@@ -328,8 +328,15 @@ const InstructorCourseDetailPage = () => {
           price: data.courseDetail.price || 0,
           image: data.courseDetail.thumbnail || "",
         });
-
-        setLessonsList(data.lessonsList || []);
+        setLessonsList(
+          (data.lessonsList || []).map((lesson) => ({
+            ...lesson,
+            // views từ backend
+            views: lesson.views || 0,
+            // completion fallback
+            completion: lesson.completion || "0%",
+          })),
+        );
       } catch (err) {
         console.error(err);
         setError("Error loading course details");
@@ -404,7 +411,8 @@ const InstructorCourseDetailPage = () => {
               {courseDetail.title}
             </h2>
             <p className="text-white/80 text-sm mb-10 leading-relaxed max-w-3xl line-clamp-3">
-              {courseDetail.description || "No description available for this course."}
+              {courseDetail.description ||
+                "No description available for this course."}
             </p>
 
             <div className="flex flex-wrap items-center gap-8">

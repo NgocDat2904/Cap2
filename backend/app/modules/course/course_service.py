@@ -232,6 +232,8 @@ class CourseService:
                     "description": lesson.get("description", ""),
                     "duration": duration,
                     "thumbnail_url": video.get("thumbnail_url", ""),
+                    "views": video.get("views", 0),
+                    "completion": "0%",
                     "is_published": lesson.get("is_published", True),
                     "isPublished": lesson.get("is_published", True),
                     "is_approved": lesson.get("is_approved", True),
@@ -309,6 +311,7 @@ class CourseService:
                 if not duration:
                     duration = "00:00"
                 total_seconds += self._duration_to_seconds(duration)
+                print("VIDEO:", video)
 
                 storage_path = video.get("storage_path")
 
@@ -323,8 +326,11 @@ class CourseService:
 
                 lessons.append({
                     "id": str(lesson["_id"]),
+                    "video_id": str(video.get("_id", "")),
                     "title": lesson.get("title", ""),
                     "duration": duration,
+                    "views": video.get("views", 0),
+                    "created_at": video.get("created_at"),
                     "thumbnail": video.get("thumbnail_url") or course.get("image", ""),
                     "videoUrl": video_url,
                })

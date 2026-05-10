@@ -1,3 +1,4 @@
+
 from bson import ObjectId
 from fastapi import HTTPException
 from datetime import datetime
@@ -204,4 +205,136 @@ class VideoService:
         m = seconds // 60
         s = seconds % 60
         return f"{m}:{str(s).zfill(2)}"
+    
+
+    async def track_view(
+        self,
+        video_id: str,
+        user_id: str,
+        payload: dict
+    ):
+
+        watched_seconds = payload.get(
+            "watched_seconds",
+            0
+        )
+
+        completed = payload.get(
+            "completed",
+            False
+        )
+        print("WATCHED:", watched_seconds) 
+        print("COMPLETED:", completed)
+
+
+        view = db.video_views.find_one({
+            "video_id": ObjectId(video_id),
+            "user_id": ObjectId(user_id)
+        })
+
+    # ==================================
+    # FIRST VIEW
+    # ==================================
+
+        if not view:
+
+            if watched_seconds >= 10:
+
+                db.video_views.insert_one({
+
+                    "video_id":
+                        ObjectId(video_id),
+
+                    "user_id":
+                        ObjectId(user_id),
+
+                    "watch_count": 1,
+
+                    "completed":
+                        completed,
+
+                    "created_at":
+                        datetime.utcnow(),
+
+                    "updated_at":
+                        datetime.utcnow()
+                })
+
+            # ✅ increase total views
+
+                result = db["videos"].update_one(
+                    {
+                        "_id":
+                            ObjectId(video_id)
+                    },
+                    {
+                        "$inc": {
+                            "views": 1
+                        }
+                    }
+                )
+                print("VIDEO ID:", video_id)
+                print("MATCHED:", result.matched_count) 
+                print("MODIFIED:", result.modified_count)
+
+                return {
+                    "message":
+                        "First view counted"
+                }
+
+            return {
+                "message":
+                    "Not enough watch time"
+            }
+
+    # ==================================
+    # WATCH AGAIN (FULL VIDEO)
+    # ==================================
+
+        if completed:
+
+            db.video_views.update_one(
+                {
+                    "_id": view["_id"]
+                },
+                {
+                    "$inc": {
+                        "watch_count": 1
+                    },
+
+                    "$set": {
+                        "completed": True,
+
+                        "updated_at":
+                            datetime.utcnow()
+                    }
+                }
+            )
+            
+
+        # ✅ increase total views again
+
+            db["videos"].update_one(
+                {
+                    "_id":
+                        ObjectId(video_id)
+                },
+                {
+                    "$inc": {
+                        "views": 1
+                    }
+                }
+            )
+
+            return {
+                "message":
+                    "Completed view counted"
+            }
+
+        return {
+            "message":
+                "Tracking..."
+        }
+
+
     
