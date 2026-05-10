@@ -10,6 +10,7 @@ import AdminProfile from "../pages/Admin/Profile";
 import AdminSettings from "../pages/Admin/SystemSetting";
 import AdminApprovalQueue from "../pages/Admin/ApprovalQueue";
 import AdminDashboard from "../pages/Admin/Dashboard";
+import AdminEditCourse from "../pages/Admin/EditCourse";
 
 const AdminRoutes = () => {
   return (
@@ -20,6 +21,7 @@ const AdminRoutes = () => {
           <Route path="users" element={<AdminUserManagement />} />
           <Route path="courses" element={<AdminCourseManagement />} />
           <Route path="courses/:id/approval" element={<AdminCourseDetail />} />
+          <Route path="courses/:id/edit" element={<AdminEditCourse />} />
           <Route path="revenue" element={<AdminRevenueReport />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="settings" element={<AdminSettings />} />

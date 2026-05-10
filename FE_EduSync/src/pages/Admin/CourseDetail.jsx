@@ -25,6 +25,7 @@ import {
   faSave,
   faPenRuler,
   faSpinner,
+  faEdit, // ✅ Đã import thêm icon Edit
 } from "@fortawesome/free-solid-svg-icons";
 
 const THUMB_FALLBACK =
@@ -112,6 +113,12 @@ const AdminCourseDetail = () => {
       </div>
     );
   }
+
+  // =========================================================================
+  // ĐIỀU KIỆN HIỂN THỊ NÚT EDIT 
+  // (Không phải duyệt, không bị từ chối, không bị đình chỉ)
+  // =========================================================================
+  const canEdit = !["pending", "rejected", "suspended"].includes(course.status);
 
   // =========================================================================
   // LOGIC HÀNH ĐỘNG CỦA ADMIN
@@ -451,12 +458,22 @@ const AdminCourseDetail = () => {
               {course.title}
             </h1>
             
-            {/* ✅ MỚI THÊM: Mô tả khóa học (Course Description) */}
             <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mt-3">
               {course.description || "No description available for this course."}
             </p>
-            
           </div>
+
+          {/* ✅ NÚT EDIT NẰM Ở ĐÂY (Chỉ hiện khi Published hoặc Draft) */}
+          {canEdit && (
+            <div className="shrink-0 mt-4 xl:mt-0 flex flex-col items-end">
+              <button
+                onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
+                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
+              >
+                <FontAwesomeIcon icon={faEdit} /> Edit Course
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -500,7 +517,6 @@ const AdminCourseDetail = () => {
               Curriculum ({lessons.length} lessons)
             </h3>
 
-            {/* ✅ ĐÃ SỬA: Danh sách bài giảng mới ở đây */}
             <div className="space-y-3">
               {lessons.map((lesson) => {
                 const isNewLesson = !lesson.play_url && !lesson.url;
@@ -551,7 +567,6 @@ const AdminCourseDetail = () => {
 
         {/* CỘT PHẢI: GỌI HÀM RENDER 5 KỊCH BẢN Ở ĐÂY */}
         <div className="w-full lg:w-1/3 space-y-6 sticky top-24">
-          {/* NƠI PHÉP THUẬT XẢY RA: Hiển thị giao diện tương ứng */}
           {renderAdminActions()}
 
           {/* KHU VỰC THÔNG TIN CHUNG (Luôn hiện) */}
