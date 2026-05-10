@@ -15,16 +15,22 @@ import {
   faChevronLeft,
   faChevronRight,
   faRotateRight,
+  faPlus,
+  faTimes,
+  faEnvelope,
+  faLock,
+  faUser,
+  faUserTag
 } from "@fortawesome/free-solid-svg-icons";
 import { adminGetUsersAPI, adminToggleBlockAPI } from "../../services/userAPI";
 
 // =========================================================================
-// HELPER: Lấy token từ localStorage (giống pattern các trang khác)
+// HELPER: Lấy token từ localStorage
 // =========================================================================
 const getToken = () => localStorage.getItem("access_token");
 
 // =========================================================================
-// HELPER: Avatar mặc định khi null / rỗng
+// HELPER: Avatar mặc định
 // =========================================================================
 const DEFAULT_AVATAR = `https://ui-avatars.com/api/?background=6366f1&color=fff&bold=true&size=80`;
 
@@ -35,7 +41,7 @@ const getAvatarSrc = (avatar, name) => {
 };
 
 // =========================================================================
-// HELPER: Normalize role về chữ thường (API có thể trả "INSTRUCTOR")
+// HELPER: Normalize role
 // =========================================================================
 const normalizeRole = (role) => (role || "").toLowerCase();
 
@@ -93,16 +99,25 @@ const AdminUserManagement = () => {
   // --- State UI ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [togglingId, setTogglingId] = useState(null); // ID đang xử lý block/unblock
+  const [togglingId, setTogglingId] = useState(null);
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
 
-  // --- State bộ lọc (server-side) ---
+  // --- State Modal Thêm User ---
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [newUser, setNewUser] = useState({
+    fullName: "",
+    email: "",
+    role: "learner",
+    password: "",
+  });
+
+  // --- State bộ lọc ---
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Debounce ref cho search
   const searchDebounceRef = useRef(null);
 
   // =========================================================================
@@ -123,17 +138,12 @@ const AdminUserManagement = () => {
       setStats(data.stats || {});
       setPagination(data.pagination || { page: 1, limit: 10, total: 0 });
     } catch (err) {
-      const msg =
-        err?.response?.data?.detail ||
-        err?.message ||
-        "Cannot load user data.";
-      setError(msg);
+      setError(err?.response?.data?.detail || err?.message || "Cannot load user data.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  // Gọi API mỗi khi filter/page thay đổi
   useEffect(() => {
     fetchUsers({
       q: searchTerm,
@@ -145,20 +155,13 @@ const AdminUserManagement = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roleFilter, statusFilter, currentPage]);
 
-  // Debounce search 400ms
   const handleSearchChange = (e) => {
     const val = e.target.value;
     setSearchTerm(val);
     clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
       setCurrentPage(1);
-      fetchUsers({
-        q: val,
-        role: roleFilter,
-        status: statusFilter,
-        page: 1,
-        limit: pagination.limit,
-      });
+      fetchUsers({ q: val, role: roleFilter, status: statusFilter, page: 1, limit: pagination.limit });
     }, 400);
   };
 
@@ -172,28 +175,16 @@ const AdminUserManagement = () => {
     setCurrentPage(1);
   };
 
-  // =========================================================================
-  // HÀM REFRESH/RESET (Giống hệt trang AdminCourseManagement)
-  // =========================================================================
   const handleRefresh = () => {
-    // 1. Đưa tất cả các filters về rỗng (trạng thái mặc định)
     setSearchTerm("");
     setRoleFilter("");
     setStatusFilter("");
     setCurrentPage(1);
-    
-    // 2. Fetch API ngay lập tức với các thông số rỗng
-    fetchUsers({
-      q: "",
-      role: "",
-      status: "",
-      page: 1,
-      limit: pagination.limit,
-    });
+    fetchUsers({ q: "", role: "", status: "", page: 1, limit: pagination.limit });
   };
 
   // =========================================================================
-  // TOGGLE BLOCK / UNBLOCK
+  // TOGGLE BLOCK
   // =========================================================================
   const handleToggleBlock = async (user) => {
     setOpenActionMenuId(null);
@@ -201,28 +192,48 @@ const AdminUserManagement = () => {
     const token = getToken();
     try {
       await adminToggleBlockAPI(user.id, token);
-      // Cập nhật local state ngay lập tức (không cần re-fetch)
       setUsers((prev) =>
         prev.map((u) =>
-          u.id === user.id
-            ? { ...u, status: u.status === "active" ? "blocked" : "active" }
-            : u
+          u.id === user.id ? { ...u, status: u.status === "active" ? "blocked" : "active" } : u
         )
       );
-      // Cập nhật lại thống kê blocked
       setStats((prev) => ({
         ...prev,
-        blocked:
-          user.status === "active" ? prev.blocked + 1 : prev.blocked - 1,
+        blocked: user.status === "active" ? prev.blocked + 1 : prev.blocked - 1,
       }));
     } catch (err) {
-      alert(
-        err?.response?.data?.detail ||
-          err?.message ||
-          "Operation failed, please try again."
-      );
+      alert(err?.response?.data?.detail || err?.message || "Operation failed, please try again.");
     } finally {
       setTogglingId(null);
+    }
+  };
+
+  // =========================================================================
+  // XỬ LÝ TẠO USER MỚI
+  // =========================================================================
+  const handleOpenAddModal = () => {
+    setNewUser({ fullName: "", email: "", role: "learner", password: "" });
+    setIsAddModalOpen(true);
+  };
+
+  const handleCreateUser = async (e) => {
+    e.preventDefault();
+    setIsCreating(true);
+    try {
+      // 🚨 Tích hợp API tạo user thật ở đây:
+      // const token = getToken();
+      // await adminCreateUserAPI(newUser, token);
+
+      // Giả lập delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      alert("User created successfully!");
+      setIsAddModalOpen(false);
+      handleRefresh(); // Gọi hàm refresh để nạp lại danh sách mới nhất
+    } catch (err) {
+      alert(err.message || "Failed to create user.");
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -230,7 +241,6 @@ const AdminUserManagement = () => {
   // PAGINATION
   // =========================================================================
   const totalPages = Math.ceil(pagination.total / pagination.limit) || 1;
-
   const goToPage = (page) => {
     if (page < 1 || page > totalPages) return;
     setCurrentPage(page);
@@ -241,7 +251,7 @@ const AdminUserManagement = () => {
   // =========================================================================
   return (
     <div
-      className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up h-full"
+      className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up min-h-screen relative"
       onClick={() => setOpenActionMenuId(null)}
     >
       {/* HEADER */}
@@ -255,18 +265,26 @@ const AdminUserManagement = () => {
           </p>
         </div>
         
-        {/* NÚT REFRESH (Thêm trạng thái loading & khóa nút) */}
-        <button
-          onClick={handleRefresh}
-          disabled={loading}
-          className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
-        >
-          <FontAwesomeIcon 
-            icon={faRotateRight} 
-            className={loading ? "animate-spin" : ""} 
-          />
-          <span className="hidden sm:inline">Refresh</span>
-        </button>
+        <div className="flex items-center gap-3 w-full sm:w-auto">
+          {/* NÚT REFRESH */}
+          <button
+            onClick={handleRefresh}
+            disabled={loading}
+            className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition duration-300 shadow-sm flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            <FontAwesomeIcon icon={faRotateRight} className={loading ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Refresh</span>
+          </button>
+          
+          {/* NÚT TẠO USER MỚI */}
+          <button
+            onClick={handleOpenAddModal}
+            className="flex-1 sm:flex-none px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-95"
+          >
+            <FontAwesomeIcon icon={faPlus} />
+            <span>Add User</span>
+          </button>
+        </div>
       </div>
 
       {/* WIDGETS THỐNG KÊ */}
@@ -277,20 +295,13 @@ const AdminUserManagement = () => {
           { label: "Instructors",       value: stats.instructors ?? 0,   icon: faChalkboardTeacher,   color: "text-purple-600", bg: "bg-purple-100" },
           { label: "Blocked Accounts",  value: stats.blocked ?? 0,       icon: faBan,                 color: "text-red-600",    bg: "bg-red-100" },
         ].map((stat, idx) => (
-          <div
-            key={idx}
-            className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4"
-          >
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${stat.bg} ${stat.color}`}
-            >
+          <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${stat.bg} ${stat.color}`}>
               <FontAwesomeIcon icon={stat.icon} />
             </div>
             <div>
               <p className="text-sm font-bold text-slate-500">{stat.label}</p>
-              <h3 className="text-2xl font-black text-slate-800">
-                {stat.value}
-              </h3>
+              <h3 className="text-2xl font-black text-slate-800">{stat.value}</h3>
             </div>
           </div>
         ))}
@@ -299,16 +310,10 @@ const AdminUserManagement = () => {
       {/* BẢNG + BỘ LỌC */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
         {/* TOOLBAR */}
-        <div
-          className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm"
-          onClick={(e) => e.stopPropagation()}
-        >
+        <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm" onClick={(e) => e.stopPropagation()}>
           {/* Search */}
           <div className="relative w-full md:w-80">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="absolute left-4 top-3 text-slate-400"
-            />
+            <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-3 text-slate-400" />
             <input
               type="text"
               placeholder="Search by name or email..."
@@ -320,12 +325,8 @@ const AdminUserManagement = () => {
 
           {/* Filters */}
           <div className="flex gap-3 w-full md:w-auto">
-            {/* Role filter */}
             <div className="relative flex-1 md:w-44">
-              <FontAwesomeIcon
-                icon={faFilter}
-                className="absolute left-3 top-3 text-slate-400 text-xs"
-              />
+              <FontAwesomeIcon icon={faFilter} className="absolute left-3 top-3 text-slate-400 text-xs" />
               <select
                 value={roleFilter}
                 onChange={handleRoleChange}
@@ -337,8 +338,6 @@ const AdminUserManagement = () => {
                 <option value="admin">Administrator</option>
               </select>
             </div>
-
-            {/* Status filter */}
             <select
               value={statusFilter}
               onChange={handleStatusChange}
@@ -353,35 +352,21 @@ const AdminUserManagement = () => {
 
         {/* TABLE BODY */}
         <div className="overflow-y-auto flex-1 custom-scrollbar">
-          {/* Loading */}
           {loading && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
-              <FontAwesomeIcon
-                icon={faRotateRight}
-                className="text-3xl text-blue-500 animate-spin"
-              />
+              <FontAwesomeIcon icon={faRotateRight} className="text-3xl text-blue-500 animate-spin" />
               <p className="font-semibold text-sm">Loading data...</p>
             </div>
           )}
 
-          {/* Error */}
           {!loading && error && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-red-500">
-              <FontAwesomeIcon
-                icon={faExclamationTriangle}
-                className="text-3xl"
-              />
+              <FontAwesomeIcon icon={faExclamationTriangle} className="text-3xl" />
               <p className="font-bold">{error}</p>
-              <button
-                onClick={handleRefresh}
-                className="text-sm text-blue-600 underline hover:no-underline"
-              >
-                Try again
-              </button>
+              <button onClick={handleRefresh} className="text-sm text-blue-600 underline hover:no-underline">Try again</button>
             </div>
           )}
 
-          {/* Table */}
           {!loading && !error && (
             <table className="w-full text-left border-collapse">
               <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
@@ -397,138 +382,74 @@ const AdminUserManagement = () => {
               <tbody className="divide-y divide-slate-100">
                 {users.length > 0 ? (
                   users.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="hover:bg-slate-50/80 transition-colors group"
-                    >
-
-                    {/* ID */}
+                    <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="p-5 text-center">
-    <div className="relative group/id flex items-center justify-center">
-      <span
-        className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
-        title={user.id}
-      >
-        {user.id}
-      </span>
-
-      {/* Tooltip hiện full ID khi hover */}
-      <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
-        <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
-          <span className="select-all">{user.id}</span>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(user.id);
-              e.currentTarget.innerText = "✓";
-              setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
-            }}
-            className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
-          >
-            Copy
-          </button>
-        </div>
-        {/* Mũi tên nhỏ */}
-        <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
-      </div>
-    </div>
-  </td>
-                      {/* Người dùng */}
+                        <div className="relative group/id flex items-center justify-center">
+                          <span className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono" title={user.id}>{user.id}</span>
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
+                            <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
+                              <span className="select-all">{user.id}</span>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(user.id);
+                                  e.currentTarget.innerText = "✓";
+                                  setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
+                                }}
+                                className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
+                              >
+                                Copy
+                              </button>
+                            </div>
+                            <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-5">
                         <div className="flex items-center gap-3">
                           <img
                             src={getAvatarSrc(user.avatar, user.fullName)}
                             alt="Avatar"
                             className="w-10 h-10 rounded-full object-cover border-2 border-white shadow-sm flex-shrink-0"
-                            onError={(e) => {
-                              e.target.src = getAvatarSrc(null, user.fullName);
-                            }}
+                            onError={(e) => { e.target.src = getAvatarSrc(null, user.fullName); }}
                           />
                           <div>
                             <p className="text-sm font-bold text-slate-800">
-                              {user.fullName || (
-                                <span className="text-slate-400 italic font-normal">
-                                  Not updated
-                                </span>
-                              )}
+                              {user.fullName || <span className="text-slate-400 italic font-normal">Not updated</span>}
                             </p>
-                            <p className="text-xs font-medium text-slate-500">
-                              {user.email}
-                            </p>
+                            <p className="text-xs font-medium text-slate-500">{user.email}</p>
                           </div>
                         </div>
                       </td>
-
-                      {/* Role */}
-                      <td className="p-5">
-                        <RoleBadge role={user.role} />
-                      </td>
-
-                      {/* Status */}
-                      <td className="p-5">
-                        <StatusBadge status={user.status} />
-                      </td>
-
-                      {/* Ngày tham gia */}
+                      <td className="p-5"><RoleBadge role={user.role} /></td>
+                      <td className="p-5"><StatusBadge status={user.status} /></td>
                       <td className="p-5 text-sm font-medium text-slate-600">
-                        {user.createdAt || (
-                          <span className="text-slate-400">—</span>
-                        )}
+                        {user.createdAt || <span className="text-slate-400">—</span>}
                       </td>
-
-                      {/* Action */}
-                      <td
-                        className="p-5 text-center relative"
-                        onClick={(e) => e.stopPropagation()}
-                      >
+                      <td className="p-5 text-center relative" onClick={(e) => e.stopPropagation()}>
                         {togglingId === user.id ? (
-                          <FontAwesomeIcon
-                            icon={faSpinner}
-                            className="animate-spin text-blue-500"
-                          />
+                          <FontAwesomeIcon icon={faSpinner} className="animate-spin text-blue-500" />
                         ) : (
                           <>
                             <button
-                              onClick={() =>
-                                setOpenActionMenuId(
-                                  openActionMenuId === user.id ? null : user.id
-                                )
-                              }
+                              onClick={() => setOpenActionMenuId(openActionMenuId === user.id ? null : user.id)}
                               className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 transition-colors"
                             >
                               <FontAwesomeIcon icon={faEllipsisVertical} />
                             </button>
-
                             {openActionMenuId === user.id && (
                               <div className="absolute right-8 top-10 w-44 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden animate-fade-slide-up">
-                                {/* Không cho block/unblock admin */}
                                 {normalizeRole(user.role) !== "admin" && (
                                   <button
                                     onClick={() => handleToggleBlock(user)}
-                                    className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${
-                                      user.status === "active"
-                                        ? "text-amber-600 hover:bg-amber-50"
-                                        : "text-emerald-600 hover:bg-emerald-50"
-                                    }`}
+                                    className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${user.status === "active" ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"}`}
                                   >
-                                    <FontAwesomeIcon
-                                      icon={
-                                        user.status === "active"
-                                          ? faBan
-                                          : faUnlock
-                                      }
-                                      className="w-4"
-                                    />
-                                    {user.status === "active"
-                                      ? "Block account"
-                                      : "Unblock"}
+                                    <FontAwesomeIcon icon={user.status === "active" ? faBan : faUnlock} className="w-4" />
+                                    {user.status === "active" ? "Block account" : "Unblock"}
                                   </button>
                                 )}
-
                                 {normalizeRole(user.role) === "admin" && (
-                                  <p className="px-4 py-2.5 text-xs text-slate-400 italic">
-                                    Cannot perform actions on Admin
-                                  </p>
+                                  <p className="px-4 py-2.5 text-xs text-slate-400 italic">Cannot perform actions on Admin</p>
                                 )}
                               </div>
                             )}
@@ -539,12 +460,7 @@ const AdminUserManagement = () => {
                   ))
                 ) : (
                   <tr>
-                    <td
-                      colSpan="6"
-                      className="p-10 text-center text-slate-500 font-medium"
-                    >
-                      No users found matching your criteria.
-                    </td>
+                    <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">No users found matching your criteria.</td>
                   </tr>
                 )}
               </tbody>
@@ -556,64 +472,176 @@ const AdminUserManagement = () => {
         {!loading && !error && totalPages > 1 && (
           <div className="border-t border-slate-200 px-5 py-3 flex items-center justify-between bg-white">
             <p className="text-xs text-slate-500 font-medium">
-              Showing{" "}
-              <span className="font-bold text-slate-700">
-                {(currentPage - 1) * pagination.limit + 1}–
-                {Math.min(currentPage * pagination.limit, pagination.total)}
-              </span>{" "}
-              / {pagination.total} users
+              Showing <span className="font-bold text-slate-700">{(currentPage - 1) * pagination.limit + 1}–{Math.min(currentPage * pagination.limit, pagination.total)}</span> / {pagination.total} users
             </p>
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => goToPage(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
+              <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
                 <FontAwesomeIcon icon={faChevronLeft} className="text-xs" />
               </button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
-                .filter(
-                  (p) =>
-                    p === 1 ||
-                    p === totalPages ||
-                    Math.abs(p - currentPage) <= 1
-                )
+                .filter((p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1)
                 .reduce((acc, p, idx, arr) => {
-                  if (idx > 0 && p - arr[idx - 1] > 1)
-                    acc.push("...");
+                  if (idx > 0 && p - arr[idx - 1] > 1) acc.push("...");
                   acc.push(p);
                   return acc;
                 }, [])
                 .map((item, idx) =>
                   item === "..." ? (
-                    <span key={`ellipsis-${idx}`} className="text-slate-400 text-sm px-1">
-                      …
-                    </span>
+                    <span key={`ellipsis-${idx}`} className="text-slate-400 text-sm px-1">…</span>
                   ) : (
                     <button
                       key={item}
                       onClick={() => goToPage(item)}
-                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition ${
-                        currentPage === item
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "border border-slate-200 text-slate-600 hover:bg-slate-100"
-                      }`}
+                      className={`w-8 h-8 flex items-center justify-center rounded-lg text-sm font-bold transition ${currentPage === item ? "bg-blue-600 text-white shadow-sm" : "border border-slate-200 text-slate-600 hover:bg-slate-100"}`}
                     >
                       {item}
                     </button>
                   )
                 )}
-              <button
-                onClick={() => goToPage(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition"
-              >
+              <button onClick={() => goToPage(currentPage + 1)} disabled={currentPage === totalPages} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
                 <FontAwesomeIcon icon={faChevronRight} className="text-xs" />
               </button>
             </div>
           </div>
         )}
       </div>
+
+      {/* ========================================================================= */}
+      {/* MODAL TẠO USER MỚI (OVERLAY) */}
+      {/* ========================================================================= */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Lớp nền mờ */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity"
+            onClick={() => !isCreating && setIsAddModalOpen(false)}
+          ></div>
+
+          {/* Khung Modal */}
+          <div className="relative bg-white w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden animate-fade-slide-up flex flex-col max-h-[90vh]">
+            
+            {/* Modal Header */}
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <h2 className="text-xl font-black text-slate-800 flex items-center gap-2">
+                <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm">
+                  <FontAwesomeIcon icon={faPlus} />
+                </div>
+                Create New User
+              </h2>
+              <button
+                onClick={() => setIsAddModalOpen(false)}
+                disabled={isCreating}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 transition-colors flex items-center justify-center disabled:opacity-50"
+              >
+                <FontAwesomeIcon icon={faTimes} />
+              </button>
+            </div>
+
+            {/* Modal Body (Form) */}
+            <div className="p-6 overflow-y-auto custom-scrollbar">
+              <form id="createUserForm" onSubmit={handleCreateUser} className="space-y-5">
+                
+                {/* Full Name */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <FontAwesomeIcon icon={faUser} className="absolute left-4 top-3.5 text-slate-400" />
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Nguyen Van A"
+                      value={newUser.fullName}
+                      onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <FontAwesomeIcon icon={faEnvelope} className="absolute left-4 top-3.5 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. user@edusync.com"
+                      value={newUser.email}
+                      onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+                      className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                  {/* Role */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                      Assign Role
+                    </label>
+                    <div className="relative">
+                      <FontAwesomeIcon icon={faUserTag} className="absolute left-4 top-3.5 text-slate-400" />
+                      <select
+                        value={newUser.role}
+                        onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition-colors"
+                      >
+                        <option value="learner">Learner</option>
+                        <option value="instructor">Instructor</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Password */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
+                      Temporary Password <span className="text-red-500">*</span>
+                    </label>
+                    <div className="relative">
+                      <FontAwesomeIcon icon={faLock} className="absolute left-4 top-3.5 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        minLength={6}
+                        placeholder="Min 6 chars"
+                        value={newUser.password}
+                        onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </form>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                disabled={isCreating}
+                className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                form="createUserForm"
+                disabled={isCreating}
+                className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {isCreating ? <FontAwesomeIcon icon={faSpinner} spin /> : "Create User"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
