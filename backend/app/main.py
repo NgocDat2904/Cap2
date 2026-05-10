@@ -1,6 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from dotenv import load_dotenv
+load_dotenv()
+
 from app.modules.auth.auth_controller import router as auth_router
 from app.modules.user.user_controller import router as user_router
 from app.modules.instructor.instructor_controller import router as instructor_router

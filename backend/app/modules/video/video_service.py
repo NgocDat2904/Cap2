@@ -1,7 +1,8 @@
 
 from bson import ObjectId
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 from datetime import datetime
+import json
 
 from app.modules.video.video_repository import VideoRepository
 from app.modules.video.video_schema import VideoRequest
@@ -38,7 +39,7 @@ class VideoService:
 
     # ===================== CREATE =====================
 
-    async def save_video(self, data: VideoRequest, instructor_id: str):
+    async def save_video(self, data: VideoRequest, instructor_id: str, background_tasks: BackgroundTasks = None):
 
     # ===================== VALIDATE LESSON =====================
         if not data.lesson_id:
@@ -110,7 +111,92 @@ class VideoService:
         "created_at": datetime.utcnow(),
     }
 
-        return video_repository.create(doc)
+        video_id = video_repository.create(doc)
+
+    # =====================  AUTO TRANSCRIPT (Background) =====================
+        video_url = (data.video_url or "").strip()
+        storage_path = (data.storage_path or "").strip()
+        has_transcript = data.transcript and data.transcript.strip()
+
+        if video_id and (video_url or storage_path) and not has_transcript and background_tasks:
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {"$set": {"ai_status": "processing"}},
+            )
+            background_tasks.add_task(
+                self._background_generate_transcript,
+                video_id=video_id,
+                video_url=video_url,
+                storage_path=storage_path,
+                language="vi",
+            )
+            print(f"Background STT scheduled for video {video_id}")
+
+        saved = db.videos.find_one({"_id": ObjectId(video_id)})
+
+        return json.loads(json.dumps(saved, default=str))
+
+    # ===================== BACKGROUND STT =====================
+
+    def _background_generate_transcript(
+        self,
+        video_id: str,
+        video_url: str,
+        storage_path: str = "",
+        language: str = "vi",
+    ):
+        print(f"[STT] Bắt đầu tạo transcript cho video {video_id}...")
+        try:
+            download_url = None
+
+            if storage_path:
+                try:
+                    download_url = gcs_client.generate_read_signed_url(storage_path)
+                    print(f" [STT] Dùng signed URL từ storage_path: {storage_path}")
+                except Exception as e:
+                    print(f" [STT] Không tạo được signed URL từ storage_path: {e}")
+
+            if not download_url and video_url:
+                object_name = gcs_client.object_name_from_public_url(video_url)
+                if object_name:
+                    try:
+                        download_url = gcs_client.generate_read_signed_url(object_name)
+                        print(f" [STT] Dùng signed URL từ video_url object: {object_name}")
+                    except Exception as e:
+                        print(f" [STT] Không tạo được signed URL từ video_url: {e}")
+
+            if not download_url:
+                download_url = video_url
+
+            if not download_url:
+                raise RuntimeError("Không có URL nào để tải video")
+
+            transcript, segments = transcribe_from_video_url(download_url, language=language)
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {
+                    "$set": {
+                        "transcript": transcript,
+                        "transcript_segments": segments,
+                        "ai_status": "ready",
+                        "ai_cache": {},
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
+            print(f"[STT] Transcript sẵn sàng cho video {video_id} ({len(transcript)} chars, {len(segments)} segments)")
+        except Exception as e:
+            print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {
+                    "$set": {
+                        "ai_status": "failed",
+                        "ai_error": str(e),
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
 
     # ===================== TRANSCRIPT =====================
 

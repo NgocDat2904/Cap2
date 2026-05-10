@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends
 from app.middleware.auth_middleware import require_role
 from app.modules.video.video_service import VideoService
 from app.modules.video.video_schema import VideoRequest, GenerateTranscriptRequest
@@ -23,9 +23,10 @@ async def get_upload_url(
 @router.post("/instructor/videos")
 async def save_video(
     data: VideoRequest,
+    background_tasks: BackgroundTasks,
     user=Depends(require_role(["instructor"]))
 ):
-    return await video_service.save_video(data, user["id"])
+    return await video_service.save_video(data, user["id"], background_tasks)
 
 
 @router.post("/instructor/videos/{video_id}/transcript")
