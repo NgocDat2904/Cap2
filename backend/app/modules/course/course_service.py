@@ -575,6 +575,12 @@ class CourseService:
         if str(course.get("instructor_id")) != instructor_id:
            raise Exception("Permission denied")
 
+        enrolled_count = db.enrollments.count_documents({
+            "course_id": ObjectId(course_id)
+        })
+        if enrolled_count > 0:
+            raise Exception("Cannot delete course with enrolled students")
+
         db.courses.update_one(
         {"_id": ObjectId(course_id)},
         {
