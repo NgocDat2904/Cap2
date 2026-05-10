@@ -7,7 +7,7 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        key_path = os.getenv("GCS_KEY_PATH", "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json")
+        key_path = os.getenv("GCS_KEY_PATH", "E:\\Keys\\edusync-491910-0a7be5d8fd86.json")
         self.client = None
         try:
             if os.path.exists(key_path):
