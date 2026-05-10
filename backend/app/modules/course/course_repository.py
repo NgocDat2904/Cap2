@@ -202,3 +202,68 @@ class CourseRepository:
         except Exception as e:
             print("❌ search_with_sort error:", e)
             return []
+
+    async def update_with_lessons(self, course_id: str, data: dict, lessons):
+        try:
+            course_obj_id = ObjectId(course_id)
+        except InvalidId:
+            return {"success": False, "error": "Invalid course_id"}
+
+        clean_data = {
+            k: v
+            for k, v in (data or {}).items()
+            if v is not None
+        }
+        clean_data["updated_at"] = datetime.utcnow()
+
+        update_result = self.collection.update_one(
+            {"_id": course_obj_id, "is_deleted": {"$ne": True}},
+            {"$set": clean_data},
+        )
+        if update_result.matched_count == 0:
+            return {"success": False, "error": "Course not found"}
+
+        lessons_count = 0
+        new_lessons_count = 0
+
+        if isinstance(lessons, list):
+            for index, lesson in enumerate(lessons):
+                if not isinstance(lesson, dict):
+                    continue
+
+                lesson_title = (lesson.get("title") or "").strip()
+                if not lesson_title:
+                    continue
+
+                lesson_update = {
+                    "title": lesson_title,
+                    "description": (lesson.get("description") or "").strip(),
+                    "order_index": lesson.get("order_index", index + 1),
+                    "updated_at": datetime.utcnow(),
+                }
+
+                lesson_id = lesson.get("id") or lesson.get("_id")
+                if lesson_id and ObjectId.is_valid(str(lesson_id)):
+                    lesson_result = db.lessons.update_one(
+                        {"_id": ObjectId(str(lesson_id)), "course_id": course_obj_id},
+                        {"$set": lesson_update},
+                    )
+                    if lesson_result.matched_count:
+                        lessons_count += 1
+                        continue
+
+                db.lessons.insert_one(
+                    {
+                        "course_id": course_obj_id,
+                        **lesson_update,
+                        "created_at": datetime.utcnow(),
+                    }
+                )
+                lessons_count += 1
+                new_lessons_count += 1
+
+        return {
+            "success": True,
+            "lessons_count": lessons_count,
+            "new_lessons_count": new_lessons_count,
+        }

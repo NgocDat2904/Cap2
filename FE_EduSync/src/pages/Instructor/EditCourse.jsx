@@ -25,7 +25,34 @@ import {
   getInstructorCourseDetailAPI,
   updateInstructorCourseAPI,
 } from "../../services/instructorAPI";
-import { uploadCourseThumbnailAPI } from "../../services/courseAPI";
+import {
+  uploadCourseThumbnailAPI,
+  createLessonAPI,
+  getPresignedUrlAPI,
+  uploadVideoToGCS,
+  saveVideoToDBAPI,
+} from "../../services/courseAPI";
+
+const COURSE_CATEGORIES = [
+  { id: "frontend", label: "Frontend Web Development" },
+  { id: "backend", label: "Backend Web Development" },
+  { id: "mobile", label: "Mobile Programming" },
+  { id: "ai", label: "AI & Machine Learning" },
+  { id: "data_analysis", label: "Data Analysis" },
+  { id: "data_engineer", label: "Data Engineering" },
+  { id: "uiux", label: "UI/UX Design" },
+  { id: "ba", label: "Business Analysis" },
+];
+
+const normalizeCategoryValue = (rawCategory) => {
+  const category = (rawCategory || "").trim().toLowerCase();
+  const byId = COURSE_CATEGORIES.find((item) => item.id === category);
+  if (byId) return byId.id;
+  const byLabel = COURSE_CATEGORIES.find(
+    (item) => item.label.toLowerCase() === category
+  );
+  return byLabel ? byLabel.id : "";
+};
 
 const InstructorCourseEditPage = () => {
   const navigate = useNavigate();
@@ -75,7 +102,7 @@ const InstructorCourseEditPage = () => {
         const courseDetail = data.courseDetail || {};
         setCourseData({
           title: courseDetail.title || "",
-          category: courseDetail.category || "",
+          category: normalizeCategoryValue(courseDetail.category),
           description: courseDetail.description || "",
           thumbnail: courseDetail.thumbnail || "",
           status: courseDetail.status || "DRAFT",
@@ -92,6 +119,7 @@ const InstructorCourseEditPage = () => {
             duration: lesson.duration || "00:00",
             isPublished: lesson.is_published !== false,
             isApproved: lesson.is_approved !== false,
+            isNew: false,
           }))
         );
 
@@ -115,7 +143,8 @@ const InstructorCourseEditPage = () => {
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonDescription, setLessonDescription] = useState("");
   const [lessonVideoName, setLessonVideoName] = useState("");
-  const [isUploadingLesson, setIsUploadingLesson] = useState(false);
+  const [lessonVideoFile, setLessonVideoFile] = useState(null);
+  const [isUploadingLesson] = useState(false);
   const lessonFileInputRef = useRef(null);
   const [thumbnailFile, setThumbnailFile] = useState(null);
 
@@ -123,6 +152,7 @@ const InstructorCourseEditPage = () => {
     setLessonTitle("");
     setLessonDescription("");
     setLessonVideoName("");
+    setLessonVideoFile(null);
     setIsLessonModalOpen(true);
   };
 
@@ -136,8 +166,23 @@ const InstructorCourseEditPage = () => {
     const file = e.target.files[0];
     if (file) {
       setLessonVideoName(file.name);
+      setLessonVideoFile(file);
     }
   };
+
+  const getVideoDuration = (file) =>
+    new Promise((resolve) => {
+      const video = document.createElement("video");
+      video.preload = "metadata";
+      video.onloadedmetadata = () => {
+        window.URL.revokeObjectURL(video.src);
+        const seconds = Math.floor(video.duration || 0);
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        resolve(`${m}:${String(s).padStart(2, "0")}`);
+      };
+      video.src = URL.createObjectURL(file);
+    });
 
   const handleSubmitLesson = (e) => {
     e.preventDefault();
@@ -149,36 +194,37 @@ const InstructorCourseEditPage = () => {
       alert("Please select lesson video!");
       return;
     }
+    if (!lessonVideoFile) {
+      alert("Please select lesson video!");
+      return;
+    }
 
-    setIsUploadingLesson(true);
+    const newLesson = {
+      id: `new-${Date.now()}`,
+      title: lessonTitle.trim(),
+      description: lessonDescription.trim(),
+      duration: "00:00",
+      isPublished: true,
+      isApproved: true,
+      isNew: true,
+      videoFile: lessonVideoFile,
+      videoFileName: lessonVideoFile.name,
+    };
 
-    // Giả lập thời gian upload video (1.5 giây)
-    setTimeout(() => {
-      const newLesson = {
-        id: Date.now(),
-        title: lessonTitle,
-        description: lessonDescription,
-        duration: "12:00",
-        isPublished: true,
-        isApproved: true,  // TỰ ĐỘNG XANH LÁ TRÊN UI LUÔN 
-      };
+    setLessons((prev) => [...prev, newLesson]);
 
-      setLessons([...lessons, newLesson]);
+    if (courseData.status === "PUBLISHED") {
+      setCourseData((prev) => ({
+        ...prev,
+        hasNewUpdateForQC: true,
+      }));
+    }
 
-      // NGHIỆP VỤ GIÁO DỤC: Nếu khóa học đã PUBLISHED, bật cờ QC
-      if (courseData.status === "PUBLISHED") {
-        setCourseData((prev) => ({
-          ...prev,
-          hasNewUpdateForQC: true, // 🚩 Bất Admin kiểm duyệt nội dung video mới
-        }));
-      }
-
-      setIsUploadingLesson(false);
-      setIsLessonModalOpen(false);
-      setLessonTitle("");
-      setLessonDescription("");
-      setLessonVideoName("");
-    }, 1500);
+    setIsLessonModalOpen(false);
+    setLessonTitle("");
+    setLessonDescription("");
+    setLessonVideoName("");
+    setLessonVideoFile(null);
   };
 
   // =========================================================================
@@ -205,12 +251,56 @@ const InstructorCourseEditPage = () => {
       setThumbnailFile(null);
     }
 
+    const pendingNewLessons = lessons.filter(
+      (lesson) => lesson.isNew && lesson.videoFile
+    );
+
+    for (let index = 0; index < pendingNewLessons.length; index += 1) {
+      const lesson = pendingNewLessons[index];
+      const lessonRes = await createLessonAPI(
+        {
+          course_id: courseId,
+          title: lesson.title,
+          order_index: lessons.length + index + 1,
+        },
+        token
+      );
+      const lessonId = lessonRes?.id;
+      if (!lessonId) {
+        throw new Error("Failed to create lesson for uploaded video");
+      }
+
+      const presign = await getPresignedUrlAPI(
+        courseId,
+        lesson.videoFileName,
+        lesson.videoFile.type,
+        token
+      );
+
+      await uploadVideoToGCS(presign.upload_url, lesson.videoFile);
+      const duration = await getVideoDuration(lesson.videoFile);
+
+      await saveVideoToDBAPI(
+        courseId,
+        {
+          lesson_id: lessonId,
+          video_url: presign.file_url,
+          storage_path: presign.storage_path,
+          thumbnail_url: thumbnailUrl || undefined,
+          title: lesson.title,
+          description: lesson.description,
+          file_name: lesson.videoFileName,
+          duration,
+        },
+        token
+      );
+    }
+
     const updateData = {
       title: courseData.title,
       category: courseData.category,
       description: courseData.description,
-      image: thumbnailUrl, // ✅ backend dùng key "image"
-      lessons: lessons
+      image: thumbnailUrl,
     };
 
     await updateInstructorCourseAPI(courseId, updateData, token);
@@ -284,7 +374,7 @@ const InstructorCourseEditPage = () => {
         }));
       }
     }
-    // 📌 TRƯỜNG HỢP 1: AN TOÀN ĐỂ XÓA THẬT
+    // TRƯỜNG HỢP 1: AN TOÀN ĐỂ XÓA THẬT
     // Nếu chưa có ai mua (studentsEnrolled === 0) HOẶC đang nháp (status !== "PUBLISHED")
     else if (courseData.studentsEnrolled === 0 || courseData.status !== "PUBLISHED") {
       const confirmDelete = window.confirm("Are you sure you want to delete this lesson?");
@@ -335,7 +425,7 @@ const InstructorCourseEditPage = () => {
         </div>
       )}
 
-      {/* 🚨 LOADING SPINNER */}
+      {/* LOADING SPINNER */}
       {isLoading && (
         <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 backdrop-blur-sm">
           <div className="bg-white p-8 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
@@ -433,14 +523,12 @@ const InstructorCourseEditPage = () => {
                     onChange={handleChange}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors cursor-pointer"
                   >
-                    <option>Frontend Web Development</option>
-                    <option>Backend Web Development</option>
-                    <option>Mobile Programming</option>
-                     <option>AI & Machine Learning</option>
-                      <option>Data Analysis</option>
-                       <option>Data Engineering</option>
-                        <option>UI/UX Design</option>
-                         <option>Business Analysis</option>
+                    <option value="">Select category</option>
+                    {COURSE_CATEGORIES.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -738,6 +826,7 @@ const InstructorCourseEditPage = () => {
                           onClick={(e) => {
                             e.stopPropagation();
                             setLessonVideoName("");
+                            setLessonVideoFile(null);
                           }}
                           className="mt-2 text-xs text-red-500 hover:text-red-700 font-semibold underline"
                           disabled={isUploadingLesson}
