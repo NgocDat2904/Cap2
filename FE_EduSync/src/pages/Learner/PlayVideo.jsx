@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -16,6 +16,7 @@ import CourseQuiz from "../../components/CourseQuiz";
 import CourseChatbot from "../../components/CourseChatbot";
 import CourseDiscussion from "../../components/CourseDiscussion";
 import { aiTimelineAPI, aiTimelineByVideoAPI } from "../../services/aiAPI";
+import { trackViewAPI } from "../../services/courseAPI";
 
 const CourseLearningWorkspace = () => {
   const { courseId, lessonId } = useParams();
@@ -34,6 +35,8 @@ const CourseLearningWorkspace = () => {
   const [aiTimeline, setAiTimeline] = useState([]);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
   const [timelineError, setTimelineError] = useState("");
+  const videoRef = useRef(null);
+  const countedRef = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -50,7 +53,8 @@ const CourseLearningWorkspace = () => {
         const data = await getCourseDetailAPI(courseId);
         if (!cancelled) setCourseDetail(data);
       } catch (error) {
-        if (!cancelled) setCourseError(error.message || "Failed to load course data");
+        if (!cancelled)
+          setCourseError(error.message || "Failed to load course data");
       } finally {
         if (!cancelled) setLoadingCourse(false);
       }
@@ -67,6 +71,7 @@ const CourseLearningWorkspace = () => {
 
     return lessons.map((lesson) => ({
       id: lesson.id,
+      video_id: lesson.video_id,
       title: lesson.title || "Untitled lesson",
       duration: lesson.duration || "00:00",
       description: lesson.description || "",
@@ -78,7 +83,7 @@ const CourseLearningWorkspace = () => {
         lesson.videoUrl ||
         lesson.video_url ||
         lesson.play_url ||
-        (lesson.videos && lesson.videos[0]?.video_url) || 
+        (lesson.videos && lesson.videos[0]?.video_url) ||
         "",
 
       completed: false,
@@ -92,7 +97,9 @@ const CourseLearningWorkspace = () => {
       setActiveLesson(null);
       return;
     }
-    const matched = playlist.find((lesson) => String(lesson.id) === String(lessonId));
+    const matched = playlist.find(
+      (lesson) => String(lesson.id) === String(lessonId),
+    );
     const nextLesson = matched || playlist[0];
 
     setActiveLesson(nextLesson);
@@ -104,13 +111,10 @@ const CourseLearningWorkspace = () => {
       description: activeLesson?.description || "",
       transcript: activeLesson?.transcript || undefined,
     }),
-    [
-      activeLesson?.title,
-      activeLesson?.description,
-      activeLesson?.transcript,
-    ],
+    [activeLesson?.title, activeLesson?.description, activeLesson?.transcript],
   );
-  const activeVideoId = activeLesson?._id || activeLesson?.id;
+  const activeVideoId = activeLesson?.video_id || activeLesson?.id;
+  console.log(activeLesson);
 
   useEffect(() => {
     if (!activeLesson) return;
@@ -130,7 +134,8 @@ const CourseLearningWorkspace = () => {
 
         if (!cancelled) setAiTimeline(data.timeline || []);
       } catch (err) {
-        if (!cancelled) setTimelineError(err.message || "Failed to load timeline from AI");
+        if (!cancelled)
+          setTimelineError(err.message || "Failed to load timeline from AI");
       } finally {
         if (!cancelled) setLoadingTimeline(false);
       }
@@ -141,7 +146,50 @@ const CourseLearningWorkspace = () => {
     };
   }, [activeVideoId, lessonContext?.transcript]);
 
+  const handleProgress = async () => {
+    if (!videoRef.current) return;
+
+    const current = videoRef.current.currentTime;
+
+    // console.log("CURRENT:", current);
+
+    // xem 10s => +1 view
+
+    if (current >= 10 && !countedRef.current) {
+      countedRef.current = true;
+
+      try {
+        await trackViewAPI(activeVideoId, current, false);
+        setCourseDetail((prev) => ({
+          ...prev,
+          lessons: prev.lessons.map((lesson) => {
+            if (lesson.video_id === activeVideoId) {
+              return {
+                ...lesson,
+                views: (lesson.views || 0) + 1,
+              };
+            }
+            return lesson;
+          }),
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  const handleEnded = async () => {
+    try {
+      await trackViewAPI(activeVideoId, videoRef.current.duration, true);
+
+      console.log("✅ Full video counted");
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleSelectLesson = (lesson) => {
+    countedRef.current = false;
     setActiveLesson(lesson);
     setActiveRightTab("timeline");
     setIsPlaying(true);
@@ -150,7 +198,8 @@ const CourseLearningWorkspace = () => {
   const instructorInfo = {
     name: courseDetail?.instructor?.name || "Giảng viên EduSync",
     followers: "Giảng viên trên EduSync",
-    avatar: courseDetail?.instructor?.avatar || "https://i.pravatar.cc/150?img=11",
+    avatar:
+      courseDetail?.instructor?.avatar || "https://i.pravatar.cc/150?img=11",
   };
 
   if (loadingCourse) {
@@ -163,7 +212,9 @@ const CourseLearningWorkspace = () => {
   }
 
   if (courseError) {
-    return <div className="w-full py-24 text-center text-red-600">{courseError}</div>;
+    return (
+      <div className="w-full py-24 text-center text-red-600">{courseError}</div>
+    );
   }
 
   if (!activeLesson) {
@@ -184,8 +235,8 @@ const CourseLearningWorkspace = () => {
   };
 
   const handleSeekVideo = (seconds) => {
-    if (playerRef.current) {
-      playerRef.current.currentTime = seconds;
+    if (videoRef.current) {
+      videoRef.current.currentTime = seconds;
       setIsPlaying(true);
     }
   };
@@ -197,11 +248,13 @@ const CourseLearningWorkspace = () => {
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
             {activeLesson.videoUrl ? (
               <video
-                ref={playerRef}
+                ref={videoRef}
                 src={activeLesson.videoUrl}
                 controls
                 className="absolute inset-0 w-full h-full object-contain bg-black"
                 playsInline
+                onTimeUpdate={handleProgress}
+                onEnded={handleEnded}
                 onLoadedMetadata={(e) => {
                   const seconds = Math.floor(e.target.duration);
 
@@ -221,7 +274,10 @@ const CourseLearningWorkspace = () => {
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-slate-300 text-sm bg-gradient-to-br from-slate-900 to-slate-800 gap-4">
-                <FontAwesomeIcon icon={faPlayCircle} className="text-5xl opacity-30" />
+                <FontAwesomeIcon
+                  icon={faPlayCircle}
+                  className="text-5xl opacity-30"
+                />
                 <p>Bài giảng này chưa có URL phát video hợp lệ.</p>
               </div>
             )}
@@ -258,22 +314,23 @@ const CourseLearningWorkspace = () => {
 
           <div className="w-full mt-2">
             <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
-              {["Summary", "Mindmap", "Quiz", "Chatbot", "Q&A"].map(
-                (tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveLeftTab(tab.toLowerCase())}
-                    className={`px-6 py-3.5 text-sm font-bold capitalize transition-all border-b-2 whitespace-nowrap ${activeLeftTab === tab.toLowerCase() ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
-                  >
-                    {tab}
-                  </button>
-                ),
-              )}
+              {["Summary", "Mindmap", "Quiz", "Chatbot", "Q&A"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveLeftTab(tab.toLowerCase())}
+                  className={`px-6 py-3.5 text-sm font-bold capitalize transition-all border-b-2 whitespace-nowrap ${activeLeftTab === tab.toLowerCase() ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                >
+                  {tab}
+                </button>
+              ))}
             </div>
 
             <div className="bg-white border border-t-0 border-slate-200 rounded-b-2xl p-6 sm:p-8 min-h-[400px] shadow-sm">
               {activeLeftTab === "summary" && (
-                <CourseSummary lessonContext={lessonContext} videoId={activeVideoId} />
+                <CourseSummary
+                  lessonContext={lessonContext}
+                  videoId={activeVideoId}
+                />
               )}
               {activeLeftTab === "mindmap" && (
                 <CourseMindmap
@@ -289,11 +346,13 @@ const CourseLearningWorkspace = () => {
                 />
               )}
               {activeLeftTab === "chatbot" && (
-                <CourseChatbot lessonContext={lessonContext} videoId={activeVideoId} />
+                <CourseChatbot
+                  lessonContext={lessonContext}
+                  videoId={activeVideoId}
+                />
               )}
-              {(activeLeftTab === "discussion" || activeLeftTab === "review") && (
-                <CourseDiscussion />
-              )}
+              {(activeLeftTab === "discussion" ||
+                activeLeftTab === "review") && <CourseDiscussion />}
             </div>
           </div>
         </div>
@@ -325,12 +384,19 @@ const CourseLearningWorkspace = () => {
                   Key Moments (AI)
                 </h4>
                 {loadingTimeline && (
-                  <p className="text-sm text-slate-500 italic text-center mt-6">Generating key moments...</p>
+                  <p className="text-sm text-slate-500 italic text-center mt-6">
+                    Generating key moments...
+                  </p>
                 )}
                 {timelineError && (
-                  <p className="text-sm text-red-600 text-center mt-6 bg-red-50 p-2 rounded-lg">{timelineError}</p>
+                  <p className="text-sm text-red-600 text-center mt-6 bg-red-50 p-2 rounded-lg">
+                    {timelineError}
+                  </p>
                 )}
-                {!loadingTimeline && !timelineError && aiTimeline && aiTimeline.length > 0 ? (
+                {!loadingTimeline &&
+                !timelineError &&
+                aiTimeline &&
+                aiTimeline.length > 0 ? (
                   <div className="relative border-l-2 border-slate-100 ml-3 space-y-6 mt-6">
                     {aiTimeline.map((point, index) => (
                       <div
@@ -350,10 +416,13 @@ const CourseLearningWorkspace = () => {
                       </div>
                     ))}
                   </div>
-                ) : !loadingTimeline && !timelineError && (
-                  <p className="text-sm text-slate-500 text-center mt-10 italic">
-                    Chưa có dữ liệu timeline AI cho video này.
-                  </p>
+                ) : (
+                  !loadingTimeline &&
+                  !timelineError && (
+                    <p className="text-sm text-slate-500 text-center mt-10 italic">
+                      Chưa có dữ liệu timeline AI cho video này.
+                    </p>
+                  )
                 )}
               </div>
             )}
@@ -405,7 +474,11 @@ const CourseLearningWorkspace = () => {
                             {lesson.title}
                           </h5>
                           <span className="text-[11px] font-medium text-slate-500 mt-1">
-                            ({lesson.id === activeLesson?.id ? videoDuration : lesson.duration})
+                            (
+                            {lesson.id === activeLesson?.id
+                              ? videoDuration
+                              : lesson.duration}
+                            )
                           </span>
                         </div>
                       </button>
