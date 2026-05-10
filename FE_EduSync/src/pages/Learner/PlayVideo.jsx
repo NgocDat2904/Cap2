@@ -67,9 +67,6 @@ const CourseLearningWorkspace = () => {
 
     return lessons.map((lesson) => ({
       id: lesson.id,
-
-      videoId:
-        lesson.video?.[0]?.id || lesson.video?.[0]?.id || "",
       title: lesson.title || "Untitled lesson",
       duration: lesson.duration || "00:00",
       description: lesson.description || "",
@@ -113,7 +110,7 @@ const CourseLearningWorkspace = () => {
       activeLesson?.transcript,
     ],
   );
-  const activeVideoId = activeLesson?.videoId;
+  const activeVideoId = activeLesson?._id || activeLesson?.id;
 
   useEffect(() => {
     if (!activeLesson) return;
