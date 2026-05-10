@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "edusync-491910",
+  "private_key_id": "0a7be5d8fd8622a2730dc9de158413dc89c21f76",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCa4WjNU8nzwGq2\np5Z456vLob2oFKc3Rq8HeMhpCK0JpWcimbK48fUtmc9Yc2aySjxxo2hvPapDhwnv\nUuhCGS8pscT3Z5hzOD3B/x2g1oqiSf0ItCAyq/c+vcGmRc9ujSZLMqdpi+ZHn8l6\nqfw45e4BLZqmZncQtKwW8xcST6qIXuzKlwMD80BDE9QIGVJASOe8B8+YNCL5kpet\nX0e+scKcP2VIlSwWYUcD8QqjeuqQLGsMAoEMTysQX5U+l4gKqACtyghlkMGEW3KO\njE4w0lc7LYFYArNVtNxeqx29XMjO+oXUaD6W0CLJZFEtCu+dq9pVadeuE5BFZZ9F\nMzpySGDtAgMBAAECggEAA5E8jjonVSdx7coXY6qGYPbVPPlYzqOgpW3pQ84Q2j+G\njBv5K1xbVtULmxBxZZrjIITwg1tqwApstqf0tI0K8o1nKYGn18OMXJsJLiqy38EP\nhHNNqI0gcUACpVdHS1cR8jp086/munCaPeqLZi4ZmMpZnQqQJIDc09x+hAv0tBZe\ndgV8pkXzkdtH8Vwl/xYxUWWPaHiLs8GpKfNh8kMhgkU1t/5YQIRr0uhRPyQmCqY+\nQmw4Qu1IxBElSQAGQmXyhdeU6jRTI3SkxGLJ+eoyyLh1nhqsjwq3KUfKUM9LjKd6\nSl1/Ox1aWjzpN4xI77iYyWsF9GN/0SwyxrWKEEidcQKBgQDLt7xrJo5zthqFlLB5\nJKdpr/m69AV0pYg9TZiATJpgUQwZKkTFiE5DP6YFfO61RLHK7QV0OUrQ02uaa+TS\nDgGTgPtoc0IT9jT3Wbtn2CY3m+hmBgCzbCe7BSQwk5ZXU0mKUJblU9FLbD29WFip\nX+FvEKyWgeGrRpRatdErgrab5QKBgQDCoRDrLOphOyu1n74Xu4ZJ944SQwN9hOgG\nJwo1qAI5RONrzDhyR7+v2PWap0lF3UfDXkACB8CnAQRe26JNG2VmrnFj3Lp7Dc5B\nXsfZl6V5xjwlUMVtbrhB08/ACNr85Zjo4ukTSSvfqJMf1iM5xnoH4n4aWdK32sbD\nAc31MBGwaQKBgAQvF92TgyV5Pf40WZODXzTaemSOknYc2Dl6GIG6EQmdYIQ7zAHK\nlODos741HKn4aTZju9LxQkobrYAUazStOPcQlRlGFLtYOSpDW4f8dnx55UIDKYyF\n0iMTLfUZcuMEQORoV1EKcaf85x+2asu/vl+Llh/ZNwtPfciHJ26fVqTJAoGABNc4\nsoC1e6GbHrNQaQqy9lf/4phkF9UcaDrEWD1LgN0jwuSbasw6CkedJDGQ8vnj9Qn9\nEY/bzMuLrkhMKxrJVNp124P751+ah6mx0smgxfyWNl9h6azdTFXWTvJpb+zN9szd\n+yrQuolYz2vmCGPVWSja9hDR2tzIIMWEt9pwNjECgYB3w1ThbCacz68tqaTNqOWU\nZM2h7PpWu+5lNBiAveb/H4G/yLjD6wnrVmBMglxfJuWDX2LuZTdhR+wdv7UMy5Sl\nj9WRQyD8J8pEZdsKgXqThnEMImnS80rnnDSuVvlH3BCpwasF+x/qvPtjb0wx5DCG\nO7+tUTWydTxdLU4ePJ1CtA==\n-----END PRIVATE KEY-----\n",
+  "client_email": "backend-service-c2se-01@edusync-491910.iam.gserviceaccount.com",
+  "client_id": "104359765193857244648",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/backend-service-c2se-01%40edusync-491910.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
