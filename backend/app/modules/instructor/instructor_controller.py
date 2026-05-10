@@ -129,4 +129,3 @@ async def get_students(
         course_id=course_id
     )
 
-
