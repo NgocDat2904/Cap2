@@ -9,10 +9,10 @@ import AdminRoutes from "./AdminRoutes";
 const AppRoutes = () => {
   return (
     <Routes>
-      {/* 1. Trang chủ công khai cho khách vãng lai */}
+      {/* Trang chủ công khai cho khách vãng lai */}
       <Route path="/" element={<PublicPage />} />
 
-      {/* 2. Dấu /* báo cho React biết bên trong InstructorRoutes còn nhiều đường dẫn con khác */}
+      {/* Dấu /* báo cho React biết bên trong InstructorRoutes còn nhiều đường dẫn con khác */}
       <Route path="/instructor/*" element={<InstructorRoutes />} />
 
       {/* Admin trước catch-all Learner để /admin/* luôn match đúng */}

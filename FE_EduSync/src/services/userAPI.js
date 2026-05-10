@@ -29,7 +29,7 @@ export const uploadAvatarAPI = async (file, token) => {
   const formData = new FormData();
   formData.append("file", file); 
 
-  const response = await axios.post("${API_URL}/upload-avatar", formData, {
+  const response = await axios.post(`${API_URL}/upload-avatar`, formData, {
     headers: {
       Authorization: `Bearer ${token}`,
       // KHÔNG set Content-Type ở đây, trình duyệt sẽ tự động xử lý

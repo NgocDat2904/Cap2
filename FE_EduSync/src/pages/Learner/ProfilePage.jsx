@@ -80,7 +80,7 @@ const LearnerProfilePage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // 1. Hiển thị ảnh preview ngay lập tức
+    // Hiển thị ảnh preview ngay lập tức
     const previewUrl = URL.createObjectURL(file);
     setProfileData((prev) => ({ ...prev, avatarUrl: previewUrl }));
 
@@ -88,10 +88,10 @@ const LearnerProfilePage = () => {
       setIsUploadingAvatar(true);
       const token = localStorage.getItem("access_token");
 
-      // 2. Giao việc gọi API cho  Service xử lý
+      // Giao việc gọi API cho  Service xử lý
       const data = await uploadAvatarAPI(file, token);
 
-      // 3. Nhận kết quả và cập nhật lại Avatar thật
+      // Nhận kết quả và cập nhật lại Avatar thật
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
         alert("Avatar uploaded successfully!");
