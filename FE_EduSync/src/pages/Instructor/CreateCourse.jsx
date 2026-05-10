@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSave, faCloudArrowUp, faTimes, faVideo, faImage, faPaperPlane,
@@ -29,6 +30,7 @@ const categories = [
 ];
 
 const InstructorCreateCourse = () => {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("basic");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadProgressText, setUploadProgressText] = useState(""); // Hiển thị trạng thái cho GV xem
@@ -52,6 +54,16 @@ const InstructorCreateCourse = () => {
 
   const fileInputRef = useRef(null);
   const thumbnailInputRef = useRef(null);
+  const MAX_WORDS = 100;
+
+  const countWords = (text) =>
+    (text || "").trim().split(/\s+/).filter(Boolean).length;
+
+  const hasInvalidFormat = (text) => {
+    const value = (text || "").trim();
+    if (!value) return false;
+    return /[<>{}`$]/.test(value) || /(script|drop\s+table|select\s+\*)/i.test(value);
+  };
 
   // =========================================================================
   // XỬ LÝ SỰ KIỆN CHUNG
@@ -94,6 +106,11 @@ const InstructorCreateCourse = () => {
   };
 
   const handleVideoDetailChange = (id, field, value) => {
+    if (field === "title" && countWords(value) > MAX_WORDS) {
+      alert(`Video title must not exceed ${MAX_WORDS} words.`);
+      return;
+    }
+
     setUploadedVideos((prev) =>
       prev.map((video) =>
         video.id === id ? { ...video, [field]: value } : video,
@@ -109,16 +126,58 @@ const InstructorCreateCourse = () => {
   // LOGIC ĐỈNH CAO: TẠO KHÓA -> XIN VÉ -> UP MÂY -> LƯU DB -> GỬI DUYỆT
   // =========================================================================
   const handleSaveCourse = async (actionType) => {
-    if (courseInfo.title.length < 5) {
-      alert("Course title must be at least 5 characters long!");
+    const title = courseInfo.title.trim();
+    const description = courseInfo.description.trim();
+
+    if (!title) {
+      alert("Course title is required.");
+      return;
+    }
+    if (title.length < 5) {
+      alert("Course title must be at least 5 characters long.");
+      return;
+    }
+    if (countWords(title) > MAX_WORDS) {
+      alert(`Course title must not exceed ${MAX_WORDS} words.`);
+      return;
+    }
+    if (hasInvalidFormat(title)) {
+      alert("Course title contains invalid format.");
       return;
     }
     if (!courseInfo.category) {
-      alert("Please select a category!");
+      alert("Please select a category.");
       return;
     }
+    if (!description) {
+      alert("Course description is required.");
+      return;
+    }
+    if (!thumbnailFile) {
+      alert("Course thumbnail is required.");
+      return;
+    }
+    if (uploadedVideos.length === 0) {
+      alert("Please add at least 1 video.");
+      return;
+    }
+    for (const video of uploadedVideos) {
+      const videoTitle = (video.title || "").trim();
+      if (!videoTitle) {
+        alert("Each video must have a title.");
+        return;
+      }
+      if (countWords(videoTitle) > MAX_WORDS) {
+        alert(`Video title "${video.originalName}" exceeds ${MAX_WORDS} words.`);
+        return;
+      }
+      if (hasInvalidFormat(videoTitle)) {
+        alert(`Video title "${video.originalName}" contains invalid format.`);
+        return;
+      }
+    }
     if (actionType === "pending" && uploadedVideos.length === 0) {
-      alert("The course must have at least 1 video to be submitted for approval!");
+      alert("The course must have at least 1 video to be submitted for approval.");
       return;
     }
 
@@ -138,8 +197,8 @@ const InstructorCreateCourse = () => {
       // BƯỚC 1: TẠO KHÓA HỌC
       setUploadProgressText("Creating new course...");
       const coursePayload = {
-        title: courseInfo.title,
-        description: courseInfo.description,
+        title,
+        description,
         category: courseInfo.category,
         image: courseImageUrl,
       };
@@ -239,6 +298,21 @@ const InstructorCreateCourse = () => {
     }
   };
 
+  const handleCancelCreate = () => {
+    const hasUnsavedData =
+      courseInfo.title.trim() ||
+      courseInfo.description.trim() ||
+      courseInfo.category ||
+      thumbnailFile ||
+      uploadedVideos.length > 0;
+
+    if (hasUnsavedData) {
+      const confirmed = window.confirm("Discard current course draft and leave this page?");
+      if (!confirmed) return;
+    }
+    navigate("/instructor/courses");
+  };
+
   // =========================================================================
   // LOGIC DROPDOWN CHUYÊN NGÀNH
   // =========================================================================
@@ -288,6 +362,13 @@ const InstructorCreateCourse = () => {
           </div>
 
           <div className="hidden sm:flex items-center gap-3">
+            <button
+              onClick={handleCancelCreate}
+              disabled={isLoading}
+              className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition duration-300 flex items-center gap-2 disabled:opacity-50"
+            >
+              Cancel
+            </button>
             <button
               onClick={() => handleSaveCourse("draft")}
               disabled={isLoading}
@@ -451,6 +532,9 @@ const InstructorCreateCourse = () => {
         )}
 
         <div className="mt-8 sm:hidden flex flex-col gap-3">
+          <button onClick={handleCancelCreate} disabled={isLoading} className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition duration-300 disabled:opacity-50">
+            Cancel
+          </button>
           <button onClick={() => handleSaveCourse("pending")} disabled={isLoading} className="w-full flex justify-center items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold rounded-xl hover:from-blue-700 hover:to-blue-900 transition duration-300 shadow-md shadow-blue-700/20 active:scale-95 disabled:opacity-50">
             {isLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPaperPlane} />} Submit for Approval
           </button>

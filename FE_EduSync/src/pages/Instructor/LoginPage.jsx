@@ -44,6 +44,8 @@ const InstructorLoginPage = () => {
       // Xử lý thông báo lỗi rõ ràng nếu thất bại
       if (err.response && err.response.status === 401) {
         setError("Incorrect email or password!");
+      } else if (err.response && err.response.status === 403) {
+        setError("This account is not an instructor account.");
       } else if (err.response && err.response.status === 404) {
         setError("This instructor account does not exist on the system!");
       } else {

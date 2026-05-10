@@ -40,8 +40,8 @@ export const createCourseAPI = async (courseData, token) => {
 // Xin link mây (Presigned URL) từ Backend
 export const getPresignedUrlAPI = async (courseId, fileName, contentType, token) => {
   
-  // ĐÃ SỬA CHUẨN 100% THEO POSTMAN: Ép tên file lên thẳng thanh địa chỉ URL
-  // Dùng encodeURIComponent để lỡ tên video của má có dấu cách (space) thì nó không bị lỗi mạng
+  
+  // Dùng encodeURIComponent để lỡ tên video có dấu cách (space) thì nó không bị lỗi mạng
   const safeFileName = encodeURIComponent(fileName);
   const ct = encodeURIComponent(contentType || "video/mp4");
   const urlVideo = `${BASE_URL}/instructor/videos/upload-url?filename=${safeFileName}&content_type=${ct}`;
