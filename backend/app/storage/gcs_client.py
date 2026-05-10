@@ -7,8 +7,14 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        key_path = os.getenv("GCS_KEY_PATH", "C:\\Users\\ADMIN\\Key\\edusync-491910-0a7be5d8fd86.json")
+        key_path = os.getenv("GCS_KEY_PATH", "")
+        
+        if not os.path.isabs(key_path):
+            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+            key_path = os.path.join(backend_dir, key_path)
+
         self.client = None
+        self.credentials = None
         try:
             if os.path.exists(key_path):
                 self.client = storage.Client.from_service_account_json(key_path)
