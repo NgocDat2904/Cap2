@@ -773,6 +773,7 @@ class CourseService:
         # 5. XỬ LÝ NGHIỆP VỤ THEO TỪNG TRẠNG THÁI
         if current_status == "APPROVED":
             data["has_pending_update"] = True
+            data["updated_at"] = datetime.utcnow()
 
         elif current_status == "REJECTED":
             data["status"] = "PENDING"
@@ -793,6 +794,63 @@ class CourseService:
             "message": "Course updated successfully",
             "lessons_updated": result.get("lessons_count", 0),
             "new_lessons_pending_review": new_count,
+        }
+
+    async def recalculate_course_duration(self, course_id: str):
+
+        lessons = list(db.lessons.find({
+            "course_id": ObjectId(course_id)
+        }))
+
+        total_seconds = 0
+
+        for lesson in lessons:
+
+            videos = list(db.videos.find({
+                "lesson_id": lesson["_id"]
+            }))
+
+            lesson_seconds = 0
+
+            for video in videos:
+
+                duration = video.get("duration", "00:00")
+
+                lesson_seconds += self._duration_to_seconds(duration)
+
+            # update lesson duration
+            db.lessons.update_one(
+                {
+                    "_id": lesson["_id"]
+                },
+                {
+                    "$set": {
+                        "duration": self._seconds_to_hhmm(
+                            lesson_seconds
+                        )
+                    }
+                }
+            )
+
+            total_seconds += lesson_seconds
+
+        # update course duration
+        db.courses.update_one(
+            {
+                "_id": ObjectId(course_id)
+            },
+            {
+                "$set": {
+                    "duration": self._seconds_to_hhmm(
+                        total_seconds
+                    ),
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+
+        return {
+            "total_duration": self._seconds_to_hhmm(total_seconds)
         }
     
 
