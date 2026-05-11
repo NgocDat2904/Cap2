@@ -66,11 +66,11 @@ const LearnerLayout = () => {
       icon: faBookOpen,
       path: isLoggedIn ? "/my-courses" : "/login",
     },
-    {
-      name: "Favorites",
-      icon: faHeart,
-      path: isLoggedIn ? "/favorites" : "/login",
-    },
+    // {
+    //   name: "Favorites",
+    //   icon: faHeart,
+    //   path: isLoggedIn ? "/favorites" : "/login",
+    // },
   ];
 
   const handleLogout = async (e) => {

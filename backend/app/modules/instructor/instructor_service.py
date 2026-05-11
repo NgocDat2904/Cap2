@@ -65,10 +65,14 @@ class InstructorService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        data_dict = {
-            k: v for k, v in data.dict(exclude_unset=True).items()
-            if v is not None
-        }
+        # Handle both plain dict (from /update-full-profile) and Pydantic model (from /update-profile)
+        if isinstance(data, dict):
+            data_dict = {k: v for k, v in data.items() if v is not None}
+        else:
+            data_dict = {
+                k: v for k, v in data.dict(exclude_unset=True).items()
+                if v is not None
+            }
 
         user_fields_map = {
             "fullName": "fullName",
