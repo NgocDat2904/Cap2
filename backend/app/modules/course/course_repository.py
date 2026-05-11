@@ -204,66 +204,190 @@ class CourseRepository:
             return []
 
     async def update_with_lessons(self, course_id: str, data: dict, lessons):
+
         try:
             course_obj_id = ObjectId(course_id)
+
         except InvalidId:
-            return {"success": False, "error": "Invalid course_id"}
+            return {
+                "success": False,
+                "error": "Invalid course_id"
+            }
+
+        # =========================
+        # UPDATE COURSE
+        # =========================
 
         clean_data = {
             k: v
             for k, v in (data or {}).items()
             if v is not None
         }
+
         clean_data["updated_at"] = datetime.utcnow()
 
         update_result = self.collection.update_one(
-            {"_id": course_obj_id, "is_deleted": {"$ne": True}},
-            {"$set": clean_data},
+            {
+                "_id": course_obj_id,
+                "is_deleted": {"$ne": True}
+            },
+            {
+                "$set": clean_data
+            }
         )
+
         if update_result.matched_count == 0:
-            return {"success": False, "error": "Course not found"}
+            return {
+                "success": False,
+                "error": "Course not found"
+            }
+
+        # =========================
+        # GET EXISTING LESSONS
+        # =========================
+
+        existing_lessons = list(
+            db.lessons.find({
+                "course_id": course_obj_id
+            })
+        )
+
+        existing_ids = [
+            lesson["_id"]
+            for lesson in existing_lessons
+        ]
+
+        incoming_ids = []
 
         lessons_count = 0
         new_lessons_count = 0
 
+        # =========================
+        # UPDATE / CREATE LESSON
+        # =========================
+
         if isinstance(lessons, list):
+
             for index, lesson in enumerate(lessons):
+
                 if not isinstance(lesson, dict):
                     continue
 
-                lesson_title = (lesson.get("title") or "").strip()
-                if not lesson_title:
+                title = (lesson.get("title") or "").strip()
+
+                if not title:
                     continue
 
                 lesson_update = {
-                    "title": lesson_title,
-                    "description": (lesson.get("description") or "").strip(),
-                    "order_index": lesson.get("order_index", index + 1),
+                    "title": title,
+                    "description": (
+                        lesson.get("description") or ""
+                    ).strip(),
+
+                    "order_index": lesson.get(
+                        "order_index",
+                        index + 1
+                    ),
+
                     "updated_at": datetime.utcnow(),
                 }
 
-                lesson_id = lesson.get("id") or lesson.get("_id")
+                lesson_id = (
+                    lesson.get("id")
+                    or lesson.get("_id")
+                )
+
+                # =====================
+                # UPDATE EXISTING
+                # =====================
+
                 if lesson_id and ObjectId.is_valid(str(lesson_id)):
+
+                    obj_id = ObjectId(str(lesson_id))
+
+                    incoming_ids.append(obj_id)
+
                     lesson_result = db.lessons.update_one(
-                        {"_id": ObjectId(str(lesson_id)), "course_id": course_obj_id},
-                        {"$set": lesson_update},
+                        {
+                            "_id": obj_id,
+                            "course_id": course_obj_id
+                        },
+                        {
+                            "$set": lesson_update
+                        }
                     )
+
                     if lesson_result.matched_count:
                         lessons_count += 1
                         continue
 
-                db.lessons.insert_one(
-                    {
-                        "course_id": course_obj_id,
-                        **lesson_update,
-                        "created_at": datetime.utcnow(),
-                    }
+                # =====================
+                # CREATE NEW LESSON
+                # =====================
+
+                new_result = db.lessons.insert_one({
+                    "course_id": course_obj_id,
+                    **lesson_update,
+                    "created_at": datetime.utcnow()
+                })
+
+                incoming_ids.append(
+                    new_result.inserted_id
                 )
+
                 lessons_count += 1
                 new_lessons_count += 1
+                
+        # =========================
+        # RECALCULATE TOTAL DURATION
+        # =========================
+
+        total_seconds = 0
+
+        videos = list(
+            db.videos.find({
+                "course_id": course_obj_id
+            })
+        )
+
+        for video in videos:
+
+            duration = video.get("duration", "0:00")
+
+            try:
+
+                parts = duration.split(":")
+
+                if len(parts) == 2:
+                    minutes = int(parts[0])
+                    seconds = int(parts[1])
+
+                    total_seconds += (
+                        minutes * 60 + seconds
+                    )
+
+            except:
+                pass
+
+        minutes = total_seconds // 60
+        seconds = total_seconds % 60
+
+        duration_text = f"{minutes}m {seconds}s"
+
+        self.collection.update_one(
+            {
+                "_id": course_obj_id
+            },
+            {
+                "$set": {
+                    "duration": duration_text
+                }
+            }
+        )
 
         return {
             "success": True,
             "lessons_count": lessons_count,
             "new_lessons_count": new_lessons_count,
+            "duration": duration_text
         }
