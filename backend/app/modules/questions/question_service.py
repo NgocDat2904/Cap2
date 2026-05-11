@@ -2,33 +2,53 @@ from datetime import datetime
 from bson import ObjectId
 
 from app.database.mongodb import db
-from app.modules.questions.question_repository import question_repository
+
+from app.modules.questions.question_repository import (
+    question_repository
+)
 
 
 class QuestionService:
 
+    # =====================================
+    # CREATE QUESTION
+    # =====================================
+
     async def create_question(self, data, user_id):
 
         doc = {
+
             "course_id": ObjectId(data.course_id),
+
             "lesson_id": ObjectId(data.lesson_id),
 
             "user_id": ObjectId(user_id),
 
-            "question": data.question,
+            "content": data.content,
 
-            "answer": "",
+            "type": "question",
 
-            "is_answered": False,
+            "parent_id": None,
 
             "created_at": datetime.utcnow()
         }
 
-        return question_repository.create(doc)
+        question_id = question_repository.create(doc)
+
+        return {
+            "message": "Question created",
+            "question_id": question_id
+        }
+
+    # =====================================
+    # GET COURSE QUESTIONS
+    # =====================================
 
     async def get_course_questions(self, course_id):
 
-        questions = question_repository.get_by_course(course_id)
+        questions = question_repository.get_course_questions(
+            course_id
+        )
 
         result = []
 
@@ -38,33 +58,106 @@ class QuestionService:
                 "_id": q["user_id"]
             })
 
+            replies = question_repository.get_replies(
+                str(q["_id"])
+            )
+
+            reply_items = []
+
+            for r in replies:
+
+                reply_user = db.users.find_one({
+                    "_id": r["user_id"]
+                })
+
+                reply_items.append({
+
+                    "id": str(r["_id"]),
+
+                    "content": r["content"],
+
+                    "type": r["type"],
+
+                    "created_at": r.get("created_at"),
+
+                    "user": {
+
+                        "id": str(reply_user["_id"]),
+
+                        "name": reply_user.get("fullName"),
+
+                        "avatar": reply_user.get("avatar_url"),
+
+                        "role": reply_user.get("role")
+                    }
+                })
+
             result.append({
+
                 "id": str(q["_id"]),
 
-                "question": q["question"],
+                "content": q["content"],
 
-                "answer": q.get("answer", ""),
+                "created_at": q.get("created_at"),
 
-                "is_answered": q.get("is_answered", False),
+                "is_answered": len(reply_items) > 0,
 
                 "user": {
-                    "name": user.get("fullName") if user else "Learner"
+
+                    "id": str(user["_id"]),
+
+                    "name": user.get("fullName"),
+
+                    "avatar": user.get("avatar_url"),
+
+                    "role": user.get("role")
                 },
 
-                "created_at": q.get("created_at")
+                "replies": reply_items
             })
 
         return result
 
-    async def answer_question(self, question_id, answer):
+    # =====================================
+    # CREATE REPLY
+    # =====================================
 
-        question_repository.answer_question(
-            question_id,
-            answer
-        )
+    async def create_reply(
+        self,
+        question_id,
+        content,
+        user_id
+    ):
+
+        question = db.questions.find_one({
+            "_id": ObjectId(question_id)
+        })
+
+        if not question:
+            raise Exception("Question not found")
+
+        doc = {
+
+            "course_id": question["course_id"],
+
+            "lesson_id": question["lesson_id"],
+
+            "user_id": ObjectId(user_id),
+
+            "content": content,
+
+            "type": "reply",
+
+            "parent_id": ObjectId(question_id),
+
+            "created_at": datetime.utcnow()
+        }
+
+        reply_id = question_repository.create(doc)
 
         return {
-            "message": "Answered successfully"
+            "message": "Reply created",
+            "reply_id": reply_id
         }
 
 
