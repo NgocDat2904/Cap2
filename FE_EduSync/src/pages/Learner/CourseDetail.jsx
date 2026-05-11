@@ -11,8 +11,10 @@ import {
   faEllipsisVertical,
   faCartShopping,
   faSpinner,
+  faBoltLightning,
+  faGraduationCap // ✅ Icon mới cho trạng thái đã đăng ký
 } from "@fortawesome/free-solid-svg-icons";
-import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
+import { getCourseDetailAPI, enrollFreeCourseAPI } from "../../services/learnerCourseAPI"; 
 
 const formatTimeAgo = (date) => {
   if (!date) return "Recently";
@@ -29,16 +31,20 @@ const formatTimeAgo = (date) => {
   if (interval >= 1) return `${interval} minute ago`;
   return "Just now";
 };
+
 const CourseDetailPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const isLoggedIn = Boolean(localStorage.getItem("access_token"));
-  // Lấy courseId từ URL hiện tại (ví dụ: đang ở trang /courses/123 thì courseId = 123)
   const { courseId } = useParams();
 
   const [courseDetail, setCourseDetail] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
+  
+  // ✅ MỚI: State quản lý xem học viên đã đăng ký khóa này chưa
+  const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,9 +53,12 @@ const CourseDetailPage = () => {
       setError("");
       try {
         const data = await getCourseDetailAPI(courseId);
-        console.log("COURSE DETAIL:", data);
-        console.log("LESSONS:", data.lessons);
-        if (!cancelled) setCourseDetail(data);
+        if (!cancelled) {
+          setCourseDetail(data);
+          // Giả sử Backend trả về cờ is_enrolled (hoặc tương tự) để biết User đã mua chưa
+          // Nếu Backend chưa có cờ này, mặc định là false
+          setIsEnrolled(data.is_enrolled || false);
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load course details");
       } finally {
@@ -66,7 +75,6 @@ const CourseDetailPage = () => {
     if (!courseDetail?.lessons) return [];
 
     return courseDetail.lessons.map((lesson) => {
-      // const video = lesson.videos?.[0] || {};
       return {
         id: lesson.id,
         video_id: lesson.video_id || "",
@@ -80,12 +88,63 @@ const CourseDetailPage = () => {
     });
   }, [courseDetail]);
 
-  // Hàm format tiền tệ VNĐ
   const formatCurrency = (amount) => {
+    if (amount === 0) return "Free";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
+  };
+
+  // =========================================================================
+  // ✅ XỬ LÝ NÚT BẤM CHÍNH (ĐĂNG KÝ / ĐI ĐẾN KHÓA HỌC / MUA HÀNG)
+  // =========================================================================
+  const handlePrimaryAction = async () => {
+    // 1. Chưa đăng nhập -> Đuổi ra trang Login
+    if (!isLoggedIn) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    // 2. Nếu đã đăng ký rồi -> Chuyển thẳng tới bài học đầu tiên
+    if (isEnrolled) {
+      const firstLessonId = lessons.length > 0 ? lessons[0].id : "";
+      if (firstLessonId) {
+        navigate(`/courses/${courseId || "1"}/lessons/${firstLessonId}`);
+      } else {
+        alert("This course has no lessons yet.");
+      }
+      return;
+    }
+
+    // 3. Nếu chưa đăng ký, kiểm tra giá tiền
+    const price = Number(courseDetail.price) || 0;
+
+    if (price === 0) {
+      // 3A. Khóa Free -> Gọi API Enroll
+      try {
+        setIsProcessingAction(true);
+        const token = localStorage.getItem("access_token");
+        
+        // Gọi API xuống Backend
+        await enrollFreeCourseAPI(courseId, token); 
+        
+        // Thành công: Chuyển trạng thái nút thành "Đã đăng ký"
+        setIsEnrolled(true);
+        
+        // Optional: Hiện thông báo cho User biết (Hệ thống đã lưu vào My Courses)
+        alert("Successfully enrolled! You can now find this course in your My Courses page.");
+        
+      } catch (err) {
+        console.error("Enrollment failed:", err);
+        alert(err.response?.data?.message || err.response?.data?.detail || "Failed to enroll. Please try again.");
+      } finally {
+        setIsProcessingAction(false);
+      }
+    } else {
+      // 3B. Khóa Paid -> Chuyển sang Checkout
+      navigate("/checkout", { state: { courseId } });
+    }
   };
 
   if (loading) {
@@ -105,19 +164,18 @@ const CourseDetailPage = () => {
     );
   }
 
+  const isFree = Number(courseDetail.price) === 0;
+
   return (
     <div className="animate-fade-slide-up w-full pb-20 relative">
       {/* ===================================================================== */}
-      {/* 1. HERO SECTION (Nền tối gradient) */}
+      {/* 1. HERO SECTION */}
       {/* ===================================================================== */}
       <section className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2.5rem] p-6 sm:p-10 lg:p-12 relative shadow-2xl overflow-hidden">
-        {/* Decorative Blur Background */}
         <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
         <div className="flex flex-col lg:flex-row relative z-10">
-          {/* Cột trái: Thông tin Khóa học */}
           <div className="w-full lg:w-2/3 lg:pr-12">
-            {/* Nút Back */}
             <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
@@ -125,47 +183,34 @@ const CourseDetailPage = () => {
               <FontAwesomeIcon icon={faArrowLeft} /> Back
             </button>
 
-            {/* Badge Category */}
             <span className="inline-block px-3 py-1 bg-blue-600/20 border border-blue-500/30 text-blue-300 rounded-full text-xs font-bold tracking-wider uppercase mb-5">
               {courseDetail.category}
             </span>
 
-            {/* Tiêu đề */}
             <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white leading-tight mb-3">
               {courseDetail.title}
             </h1>
 
-            {/* ✅ MỚI THÊM: Mô tả khóa học (Description) */}
             <p className="text-white/80 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mb-8">
-              {courseDetail.description ||
-                "No description available for this course."}
+              {courseDetail.description || "No description available for this course."}
             </p>
 
-            {/* MỚI THÊM: Biến Avatar + Tên thành Link bấm được */}
             <Link
               to={`/instructors/${courseDetail.instructor?.id || ""}`}
               className="flex items-center gap-4 mb-10 group w-max cursor-pointer"
             >
               <img
-                src={
-                  courseDetail.instructor?.avatar ||
-                  "https://i.pravatar.cc/150?img=11"
-                }
+                src={courseDetail.instructor?.avatar || "https://i.pravatar.cc/150?img=11"}
                 alt="Instructor"
                 className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover group-hover:border-blue-400 transition-colors shadow-sm"
               />
               <div>
-                <p className="text-slate-300 text-xs font-semibold mb-0.5">
-                  Instructor
-                </p>
+                <p className="text-slate-300 text-xs font-semibold mb-0.5">Instructor</p>
                 <div className="flex items-center gap-1.5">
                   <p className="text-white font-bold group-hover:text-blue-400 transition-colors">
                     {courseDetail.instructor?.name || "EduSync Instructor"}
                   </p>
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    className="text-blue-400 text-xs"
-                  />
+                  <FontAwesomeIcon icon={faCheckCircle} className="text-blue-400 text-xs" />
                 </div>
                 <p className="text-slate-400 text-xs mt-0.5">
                   {courseDetail.instructor?.title || "Instructor"}
@@ -173,42 +218,26 @@ const CourseDetailPage = () => {
               </div>
             </Link>
 
-            {/* Stats (Học viên, Thời gian, Số bài giảng) */}
             <div className="flex flex-wrap items-center gap-6 sm:gap-12">
               <div className="flex flex-col gap-1.5">
-                <FontAwesomeIcon
-                  icon={faUsers}
-                  className="text-slate-400 text-lg"
-                />
+                <FontAwesomeIcon icon={faUsers} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
-                  {courseDetail.students.toLocaleString()}{" "}
-                  <span className="text-slate-400 font-medium text-sm">
-                    Students
-                  </span>
+                  {courseDetail.students?.toLocaleString() || 0}{" "}
+                  <span className="text-slate-400 font-medium text-sm">Students</span>
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <FontAwesomeIcon
-                  icon={faClock}
-                  className="text-slate-400 text-lg"
-                />
+                <FontAwesomeIcon icon={faClock} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
                   {courseDetail.duration}{" "}
-                  <span className="text-slate-400 font-medium text-sm">
-                    Duration
-                  </span>
+                  <span className="text-slate-400 font-medium text-sm">Duration</span>
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
-                <FontAwesomeIcon
-                  icon={faBookOpen}
-                  className="text-slate-400 text-lg"
-                />
+                <FontAwesomeIcon icon={faBookOpen} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
-                  {courseDetail.lessonCount}{" "}
-                  <span className="text-slate-400 font-medium text-sm">
-                    Lessons
-                  </span>
+                  {courseDetail.lessonCount || lessons.length}{" "}
+                  <span className="text-slate-400 font-medium text-sm">Lessons</span>
                 </p>
               </div>
             </div>
@@ -217,29 +246,19 @@ const CourseDetailPage = () => {
       </section>
 
       {/* ===================================================================== */}
-      {/* 2. FLOATING PRICING CARD (Thẻ nổi chứa video và giá) */}
-      {/* Trên PC: Nó nằm nổi lên góc phải màn hình. Trên Mobile: Nó rớt xuống dưới. */}
+      {/* 2. FLOATING PRICING CARD */}
       {/* ===================================================================== */}
       <div className="lg:absolute lg:top-12 lg:right-12 z-20 w-full lg:w-[340px] xl:w-[380px] mt-8 lg:mt-0 px-4 lg:px-0 h-fit">
-        {/* Đã giảm p-6 thành p-5 và giảm bo góc xuống 28px cho cân đối với chiều cao mới */}
         <div className="bg-white rounded-[28px] p-5 shadow-2xl shadow-black/40 border border-slate-100 flex flex-col h-fit">
-          {/* Ảnh Preview: Giảm mb-6 xuống mb-4 */}
           <div className="relative aspect-video rounded-xl overflow-hidden mb-4 group cursor-pointer border border-slate-100">
             <img
-              src={
-                courseDetail.thumbnail ||
-                "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"
-              }
+              src={courseDetail.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"}
               alt="Preview"
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
             />
             <div className="absolute inset-0 bg-slate-900/30 flex items-center justify-center">
-              {/* Nút Play: Giảm từ w-16 xuống w-14 */}
               <div className="w-14 h-14 bg-white/95 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 shadow-xl transform group-hover:scale-110 transition-transform">
-                <FontAwesomeIcon
-                  icon={faPlayCircle}
-                  className="text-3xl ml-1"
-                />
+                <FontAwesomeIcon icon={faPlayCircle} className="text-3xl ml-1" />
               </div>
             </div>
             <span className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-md">
@@ -247,38 +266,58 @@ const CourseDetailPage = () => {
             </span>
           </div>
 
-          {/* Giá tiền: Giảm mb-6 xuống mb-4, chữ từ 32px xuống 30px (text-3xl) */}
           <div className="flex items-end gap-3 mb-4">
-            <span className="text-3xl font-black text-slate-900 tracking-tight leading-none">
+            <span className={`text-3xl font-black tracking-tight leading-none ${isFree ? 'text-emerald-600 uppercase tracking-wider text-2xl' : 'text-slate-900'}`}>
               {formatCurrency(courseDetail.price)}
             </span>
+            {isFree && <span className="text-sm font-bold text-slate-400 line-through pb-0.5">$99.99</span>}
           </div>
 
-          {/* Nút Mua ngay: khách → đăng nhập */}
+          {/* ======================================================= */}
+          {/* NÚT BẤM (ĐÃ CHỈNH SỬA LOGIC TRẠNG THÁI) */}
+          {/* ======================================================= */}
           <button
             type="button"
-            onClick={() =>
-              isLoggedIn
-                ? navigate("/checkout", {
-                    state: { courseId },
-                  })
-                : navigate("/login", { state: { from: location.pathname } })
-            }
-            className="w-full py-3.5 bg-[#1dbf54] hover:bg-[#19a347] text-white font-extrabold rounded-xl transition-colors shadow-lg shadow-[#1dbf54]/30 flex items-center justify-center gap-2 text-lg active:scale-95"
+            onClick={handlePrimaryAction}
+            disabled={isProcessingAction}
+            className={`w-full py-3.5 text-white font-extrabold rounded-xl transition-all flex items-center justify-center gap-2 text-base active:scale-95 disabled:opacity-70 disabled:cursor-wait shadow-lg
+              ${isEnrolled 
+                ? "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-600/30" // Màu riêng cho nút Đã Đăng ký
+                : isFree 
+                  ? "bg-blue-600 hover:bg-blue-700 shadow-blue-600/30" 
+                  : "bg-[#1dbf54] hover:bg-[#19a347] shadow-[#1dbf54]/30"
+              }`}
           >
-            <FontAwesomeIcon icon={faCartShopping} />{" "}
-            {isLoggedIn ? "Buy Now" : "Sign in to purchase"}
+            {isProcessingAction ? (
+              <FontAwesomeIcon icon={faSpinner} spin />
+            ) : isEnrolled ? (
+              <FontAwesomeIcon icon={faGraduationCap} /> // Icon mũ tốt nghiệp khi đã đăng ký
+            ) : isFree ? (
+              <FontAwesomeIcon icon={faBoltLightning} />
+            ) : (
+              <FontAwesomeIcon icon={faCartShopping} />
+            )}
+            
+            {isProcessingAction 
+              ? "Processing..." 
+              : !isLoggedIn 
+                ? "Sign in to enroll" 
+                : isEnrolled
+                  ? "Go to Course" // Đã đăng ký thì hiện chữ này
+                  : isFree 
+                    ? "Enroll Now" 
+                    : "Proceed to Checkout"
+            }
           </button>
 
-          {/* Text hoàn tiền: Giảm mt-4 xuống mt-3, text-xs */}
           <p className="text-center text-xs text-slate-500 mt-3 font-medium">
-            30-day money-back guarantee
+            {isEnrolled ? "You are enrolled in this course" : isFree ? "Full lifetime access" : "30-day money-back guarantee"}
           </p>
         </div>
       </div>
 
       {/* ===================================================================== */}
-      {/* 3. COURSE CONTENT LIST (Danh sách bài giảng) */}
+      {/* 3. COURSE CONTENT LIST */}
       {/* ===================================================================== */}
       <section className="mt-12 lg:mt-16 lg:w-2/3 px-4 lg:px-0">
         <div className="flex items-center justify-between mb-6">
@@ -290,41 +329,29 @@ const CourseDetailPage = () => {
           </span>
         </div>
 
-        {/* Danh sách List View */}
         <div className="space-y-4">
           {lessons.map((lesson, index) => (
-            // THAY ĐỔI Ở ĐÂY: Dùng thẻ <Link> thay vì <div>
-            // Đường dẫn đến trang Học bài: /courses/:courseId/lessons/:lessonId
-            // Lưu ý: Nếu URL hiện tại chưa có courseId thật, tạm thời dùng số 1 để test.
             <Link
               key={lesson.id}
-              to={
-                isLoggedIn
-                  ? `/courses/${courseId || "1"}/lessons/${lesson.id}`
-                  : "/login"
-              }
+              to={isLoggedIn ? `/courses/${courseId || "1"}/lessons/${lesson.id}` : "/login"}
               state={!isLoggedIn ? { from: location.pathname } : undefined}
               className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer block"
             >
-              {/* Thumbnail Bài giảng (Nhỏ gọn) */}
               <div className="relative w-full sm:w-40 aspect-video rounded-xl overflow-hidden shrink-0 bg-slate-200">
                 <img
                   src={lesson.image}
                   alt={lesson.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => { e.target.src = "https://via.placeholder.com/150" }}
                 />
                 <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors flex items-center justify-center">
-                  <FontAwesomeIcon
-                    icon={faPlayCircle}
-                    className="text-white text-2xl opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all"
-                  />
+                  <FontAwesomeIcon icon={faPlayCircle} className="text-white text-2xl opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
                 </div>
                 <span className="absolute bottom-1.5 right-1.5 bg-slate-900/80 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">
                   {lesson.duration}
                 </span>
               </div>
 
-              {/* Thông tin Bài giảng */}
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">
                   Lesson {index + 1}
@@ -339,12 +366,9 @@ const CourseDetailPage = () => {
                 </div>
               </div>
 
-              {/* 3 chấm (Menu option) */}
-              {/* Thêm e.preventDefault() để khi click nút này không bị ăn theo sự kiện chuyển trang của thẻ <Link> bao ngoài */}
               <button
                 onClick={(e) => {
                   e.preventDefault();
-                  // Xử lý logic mở menu 3 chấm ở đây (nếu có)
                 }}
                 className="text-slate-400 hover:text-slate-700 px-3 py-2 shrink-0 self-start sm:self-center"
               >
