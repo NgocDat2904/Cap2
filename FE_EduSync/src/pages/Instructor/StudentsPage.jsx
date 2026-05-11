@@ -278,7 +278,7 @@ const InstructorStudentsPage = () => {
           </div>
         </div>
 
-        {/* 🚨 BẢNG DỮ LIỆU (Cuộn tự do ở giữa) */}
+        {/* BẢNG DỮ LIỆU (Cuộn tự do ở giữa) */}
         <div className="overflow-y-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
@@ -449,7 +449,7 @@ const InstructorStudentsPage = () => {
           </table>
         </div>
 
-        {/* 🚨 PHÂN TRANG (Nằm cố định ở đáy bảng) */}
+        {/* PHÂN TRANG (Nằm cố định ở đáy bảng) */}
         <div className="sticky bottom-0 z-20 p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-sm shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
           <p className="text-slate-500 font-medium">
             Hiển thị{" "}

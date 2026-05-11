@@ -151,8 +151,6 @@ const CourseLearningWorkspace = () => {
 
     const current = videoRef.current.currentTime;
 
-    // console.log("CURRENT:", current);
-
     // xem 10s => +1 view
 
     if (current >= 10 && !countedRef.current) {
@@ -342,7 +340,7 @@ const CourseLearningWorkspace = () => {
                 <CourseQuiz
                   lessonContext={lessonContext}
                   videoId={activeVideoId}
-                  onSwitchToDiscussion={() => setActiveLeftTab("discussion")}
+                  onSwitchToDiscussion={() => setActiveLeftTab("q&a")}
                 />
               )}
               {activeLeftTab === "chatbot" && (
@@ -351,7 +349,9 @@ const CourseLearningWorkspace = () => {
                   videoId={activeVideoId}
                 />
               )}
-              {(activeLeftTab === "discussion" ||
+              {/* ✅ ĐÃ SỬA: Cập nhật điều kiện hiển thị Tab Q&A ở đây */}
+              {(activeLeftTab === "q&a" ||
+                activeLeftTab === "discussion" ||
                 activeLeftTab === "review") && <CourseDiscussion />}
             </div>
           </div>
