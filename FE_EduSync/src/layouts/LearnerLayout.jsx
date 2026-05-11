@@ -170,9 +170,9 @@ const LearnerLayout = () => {
                       />
                     )}
 
-                    <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white">
+                    {/* <span className="absolute top-0 right-0 block h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white">
                       <span className="absolute inline-flex w-full h-full rounded-full bg-red-400 opacity-75 animate-ping"></span>
-                    </span>
+                    </span> */}
                   </button>
 
                   {isDropdownOpen && (
