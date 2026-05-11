@@ -3,6 +3,9 @@ from app.modules.user.user_service import user_service
 from app.middleware.auth_middleware import get_current_user
 from app.utils.cloudinary import upload_image
 from app.modules.user.user_schema import UserUpdate
+from app.modules.user.user_schema import (
+    CreateUserRequest
+)
 
 router = APIRouter(prefix="/user", tags=["User"])
 
@@ -58,6 +61,27 @@ def get_all_users_api(
         raise HTTPException(status_code=403, detail="Access denied")
 
     return user_service.get_all_users(q, role, status, page, limit)
+
+@router.post("/admin/users")
+def create_user_api(
+
+    data: CreateUserRequest,
+
+    current_user=Depends(
+        get_current_user
+    )
+):
+
+    if current_user.get("role") != "admin":
+
+        raise HTTPException(
+
+            status_code=403,
+
+            detail="Access denied"
+        )
+
+    return user_service.create_user(data)
 
 
 @router.put("/admin/users/{user_id}/toggle-block")

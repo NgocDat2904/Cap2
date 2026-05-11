@@ -24,3 +24,13 @@ class UserUpdate(BaseModel):
     dob: Optional[str] = None
     gender: Optional[str] = None
     address: Optional[str] = None
+
+class CreateUserRequest(BaseModel):
+
+    fullName: str
+
+    email: EmailStr
+
+    password: str
+
+    role: str
