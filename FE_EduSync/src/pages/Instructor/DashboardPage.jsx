@@ -168,11 +168,10 @@ const InstructorDashboardPage = () => {
   const chartDataApi = data.student_chart || [];
   const chartLabelsYear = chartDataApi.map((item) => monthMap[item.month - 1] || item.month);
   const chartValuesYear = chartDataApi.map((item) => item.students);
-  const maxVal = Math.max(...chartValuesYear, 500);
-  const maxChartValue = Math.ceil(maxVal / 100) * 100;
-  const chartStep = maxChartValue / 5;
+  const maxChartValue = 100; 
+  const chartStep = 20; // Chia làm 5 khoảng (0, 20, 40, 60, 80, 100)
 
-  const yAxisLabelsYear = [];
+ const yAxisLabelsYear = [];
   for (let i = 0; i <= maxChartValue; i += chartStep) {
     yAxisLabelsYear.push(i.toString());
   }
