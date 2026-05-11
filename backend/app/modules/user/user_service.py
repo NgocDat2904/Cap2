@@ -7,6 +7,9 @@ from fastapi import HTTPException
 from datetime import datetime
 from app.database.mongodb import db 
 from app.utils.password import hash_password, verify_password
+import bcrypt
+
+
 
 
 
@@ -190,6 +193,98 @@ class UserService:
         return {
             "message": "User blocked" if new_status else "User unblocked",
             "is_blocked": new_status
+        }
+
+    def create_user(
+        self,
+        data
+    ):
+
+        # =========================
+        # CHECK EMAIL
+        # =========================
+
+        existing = db.users.find_one({
+
+            "email": data.email
+
+        })
+
+        if existing:
+
+            raise HTTPException(
+
+                status_code=400,
+
+                detail="Email already exists"
+            )
+
+        # =========================
+        # HASH PASSWORD
+        # =========================
+
+        hashed_password = bcrypt.hashpw(
+
+            data.password.encode("utf-8"),
+
+            bcrypt.gensalt()
+
+        ).decode("utf-8")
+
+        # =========================
+        # USER DATA
+        # =========================
+
+        user = {
+
+            "fullName": data.fullName,
+
+            "email": data.email,
+
+            "password": hashed_password,
+
+            "role": data.role,
+
+            "is_blocked": False,
+
+            "must_change_password": True,
+
+            "avatar_url": "",
+
+            "created_at": datetime.utcnow()
+        }
+
+        # =========================
+        # INSERT USER
+        # =========================
+
+        result = db.users.insert_one(user)
+
+        # =========================
+        # AUTO CREATE
+        # INSTRUCTOR PROFILE
+        # =========================
+
+        if data.role == "instructor":
+
+            db.instructor_profiles.insert_one({
+
+                "user_id": result.inserted_id,
+
+                "bio": "",
+
+                "created_at": datetime.utcnow()
+            })
+
+        # =========================
+        # RESPONSE
+        # =========================
+
+        return {
+
+            "message": "User created successfully",
+
+            "user_id": str(result.inserted_id)
         }
 
 
