@@ -1,3 +1,6 @@
+from re import search
+from urllib import response
+
 from fastapi import HTTPException
 from bson import ObjectId
 from app.database.mongodb import db
@@ -129,104 +132,448 @@ class InstructorService:
     # =========================
     # 📊 GET STUDENTS (FINAL)
     # =========================
-    async def get_students(self, instructor_id: str, search=None, course_id=None):
-        result = []
+    # =========================
+# 📊 GET STUDENTS (FINAL)
+# =========================
+    def format_last_active(self, dt):
 
+        if not dt:
+            return "Never"
+
+        now = datetime.utcnow()
+
+        diff = now - dt
+
+        seconds = diff.total_seconds()
+
+        # ====================================
+        # MINUTES
+        # ====================================
+
+        minutes = int(seconds // 60)
+
+        if minutes < 60:
+            return f"{minutes} phút trước"
+
+        # ====================================
+        # HOURS
+        # ====================================
+
+        hours = int(minutes // 60)
+
+        if hours < 24:
+            return f"{hours} giờ trước"
+
+        # ====================================
+        # DAYS
+        # ====================================
+
+        days = int(hours // 24)
+
+        if days < 30:
+            return f"{days} ngày trước"
+
+        # ====================================
+        # MONTHS
+        # ====================================
+
+        months = int(days // 30)
+
+        if months < 12:
+            return f"{months} tháng trước"
+
+        # ====================================
+        # YEARS
+        # ====================================
+
+        years = int(months // 12)
+
+        return f"{years} năm trước"
+
+
+    def get_students(
+        self,
+        instructor_id: str,
+        search: str = None,
+        course_id: str = None
+    ):
+
+        from bson import ObjectId
+        from datetime import datetime, timedelta
+
+        # =========================================
+        # 1. QUERY COURSES
+        # =========================================
+
+        course_filter = {
+            "instructor_id": ObjectId(instructor_id),
+            "status": "APPROVED"
+        }
+
+        print("INSTRUCTOR ID:", instructor_id)
+
+        # filter theo course nếu có
         if course_id:
-            course = await self.course_repo.get_by_id(course_id)
-            courses = [course] if course else []
-        else:
-            courses = await self.course_repo.find_by_instructor(instructor_id)
+            course_filter["_id"] = ObjectId(course_id)
 
-        total_students = 0
-        active_students = 0
-        total_progress = 0
+        courses = list(
+            db.courses.find(course_filter)
+        )
 
-        for course in courses:
-            if not course:
+        print("COURSES:", courses)
+
+        # =========================================
+        # NO COURSES
+        # =========================================
+
+        if not courses:
+
+            return {
+                "stats": {
+                    "total_students": 0,
+                    "active_learners": 0,
+                    "avg_completion_rate": 0
+                },
+                "students": []
+            }
+
+        # =========================================
+        # 2. COURSE IDS
+        # =========================================
+
+        course_ids = [
+            course["_id"]
+            for course in courses
+        ]
+
+        print("COURSE IDS:", course_ids)
+
+        # =========================================
+        # 3. QUERY ENROLLMENTS
+        # =========================================
+
+        enrollments = list(
+            db.enrollments.find({
+                "course_id": {
+                    "$in": course_ids
+                }
+            })
+        )
+
+        print("ENROLLMENTS:", enrollments)
+
+        # =========================================
+        # NO ENROLLMENTS
+        # =========================================
+
+        if not enrollments:
+
+            return {
+                "stats": {
+                    "total_students": 0,
+                    "active_learners": 0,
+                    "avg_completion_rate": 0
+                },
+                "students": []
+            }
+
+        # =========================================
+        # 4. LEARNER IDS
+        # =========================================
+
+        learner_ids = list(set([
+
+            enrollment["learner_id"]
+
+            for enrollment in enrollments
+        ]))
+
+        print("LEARNER IDS:", learner_ids)
+
+        # =========================================
+        # 5. USER FILTER
+        # =========================================
+
+        user_filter = {
+            "_id": {
+                "$in": learner_ids
+            }
+        }
+
+        # =========================================
+        # SEARCH
+        # =========================================
+
+        if search:
+
+            user_filter["$or"] = [
+
+                {
+                    "fullName": {
+                        "$regex": search,
+                        "$options": "i"
+                    }
+                },
+
+                {
+                    "email": {
+                        "$regex": search,
+                        "$options": "i"
+                    }
+                }
+            ]
+
+        students = list(
+            db.users.find(user_filter)
+        )
+
+        print("STUDENTS:", students)
+
+        # =========================================
+        # 6. BUILD RESPONSE
+        # =========================================
+
+        response = []
+
+        for enrollment in enrollments:
+
+            # ====================================
+            # FIND STUDENT
+            # ====================================
+
+            student = next(
+                (
+                    s for s in students
+                    if s["_id"] == enrollment["learner_id"]
+                ),
+                None
+            )
+
+            if not student:
                 continue
 
-        # 🔥 FIX ObjectId an toàn
-            c_id = course.get("id") or course.get("_id")
+            # ====================================
+            # FIND COURSE
+            # ====================================
 
-            if not c_id or not ObjectId.is_valid(str(c_id)):
-                continue
+            course = next(
+                (
+                    c for c in courses
+                    if c["_id"] == enrollment["course_id"]
+                ),
+                None
+            )
 
-            c_id = ObjectId(c_id)
+            # ====================================
+            # CALCULATE PROGRESS
+            # ====================================
 
-            enrollments = list(db.enrollments.find({
-                "course_id": c_id
-        }))
+            progress = self.calculate_course_progress(
 
-        for enroll in enrollments:
-            user_id = enroll.get("learner_id")
-            if not user_id:
-                continue
+                learner_id=enrollment["learner_id"],
 
-            user = get_user_by_id(str(user_id))
-            if not user:
-                continue
+                course_id=enrollment["course_id"]
+            )
 
-            # 🔍 SEARCH SAFE
-            if search:
-                keyword = search.lower()
-                name = (user.get("fullName") or "").lower()
-                email = (user.get("email") or "").lower()
+            # ====================================
+            # LESSON SUMMARY
+            # ====================================
 
-                if keyword not in name and keyword not in email:
-                    continue
-
-            progress = int(enroll.get("progress_percent", 0))
-
-            # 🔥 LAST ACTIVITY SAFE
-            last_time = enroll.get("last_accessed_at")
-
-            if last_time and isinstance(last_time, datetime):
-                diff = datetime.utcnow() - last_time
-                hours = int(diff.total_seconds() // 3600)
-
-                if hours < 1:
-                    last_activity = "Vừa xong"
-                elif hours < 24:
-                    last_activity = f"{hours} giờ trước"
-                else:
-                    last_activity = f"{hours // 24} ngày trước"
-
-                enrolled_at = last_time.strftime("%d/%m/%Y")
-            else:
-                last_activity = "Chưa học"
-                enrolled_at = ""
-
-            total_students += 1
-            total_progress += progress
-
-            if progress > 0:
-                active_students += 1
-
-            result.append({
-                "studentName": user.get("fullName") or "",
-                "email": user.get("email") or "",
-                "avatar": user.get("avatar_url") or "",   # 🔥 FIX null
-                "courseName": course.get("title") or "",
-                "progress": progress,
-                "progressLabel": f"{progress}%",
-                "enrolledAt": enrolled_at,
-                "lastActivity": last_activity
+            total_lessons = db.lessons.count_documents({
+                "course_id": enrollment["course_id"]
             })
 
-        avg_progress = int(total_progress / total_students) if total_students else 0
+            completed_lessons = db.lesson_progress.count_documents({
+
+                "learner_id": enrollment["learner_id"],
+
+                "is_completed": True,
+
+                "lesson_id": {
+                    "$exists": True
+                }
+            })
+
+            # ====================================
+            # RESPONSE ITEM
+            # ====================================
+
+            response.append({
+
+                "student_id": str(student["_id"]),
+
+                "name": student.get("fullName"),
+
+                "email": student.get("email"),
+
+                "avatar": student.get("avatar_url"),
+
+                "course_id": str(
+                    enrollment["course_id"]
+                ),
+
+                "course_name": (
+                    course.get("title")
+                    if course else ""
+                ),
+
+                "progress": progress,
+
+                "progress_summary": {
+
+                    "completed_lessons": completed_lessons,
+
+                    "total_lessons": total_lessons
+                },
+
+                "enrolled_at": (
+                    enrollment.get("created_at").strftime("%d/%m/%Y")
+                    if enrollment.get("created_at")
+                    else None
+                ),
+
+                "last_active": self.format_last_active(
+                    enrollment.get("last_accessed_at")
+                ),
+
+                "actions": {
+
+                    "can_view_progress": True,
+
+                    "can_send_reminder": True,
+
+                    "can_revoke_access": True
+                }
+            })
+
+        # =========================================
+        # 7. TOTAL STUDENTS
+        # =========================================
+
+        unique_students = set([
+
+            str(e["learner_id"])
+
+            for e in enrollments
+        ])
+
+        total_students = len(unique_students)
+
+        # =========================================
+        # 8. ACTIVE LEARNERS
+        # =========================================
+
+        one_month_ago = (
+            datetime.utcnow() - timedelta(days=30)
+        )
+
+        active_students = set([
+
+            str(e["learner_id"])
+
+            for e in enrollments
+
+            if e.get("last_accessed_at")
+            and e["last_accessed_at"] >= one_month_ago
+        ])
+
+        active_learners = len(active_students)
+
+        # =========================================
+        # 9. AVG COMPLETION RATE
+        # =========================================
+
+        total_progress = sum([
+
+            student["progress"]
+
+            for student in response
+        ])
+
+        avg_completion_rate = 0
+
+        if response:
+
+            avg_completion_rate = int(
+                total_progress / len(response)
+            )
+
+        # =========================================
+        # 10. FINAL RESPONSE
+        # =========================================
 
         return {
-        "stats": {
-            "totalStudents": total_students,
-            "activeStudents": active_students,
-            "avgProgress": avg_progress
-        },
-        "students": result
-    }
+
+            "stats": {
+
+                "total_students": total_students,
+
+                "active_learners": active_learners,
+
+                "avg_completion_rate": avg_completion_rate
+            },
+
+            "students": response
+        }
+    def calculate_course_progress(
+        self,
+        learner_id,
+        course_id
+    ):
+
+        # ====================================
+        # TOTAL LESSONS
+        # ====================================
+
+        total_lessons = db.lessons.count_documents({
+            "course_id": course_id
+        })
+
+        if total_lessons == 0:
+            return 0
+
+        # ====================================
+        # GET LESSON IDS
+        # ====================================
+
+        lessons = list(
+            db.lessons.find({
+                "course_id": course_id
+            })
+        )
+
+        lesson_ids = [
+            lesson["_id"]
+            for lesson in lessons
+        ]
+
+        # ====================================
+        # COMPLETED LESSONS
+        # ====================================
+
+        completed_lessons = db.lesson_progress.count_documents({
+
+            "learner_id": learner_id,
+
+            "lesson_id": {
+                "$in": lesson_ids
+            },
+
+            "is_completed": True
+        })
+
+        # ====================================
+        # FORMULA
+        # ====================================
+
+        progress = int(
+            (completed_lessons / total_lessons) * 100
+        )
+
+        return progress
     
 
-    async def get_top_courses(self, instructor_id: str):
+    def get_top_courses(self, instructor_id: str):
 
         pipeline = [
         {
@@ -270,7 +617,9 @@ class InstructorService:
         }
     ]
 
-        courses = await db.courses.aggregate(pipeline).to_list(length=5)
+        courses = list(
+            db.courses.aggregate(pipeline)
+        )
 
         return {
         "items": [
@@ -284,6 +633,72 @@ class InstructorService:
             for c in courses
         ]
     }
+
+    def calculate_average_completion_rate(
+        self,
+        instructor_id
+    ):
+
+        # ====================================
+        # 1. LẤY COURSES
+        # ====================================
+
+        courses = list(
+            db.courses.find({
+                "instructor_id": ObjectId(instructor_id),
+                "status": "APPROVED"
+            })
+        )
+
+        if not courses:
+            return 0
+
+        course_ids = [
+            course["_id"]
+            for course in courses
+        ]
+
+        # ====================================
+        # 2. LẤY ENROLLMENTS
+        # ====================================
+
+        enrollments = list(
+            db.enrollments.find({
+                "course_id": {
+                    "$in": course_ids
+                }
+            })
+        )
+
+        if not enrollments:
+            return 0
+
+        # ====================================
+        # 3. TÍNH TOTAL PROGRESS
+        # ====================================
+
+        total_progress = 0
+
+        for enrollment in enrollments:
+
+            progress = self.calculate_course_progress(
+
+                learner_id=enrollment["learner_id"],
+
+                course_id=enrollment["course_id"]
+            )
+
+            total_progress += progress
+
+        # ====================================
+        # 4. AVG FORMULA
+        # ====================================
+
+        average_progress = int(
+            total_progress / len(enrollments)
+        )
+
+        return average_progress
     
 
 

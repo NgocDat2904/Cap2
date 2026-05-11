@@ -123,7 +123,7 @@ async def get_students(
     if current_user.get("role") != "instructor":
         raise HTTPException(status_code=403, detail="Access denied")
 
-    return await instructor_service.get_students(
+    return  instructor_service.get_students(
         instructor_id=current_user["id"],
         search=search,
         course_id=course_id
