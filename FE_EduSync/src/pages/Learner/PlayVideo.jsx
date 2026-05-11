@@ -349,6 +349,13 @@ const CourseLearningWorkspace = () => {
                   videoId={activeVideoId}
                 />
               )}
+
+              {activeLeftTab === "Q&A" && (
+                <CourseDiscussion
+                  lessonContext={lessonContext}
+                  videoId={activeVideoId}
+                />
+              )}
               {/* ✅ ĐÃ SỬA: Cập nhật điều kiện hiển thị Tab Q&A ở đây */}
               {(activeLeftTab === "q&a" ||
                 activeLeftTab === "discussion" ||
