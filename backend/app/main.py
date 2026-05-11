@@ -10,6 +10,9 @@ from app.modules.course_content.content_controller import router as content_rout
 from app.modules.ai.ai_controller import router as ai_router
 from app.modules.learning.learning_controller import router as learning_router
 from app.modules.dashboard.dashboard_controller import router as dashboard_router
+from app.modules.payment.payment_controller import (
+    router as payment_router
+)
 
 
 # =========================
@@ -55,6 +58,7 @@ app.include_router(content_router, prefix="")
 app.include_router(ai_router, prefix="")
 app.include_router(learning_router, prefix="")
 app.include_router(dashboard_router)
+app.include_router(payment_router)
 
 
 # =========================
