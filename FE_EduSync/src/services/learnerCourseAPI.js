@@ -69,3 +69,10 @@ export async function getMyCoursesAPI() {
     throw new Error(await parseError(error, "Failed to load your courses."));
   }
 }
+
+
+export async function enrollFreeCourseAPI(courseId) {
+  const token = localStorage.getItem("access_token");
+  const res = await axios.post(`${BASE_URL}/courses/enroll`, { course_id: courseId }, { headers: { Authorization: `Bearer ${token}` } });
+return res.data;
+}

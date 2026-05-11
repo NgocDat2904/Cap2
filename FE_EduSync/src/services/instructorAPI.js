@@ -18,7 +18,7 @@ export const updateInstructorProfileAPI = async (data, token) => {
   const response = await axios.post(`${API_URL}/update-full-profile`, data, {
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "multipart/form-data",
+      // "Content-Type": "multipart/form-data",
     },
   });
   return response.data;
