@@ -178,89 +178,316 @@ class CourseService:
             "limit": limit,
         }
 
-    async def get_instructor_course_detail(self, course_id: str, instructor_id: str):
+    async def get_instructor_course_detail(
+        self,
+        course_id: str,
+        instructor_id: str
+    ):
+
         try:
+
             print("👉 course_id:", course_id)
 
-        # ✅ FIX ObjectId crash
+            # ====================================
+            # FIX OBJECT ID
+            # ====================================
+
             try:
+
                 course_obj_id = ObjectId(course_id)
+
             except InvalidId:
+
                 raise Exception("Invalid course_id")
 
-        # 1. Lấy course
-            course = await course_repository.get_by_id(course_id)
+            # ====================================
+            # GET COURSE
+            # ====================================
+
+            course = await course_repository.get_by_id(
+                course_id
+            )
 
             print("👉 course:", course)
 
             if not course:
                 return None
 
-            if str(course.get("instructor_id")) != instructor_id:
-                raise Exception("Permission denied")
+            # ====================================
+            # PERMISSION CHECK
+            # ====================================
 
-        # 2. Instructor
+            if str(course.get(
+                "instructor_id"
+            )) != instructor_id:
+
+                raise Exception(
+                    "Permission denied"
+                )
+
+            # ====================================
+            # GET INSTRUCTOR
+            # ====================================
+
             instructor = db.users.find_one({
+
                 "_id": ObjectId(instructor_id)
-        })
 
-            instructor_name = instructor.get("fullName", "Unknown") if instructor else "Unknown"
-            avatar = instructor.get("avatar_url", "") if instructor else ""
-
-        # 3. Students
-            students = db.enrollments.count_documents({
-                "course_id": course_obj_id
-        })
-
-        # 4. Lessons
-            lessons_db = list(db.lessons.find({
-                "course_id": course_obj_id
-            }).sort("order_index", 1))
-
-            print("👉 lessons:", lessons_db)
-            lessons_list = []
-            total_seconds = 0
-            for lesson in lessons_db:
-                lesson_id = lesson.get("_id")
-                videos = video_repository.get_by_lesson(lesson_id)
-                video = videos[0] if videos else {}
-                duration = video.get("duration", "00:00")
-                total_seconds += self._duration_to_seconds(duration)
-                lessons_list.append({
-                    "id": str(lesson.get("_id", "")),  # ✅ SAFE
-                    "title": lesson.get("title", ""),
-                    "description": lesson.get("description", ""),
-                    "duration": duration,
-                    "thumbnail_url": video.get("thumbnail_url", ""),
-                    "views": video.get("views", 0),
-                    "completion": "0%",
-                    "is_published": lesson.get("is_published", True),
-                    "isPublished": lesson.get("is_published", True),
-                    "is_approved": lesson.get("is_approved", True),
             })
 
-        # 5. Return
+            instructor_name = (
+                instructor.get(
+                    "fullName",
+                    "Unknown"
+                )
+                if instructor
+                else "Unknown"
+            )
+
+            avatar = (
+                instructor.get(
+                    "avatar_url",
+                    ""
+                )
+                if instructor
+                else ""
+            )
+
+            # ====================================
+            # TOTAL STUDENTS
+            # ====================================
+
+            students = db.enrollments.count_documents({
+
+                "course_id": course_obj_id
+
+            })
+
+            # ====================================
+            # GET LESSONS
+            # ====================================
+
+            lessons_db = list(
+
+                db.lessons.find({
+
+                    "course_id": course_obj_id
+
+                }).sort("order_index", 1)
+            )
+
+            print("👉 lessons:", lessons_db)
+
+            lessons_list = []
+
+            total_seconds = 0
+
+            # ====================================
+            # LOOP LESSONS
+            # ====================================
+
+            for lesson in lessons_db:
+
+                lesson_id = lesson.get("_id")
+
+                # ====================================
+                # GET VIDEOS
+                # ====================================
+
+                videos = list(
+
+                    db.videos.find({
+
+                        "lesson_id": lesson_id
+
+                    }).sort("order_index", 1)
+                )
+
+                # ====================================
+                # VIDEO ITEMS
+                # ====================================
+
+                video_items = []
+
+                lesson_duration_seconds = 0
+
+                for video in videos:
+
+                    duration = video.get(
+                        "duration",
+                        "00:00"
+                    )
+
+                    lesson_duration_seconds += (
+                        self._duration_to_seconds(
+                            duration
+                        )
+                    )
+
+                    video_items.append({
+
+                        "id": str(video.get("_id")),
+
+                        "title": video.get(
+                            "title",
+                            ""
+                        ),
+
+                        "description": video.get(
+                            "description",
+                            ""
+                        ),
+
+                        "video_url": video.get(
+                            "video_url",
+                            ""
+                        ),
+
+                        "thumbnail_url": video.get(
+                            "thumbnail_url",
+                            ""
+                        ),
+
+                        "duration": duration,
+
+                        "views": video.get(
+                            "views",
+                            0
+                        ),
+
+                        "order_index": video.get(
+                            "order_index",
+                            0
+                        ),
+
+                        "is_preview": video.get(
+                            "is_preview",
+                            False
+                        )
+                    })
+
+                # ====================================
+                # TOTAL COURSE DURATION
+                # ====================================
+
+                total_seconds += lesson_duration_seconds
+
+                # ====================================
+                # LESSON ITEM
+                # ====================================
+
+                lessons_list.append({
+
+                    "id": str(
+                        lesson.get("_id", "")
+                    ),
+
+                    "title": lesson.get(
+                        "title",
+                        ""
+                    ),
+
+                    "description": lesson.get(
+                        "description",
+                        ""
+                    ),
+
+                    "duration": self._seconds_to_hhmm(
+                        lesson_duration_seconds
+                    ),
+
+                    "video_count": len(
+                        video_items
+                    ),
+
+                    "videos": video_items,
+
+                    "completion": "0%",
+
+                    "is_published": lesson.get(
+                        "is_published",
+                        True
+                    ),
+
+                    "isPublished": lesson.get(
+                        "is_published",
+                        True
+                    ),
+
+                    "is_approved": lesson.get(
+                        "is_approved",
+                        True
+                    )
+                })
+
+            # ====================================
+            # RETURN
+            # ====================================
+
             return {
+
                 "courseDetail": {
-                "id": str(course.get("_id", "")),  # ✅ SAFE
-                "title": course.get("title", ""),
-                "category": self._category_display(course.get("category")),
-                "instructor": instructor_name,
-                "students": students,
-                "students_enrolled": students,
-                "duration": self._seconds_to_hhmm(total_seconds),
-                "lessonCount": len(lessons_list),
-                "price": course.get("price", 0),
-                "thumbnail": course.get("image", ""),
-                "avatar": avatar,
-                "status": self.map_status(course.get("status", "DRAFT"))
-            },
-            "lessonsList": lessons_list
-        }
+
+                    "id": str(
+                        course.get("_id", "")
+                    ),
+
+                    "title": course.get(
+                        "title",
+                        ""
+                    ),
+
+                    "description": course.get(
+                        "description",
+                        ""
+                    ),
+
+                    "category": self._category_display(
+                        course.get("category")
+                    ),
+
+                    "instructor": instructor_name,
+
+                    "students": students,
+
+                    "students_enrolled": students,
+
+                    "duration": self._seconds_to_hhmm(
+                        total_seconds
+                    ),
+
+                    "lessonCount": len(
+                        lessons_list
+                    ),
+
+                    "price": course.get(
+                        "price",
+                        0
+                    ),
+
+                    "thumbnail": course.get(
+                        "image",
+                        ""
+                    ),
+
+                    "avatar": avatar,
+
+                    "status": self.map_status(
+                        course.get(
+                            "status",
+                            "DRAFT"
+                        )
+                    )
+                },
+
+                "lessonsList": lessons_list
+            }
 
         except Exception as e:
+
             print("❌ ERROR:", str(e))
-            raise
+
+            raise e
 
     async def get_public_course_detail(self, course_id: str):
         try:
