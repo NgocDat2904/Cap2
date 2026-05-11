@@ -109,7 +109,24 @@ class VideoService:
         "created_at": datetime.utcnow(),
     }
 
-        return video_repository.create(doc)
+        video_id = video_repository.create(doc)
+
+        if not video_id:
+            raise HTTPException(500, "Save video failed")
+
+        # AUTO GENERATE TRANSCRIPT
+        try:
+            await self.generate_transcript(
+                video_id=video_id,
+                instructor_id=instructor_id,
+                language="vi",
+                force=False,
+            )
+            
+        except Exception as e:
+                print("⚠️ Auto transcript failed:", e)
+
+        return video_id
 
     # ===================== TRANSCRIPT =====================
 
