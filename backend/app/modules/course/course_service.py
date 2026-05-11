@@ -601,25 +601,63 @@ class CourseService:
 
 
     # ===================== LEARNER =====================
-    async def enroll(self, course_id: str, user_id: str):
-        from app.database.mongodb import db
-        from bson import ObjectId
+    async def enroll(
+        self,
+        course_id: str,
+        user_id: str
+    ):
+
+        # ====================================
+        # CHECK ALREADY ENROLLED
+        # ====================================
 
         exists = db.enrollments.find_one({
-        "course_id": ObjectId(course_id),
-        "learner_id": ObjectId(user_id)
-    })
+
+            "course_id": ObjectId(course_id),
+
+            "learner_id": ObjectId(user_id)
+        })
 
         if exists:
-           return {"message": "Already enrolled"}
 
-        db.enrollments.insert_one({
-        "course_id": ObjectId(course_id),
-        "learner_id": ObjectId(user_id)
-    })
+            return {
+                "message": "Already enrolled"
+            }
 
-        return {"message": "Enrolled successfully"}
-    
+        # ====================================
+        # INSERT ENROLLMENT
+        # ====================================
+
+        enrollment = {
+
+            "course_id": ObjectId(course_id),
+
+            "learner_id": ObjectId(user_id),
+
+            # ngày enroll
+            "created_at": datetime.utcnow(),
+
+            # lần truy cập cuối
+            "last_accessed_at": datetime.utcnow()
+        }
+
+        result = db.enrollments.insert_one(
+            enrollment
+        )
+
+        # ====================================
+        # RESPONSE
+        # ====================================
+
+        return {
+
+            "message": "Enrolled successfully",
+
+            "enrollment_id": str(
+                result.inserted_id
+            )
+        }
+        
 
     async def get_course_students(self, course_id: str):
         enrollments = list(db.enrollments.find({
