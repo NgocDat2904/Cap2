@@ -9,11 +9,11 @@ security = HTTPBearer()
 def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     token = credentials.credentials
 
-    print("\n===== AUTH DEBUG START =====")
-    print("TOKEN:", token)
+    # print("\n===== AUTH DEBUG START =====")
+    # print("TOKEN:", token)
 
     payload = decode_access_token(token)
-    print("PAYLOAD:", payload)
+    # print("PAYLOAD:", payload)
 
     if not payload:
         print("❌ Invalid token")
