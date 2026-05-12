@@ -137,6 +137,8 @@ const InstructorDashboardPage = () => {
         const token = localStorage.getItem("access_token");
         if (!token) return;
         const data = await getInstructorDashboardAPI(token);
+        // 🔥 DEBUG Ở ĐÂY: Mở F12 -> Console để xem định dạng mảng chart
+        console.log("🔥 DỮ LIỆU CHART TỪ BACKEND:", JSON.stringify(data.student_chart, null, 2));
         setDashboardData(data);
       } catch (err) {
         console.error("Failed to load dashboard data", err);
@@ -341,7 +343,7 @@ const InstructorDashboardPage = () => {
                   <th className="p-4 w-1/2">Course</th>
                   <th className="p-4">Students</th>
                   <th className="p-4">Revenue</th>
-                  <th className="p-4 text-center">Actions</th>
+                  {/* <th className="p-4 text-center">Actions</th> */}
                 </tr>
               </thead>
               <tbody
@@ -372,7 +374,7 @@ const InstructorDashboardPage = () => {
                       </td>
 
                     {/* CỘT HÀNH ĐỘNG */}
-                    <td className="p-4 text-center">
+                    {/* <td className="p-4 text-center">
                       <div className="flex justify-center items-center gap-1.5 relative">
                         <button
                           className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center"
@@ -393,7 +395,6 @@ const InstructorDashboardPage = () => {
                           />
                         </button>
 
-                        {/* Dấu 3 chấm */}
                         <div className="relative inline-block text-left">
                           <button
                             onClick={() =>
@@ -409,7 +410,7 @@ const InstructorDashboardPage = () => {
                             />
                           </button>
 
-                          {/* Menu xổ xuống */}
+                   
                           {openActionId === course.id && (
                             <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-[100] py-2 animate-fade-slide-up origin-top-right">
                               <button
@@ -438,7 +439,7 @@ const InstructorDashboardPage = () => {
                           )}
                         </div>
                       </div>
-                    </td>
+                    </td> */}
                   </tr>
                 ))
               ) : (

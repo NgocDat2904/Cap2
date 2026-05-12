@@ -2,6 +2,7 @@
 import axios from "axios";
 
 const API_URL = "http://localhost:8000/instructor";
+const BASE_URL = "http://localhost:8000"; // dùng cho Q&A (không có prefix /instructor)
 
 // LẤY HỒ SƠ
 export const getInstructorProfileAPI = async (token) => {
@@ -82,4 +83,35 @@ export const getInstructorDashboardAPI = async (token) => {
     },
   });
   return response.data;
+};
+
+// Trang student management
+export const getInstructorStudentsAPI = async (token) => {
+  try {
+    const res = await axios.get(`${API_URL}/students`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    console.log("data student:", res.data);
+
+    return res.data;
+  } catch (error) {
+    throw error.response?.data || error.message;
+  }
+};
+
+// lấy danh sách Q&A của khóa học (route: /questions/course/{courseId})
+export const getCourseQuestionsAPI = async (courseId, token) => {
+  const res = await axios.get(`${BASE_URL}/questions/course/${courseId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// đăng TRẢ LỜI (route: /questions/{questionId}/reply)
+export const postReplyAPI = async (questionId, content, token) => {
+  const res = await axios.post(`${BASE_URL}/questions/${questionId}/reply`,
+    { content: content },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
 };

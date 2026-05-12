@@ -7,6 +7,10 @@ from app.modules.questions.question_repository import (
     question_repository
 )
 
+from app.modules.notifications.notification_repository import (
+    notification_repository
+)
+
 
 class QuestionService:
 
@@ -35,6 +39,35 @@ class QuestionService:
 
         question_id = question_repository.create(doc)
 
+        # =====================================
+        # 🔥 CREATE NOTIFICATION FOR INSTRUCTOR
+        # =====================================
+
+        course = db.courses.find_one({
+            "_id": ObjectId(data.course_id)
+        })
+
+        if course:
+
+            notification_repository.create({
+
+                "user_id": course["instructor_id"],
+
+                "title": "New question received",
+
+                "message": "A learner asked a new question.",
+
+                "type": "new_question",
+
+                "course_id": ObjectId(data.course_id),
+
+                "question_id": ObjectId(question_id),
+
+                "is_read": False,
+
+                "created_at": datetime.utcnow()
+            })
+
         return {
             "message": "Question created",
             "question_id": question_id
@@ -44,79 +77,70 @@ class QuestionService:
     # GET COURSE QUESTIONS
     # =====================================
 
-    async def get_course_questions(self, course_id):
-
-        questions = question_repository.get_course_questions(
-            course_id
-        )
-
+    def _format_questions(self, questions):
         result = []
-
         for q in questions:
-
-            user = db.users.find_one({
-                "_id": q["user_id"]
-            })
-
-            replies = question_repository.get_replies(
-                str(q["_id"])
-            )
-
+            user = db.users.find_one({"_id": q["user_id"]})
+            replies = question_repository.get_replies(str(q["_id"]))
             reply_items = []
-
             for r in replies:
-
-                reply_user = db.users.find_one({
-                    "_id": r["user_id"]
-                })
-
+                reply_user = db.users.find_one({"_id": r["user_id"]})
                 reply_items.append({
-
                     "id": str(r["_id"]),
-
                     "content": r["content"],
-
                     "type": r["type"],
-
                     "created_at": r.get("created_at"),
-
                     "user": {
-
-                        "id": str(reply_user["_id"]),
-
-                        "name": reply_user.get("fullName"),
-
-                        "avatar": reply_user.get("avatar_url"),
-
-                        "role": reply_user.get("role")
+                        "id": str(reply_user["_id"]) if reply_user else "",
+                        "name": reply_user.get("fullName") if reply_user else "Unknown",
+                        "avatar": reply_user.get("avatar_url") if reply_user else "",
+                        "role": reply_user.get("role") if reply_user else ""
                     }
                 })
 
+            # Tìm thông tin bài học/video
+            lesson_id_str = str(q.get("lesson_id")) if q.get("lesson_id") else ""
+            lesson_title = "General Lesson"
+            video_url = ""
+            if lesson_id_str:
+                try:
+                    obj_id = ObjectId(lesson_id_str)
+                    video = db.videos.find_one({"_id": obj_id})
+                    if video:
+                        lesson_title = video.get("title", "Untitled Video")
+                        video_url = video.get("video_url") or video.get("play_url", "")
+                    else:
+                        lesson = db.lessons.find_one({"_id": obj_id})
+                        if lesson:
+                            lesson_title = lesson.get("title", "Untitled Lesson")
+                except:
+                    pass
+
             result.append({
-
                 "id": str(q["_id"]),
-
+                "lesson_id": lesson_id_str,
+                "lesson_title": lesson_title,
+                "video_url": video_url,
                 "content": q["content"],
-
                 "created_at": q.get("created_at"),
-
                 "is_answered": len(reply_items) > 0,
-
                 "user": {
-
-                    "id": str(user["_id"]),
-
-                    "name": user.get("fullName"),
-
-                    "avatar": user.get("avatar_url"),
-
-                    "role": user.get("role")
+                    "id": str(user["_id"]) if user else "",
+                    "name": user.get("fullName") if user else "Unknown",
+                    "avatar": user.get("avatar_url") if user else "",
+                    "role": user.get("role") if user else ""
                 },
-
                 "replies": reply_items
             })
-
         return result
+
+    async def get_course_questions(self, course_id):
+        questions = question_repository.get_course_questions(course_id)
+        return self._format_questions(questions)
+
+    async def get_lesson_questions(self, lesson_id):
+        questions = question_repository.get_lesson_questions(lesson_id)
+        return self._format_questions(questions)
 
     # =====================================
     # CREATE REPLY
@@ -154,6 +178,29 @@ class QuestionService:
         }
 
         reply_id = question_repository.create(doc)
+
+        # =====================================
+        # 🔥 CREATE NOTIFICATION FOR LEARNER
+        # =====================================
+
+        notification_repository.create({
+
+            "user_id": question["user_id"],
+
+            "title": "Instructor replied to you",
+
+            "message": "Your question has a new reply.",
+
+            "type": "question_reply",
+
+            "course_id": question["course_id"],
+
+            "question_id": question["_id"],
+
+            "is_read": False,
+
+            "created_at": datetime.utcnow()
+        })
 
         return {
             "message": "Reply created",

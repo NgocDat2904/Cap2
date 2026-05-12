@@ -21,7 +21,7 @@ router = APIRouter()
 @router.post("/questions")
 async def create_question(
     data: CreateQuestionRequest,
-    user=Depends(require_role(["learner"]))
+    user=Depends(require_role(["learner", "instructor"]))
 ):
 
     return await question_service.create_question(
@@ -39,6 +39,17 @@ async def get_course_questions(course_id: str):
 
     return await question_service.get_course_questions(
         course_id
+    )
+
+# =====================================
+# GET LESSON QUESTIONS
+# =====================================
+
+@router.get("/questions/lesson/{lesson_id}")
+async def get_lesson_questions(lesson_id: str):
+
+    return await question_service.get_lesson_questions(
+        lesson_id
     )
 
 

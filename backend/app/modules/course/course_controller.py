@@ -88,6 +88,11 @@ async def get_course_detail(course_id: str):
         print("❌ Get course detail error:", e)
         raise HTTPException(500, "Internal server error")
 
+# ====================== Top 4 khóa học nổi bật =====================
+@router.get("/courses/featured")
+async def get_featured_courses():
+    return await course_service.get_featured_courses()
+
 
 # ===================== INSTRUCTOR =====================
 

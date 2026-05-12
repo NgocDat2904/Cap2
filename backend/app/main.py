@@ -17,6 +17,12 @@ from app.modules.payment.payment_controller import (
     router as payment_router
 )
 from app.modules.questions.question_controller import router as question_router
+from app.modules.notifications.notifications_controller import (
+    router as notification_router
+)
+from app.modules.admin.admin_controller import (
+    router as admin_router
+)
 
 
 # =========================
@@ -64,6 +70,8 @@ app.include_router(learning_router, prefix="")
 app.include_router(dashboard_router)
 app.include_router(payment_router)
 app.include_router(question_router)
+app.include_router(notification_router)
+app.include_router(admin_router)
 
 
 # =========================

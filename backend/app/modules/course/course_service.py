@@ -1388,6 +1388,39 @@ class CourseService:
             print("❌ get_top_courses error:", e)
         raise e
     
+    async def get_featured_courses(self):
+
+        courses = course_repository.get_featured_courses()
+
+        result = []
+
+        for c in courses:
+
+            instructor_name = "Unknown"
+
+            instructor = db.users.find_one({
+                "_id": c.get("instructor_id")
+            })
+
+            if instructor:
+                instructor_name = instructor.get("fullName", "Unknown")
+
+            lesson_count = db.lessons.count_documents({
+                "course_id": c["_id"]
+            })
+
+            result.append({
+                "id": str(c["_id"]),
+                "title": c.get("title"),
+                "thumbnail": c.get("thumbnail"),
+                "price": c.get("price", 0),
+                "students": c.get("students_count", 0),
+                "lesson_count": lesson_count,
+                "instructor": instructor_name,
+                "category": c.get("category"),
+            })
+
+        return result
 
         
 course_service = CourseService()

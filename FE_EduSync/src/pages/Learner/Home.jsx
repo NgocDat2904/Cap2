@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { getPopularCoursesAPI } from "../../services/learnerCourseAPI";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLaptopCode,
@@ -19,59 +20,26 @@ const EduSyncHome = () => {
   const navigate = useNavigate();
   const isLoggedIn = Boolean(localStorage.getItem("access_token"));
 
+  const [featuredCourses, setFeaturedCourses] = useState([]);
+
   // =========================================================================
-  // MOCK DATA
+  // GỌI API LẤY 4 KHÓA HỌC HOT NHẤT
   // =========================================================================
-  const featuredCourses = [
-    {
-      id: 1,
-      title: "Python Programming from Basic to Advanced",
-      instructor: "Nguyễn Văn A",
-      avatar: "https://i.pravatar.cc/150?img=11",
-      videoCount: 15,
-      rating: 4.8,
-      students: 1520,
-      price: 1222000,
-      isBestseller: true,
-      image: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 2,
-      title: "Practical UI/UX Design with Figma",
-      instructor: "Trần Thị B.",
-      avatar: "https://i.pravatar.cc/150?img=5",
-      videoCount: 24,
-      rating: 4.9,
-      students: 3420,
-      price: 499000,
-      isBestseller: true,
-      image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 3,
-      title: "System Architecture Design",
-      instructor: "Lê Văn C.",
-      avatar: "https://i.pravatar.cc/150?img=8",
-      videoCount: 32,
-      rating: 4.7,
-      students: 890,
-      price: 899000,
-      isBestseller: false,
-      image: "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    },
-    {
-      id: 4,
-      title: "Data Analysis from Basic to Advanced",
-      instructor: "Phạm D.",
-      avatar: "https://i.pravatar.cc/150?img=12",
-      videoCount: 18,
-      rating: 4.6,
-      students: 2100,
-      price: 599000,
-      isBestseller: false,
-      image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-    },
-  ];
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const data = await getPopularCoursesAPI();
+        const top4 = data
+          .sort((a, b) => (b.students || 0) - (a.students || 0))
+          .slice(0, 4);
+          
+        setFeaturedCourses(top4);
+      } catch (error) {
+        console.error("Lỗi lấy khóa học:", error);
+      }
+    };
+    fetchCourses();
+  }, []);
 
   const categories = [
     { name: "Frontend Web Development", icon: <FontAwesomeIcon icon={faLaptopCode} className="text-blue-500 text-2xl" />, courses: "120+" },
@@ -95,12 +63,9 @@ const EduSyncHome = () => {
     <main className="animate-fade-slide-up w-full space-y-16 pb-12 font-sans">
       {/* ================= HERO SECTION (PREMIUM BENTO UI) ================= */}
       <section className="relative overflow-hidden bg-white rounded-[2rem] p-8 sm:p-12 lg:p-16 border border-slate-200 shadow-sm flex flex-col lg:flex-row items-center justify-between gap-12 group">
-        {/* Nền lưới (Grid pattern) tạo cảm giác tech/engineering cực tinh tế */}
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:32px_32px]"></div>
 
-        {/* Cột trái: Text & Call to action */}
         <div className="relative z-10 flex-1 space-y-7 text-center lg:text-left">
-          {/* Badge xịn hơn với hiệu ứng chấm xanh nhấp nháy */}
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-slate-50 border border-slate-200 text-slate-700 text-xs sm:text-sm font-bold shadow-sm">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
@@ -141,12 +106,8 @@ const EduSyncHome = () => {
           </div>
         </div>
 
-        {/* Cột phải: Floating UI Dashboard (Thay thế hoàn toàn hình ảnh mộc mạc) */}
         <div className="relative z-10 hidden lg:block w-5/12 h-[380px] perspective-1000">
-          {/* Vòng sáng nền mờ */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] bg-blue-100/50 rounded-full blur-3xl -z-10"></div>
-
-          {/* Main Card: Progress Mockup */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-white/80 backdrop-blur-xl rounded-2xl border border-slate-100 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.1)] p-6 hover:-translate-y-2 transition-transform duration-500 cursor-default">
             <div className="flex items-center justify-between mb-6">
               <div>
@@ -180,7 +141,6 @@ const EduSyncHome = () => {
             </div>
           </div>
 
-          {/* Floating Card 1: AI Alert */}
           <div className="absolute -left-6 top-8 bg-white rounded-xl border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.08)] p-4 flex items-center gap-4 hover:-translate-y-1 transition-transform duration-300">
             <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center text-purple-600 border border-purple-100">
                <FontAwesomeIcon icon={faRobot} />
@@ -191,7 +151,6 @@ const EduSyncHome = () => {
             </div>
           </div>
 
-          {/* Floating Card 2: Success Toast */}
           <div className="absolute -right-4 bottom-12 bg-slate-900 rounded-xl border border-slate-800 shadow-2xl p-4 flex items-center gap-3 hover:-translate-y-1 transition-transform duration-300">
             <div className="text-emerald-400 text-xl bg-emerald-400/10 rounded-full p-1">
                <FontAwesomeIcon icon={faCheckCircle} />
@@ -256,82 +215,80 @@ const EduSyncHome = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {featuredCourses.map((course) => (
-            <div
-              key={course.id}
-              className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] hover:border-blue-200 hover:-translate-y-2 transition-all duration-400 overflow-hidden flex flex-col group cursor-pointer relative"
-            >
-              {/* Bestseller Badge */}
-              {course.isBestseller && (
-                <div className="absolute top-4 left-4 z-10 px-3 py-1 bg-gradient-to-r from-amber-400 to-orange-500 text-white text-[11px] font-bold uppercase tracking-wider rounded-full shadow-md">
-                  Bestseller
-                </div>
-              )}
-
-              {/* Thumbnail Area */}
-              <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
-                />
-                <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors duration-300 flex items-center justify-center">
-                  <div className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 opacity-0 transform scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl">
-                    <FontAwesomeIcon icon={faPlayCircle} className="text-2xl ml-1" />
-                  </div>
-                </div>
-                {/* Glassmorphism Video Tag */}
-                <div className="absolute bottom-3 right-3 px-2.5 py-1.5 bg-slate-900/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
-                  <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.videoCount}
-                </div>
-              </div>
-
-              {/* Content Area */}
-              <div className="p-5 flex-1 flex flex-col">
-                {/* Rating & Students */}
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-1.5 text-slate-400 font-medium text-xs">
-                    <FontAwesomeIcon icon={faUsers} />
-                    {course.students.toLocaleString()}
-                  </div>
-                </div>
-
-                <h3 className="font-bold text-[17px] text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors mb-3">
-                  {course.title}
-                </h3>
-
-                {/* Instructor */}
-                <div className="flex items-center gap-2 mt-auto pb-4">
+          {featuredCourses.length > 0 ? (
+            featuredCourses.map((course) => (
+              <div
+                key={course.id}
+                className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] hover:border-blue-200 hover:-translate-y-2 transition-all duration-400 overflow-hidden flex flex-col group cursor-pointer relative"
+              >
+                {/* Thumbnail Area */}
+                <div className="relative aspect-[4/3] overflow-hidden bg-slate-100">
                   <img
-                    src={course.avatar}
-                    alt="Avatar"
-                    className="w-7 h-7 rounded-full object-cover border-2 border-white shadow-sm"
+                    src={course.thumbnail || "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
+                    alt={course.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-in-out"
                   />
-                  <span className="text-xs font-semibold text-slate-600">
-                    {course.instructor}
-                  </span>
-                  <FontAwesomeIcon
-                    icon={faCheckCircle}
-                    className="text-blue-500 text-[11px]"
-                    title="Verified Instructor"
-                  />
+                  <div className="absolute inset-0 bg-slate-900/10 group-hover:bg-slate-900/30 transition-colors duration-300 flex items-center justify-center">
+                    <div className="w-14 h-14 bg-white/90 backdrop-blur-md rounded-full flex items-center justify-center text-blue-600 opacity-0 transform scale-50 group-hover:opacity-100 group-hover:scale-100 transition-all duration-300 shadow-xl">
+                      <FontAwesomeIcon icon={faPlayCircle} className="text-2xl ml-1" />
+                    </div>
+                  </div>
+                  {/* Glassmorphism Lesson Tag */}
+                  <div className="absolute bottom-3 right-3 px-2.5 py-1.5 bg-slate-900/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.lesson_count || 0} Lessons
+                  </div>
                 </div>
 
-                {/* Footer: Price & CTA */}
-                <div className="flex items-center justify-between border-t border-slate-100 pt-4">
-                  <span className={`font-extrabold text-xl tracking-tight ${course.price === 0 ? "text-green-600" : "text-slate-900"}`}>
-                    {formatCurrency(course.price)}
-                  </span>
-                  <Link
-                    to={`/courses/${course.id}`}
-                    className="text-sm font-bold text-blue-600 bg-blue-50/50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl transition-all duration-300"
-                  >
-                    Details
-                  </Link>
+                {/* Content Area */}
+                <div className="p-5 flex-1 flex flex-col">
+                  {/* Category & Students */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                      {course.category}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-slate-400 font-medium text-xs">
+                      <FontAwesomeIcon icon={faUsers} />
+                      {course.students || 0}
+                    </div>
+                  </div>
+
+                  <h3 className="font-bold text-[17px] text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors mb-3">
+                    {course.title}
+                  </h3>
+
+                  {/* Instructor */}
+                  <div className="flex items-center gap-2 mt-auto pb-4">
+                    <div className="w-7 h-7 rounded-full bg-slate-200 text-slate-600 flex items-center justify-center text-xs font-bold border-2 border-white shadow-sm">
+                      {course.instructor ? course.instructor.charAt(0).toUpperCase() : "U"}
+                    </div>
+                    <span className="text-xs font-semibold text-slate-600 line-clamp-1">
+                      {course.instructor || "Unknown"}
+                    </span>
+                    <FontAwesomeIcon
+                      icon={faCheckCircle}
+                      className="text-blue-500 text-[11px]"
+                      title="Verified Instructor"
+                    />
+                  </div>
+
+                  {/* Footer: Price & CTA */}
+                  <div className="flex items-center justify-between border-t border-slate-100 pt-4">
+                    <span className={`font-extrabold text-xl tracking-tight ${!course.price || course.price === 0 ? "text-green-600" : "text-slate-900"}`}>
+                      {!course.price || course.price === 0 ? "Free" : formatCurrency(course.price)}
+                    </span>
+                    <Link
+                      to={`/courses/${course.id}`}
+                      className="text-sm font-bold text-blue-600 bg-blue-50/50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl transition-all duration-300"
+                    >
+                      Details
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+             <p className="col-span-full text-center text-slate-500 py-10 font-medium">No featured courses available at the moment.</p>
+          )}
         </div>
       </section>
     </main>
