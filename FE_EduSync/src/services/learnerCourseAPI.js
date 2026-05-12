@@ -97,10 +97,12 @@ export const getLessonQuestionsAPI = async (lessonId, token) => {
 
 // đăng CÂU HỎI MỚI (Dành cho Learner)
 export const postQuestionAPI = async (courseId, lessonId, content, token) => {
-  const res = await axios.post(`${BASE_URL}/questions`, 
-   { course_id: courseId,
-      lesson_id: lessonId, 
-      content: content },
+  const res = await axios.post(`${BASE_URL}/questions`,
+    {
+      course_id: courseId,
+      lesson_id: lessonId,
+      content: content
+    },
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return res.data;
@@ -108,9 +110,18 @@ export const postQuestionAPI = async (courseId, lessonId, content, token) => {
 
 //đăng TRẢ LỜI
 export const postReplyAPI = async (questionId, content, token) => {
-  const res = await axios.post(`${BASE_URL}/questions/${questionId}/reply`, 
-    { content: content }, 
+  const res = await axios.post(`${BASE_URL}/questions/${questionId}/reply`,
+    { content: content },
     { headers: { Authorization: `Bearer ${token}` } }
   );
+  return res.data;
+};
+
+// Lấy danh sách khóa học phổ biến
+export const getPopularCoursesAPI = async () => {
+  const token = localStorage.getItem("access_token");
+  const res = await axios.get(`${BASE_URL}/courses/featured`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
   return res.data;
 };
