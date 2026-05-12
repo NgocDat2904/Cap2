@@ -1,38 +1,65 @@
 import React, { useEffect, useState } from "react";
-import { aiSummaryAPI, aiSummaryByVideoAPI } from "../services/aiAPI";
+import { aiSummaryAPI, aiSummaryByVideoAPI, getSummaryByVideoAPI } from "../services/aiAPI";
 
 const CourseSummary = ({ lessonContext, videoId }) => {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [status, setStatus] = useState("loading"); // loading | ready | pending | error
+
+  const fetchSummary = async (usePost = false) => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setError("Please sign in to view the AI summary.");
+      setStatus("error");
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError("");
+    setSummary("");
+    setStatus("loading");
+    try {
+      let data;
+      if (usePost) {
+        // POST = regenerate via AI
+        data = videoId
+          ? await aiSummaryByVideoAPI(token, videoId, "vi")
+          : await aiSummaryAPI(token, lessonContext, "vi");
+      } else {
+        // GET = read from DB (fast)
+        if (!videoId) {
+          setStatus("pending");
+          setLoading(false);
+          return;
+        }
+        console.log("Fetching summary for videoId:", videoId);
+        data = await getSummaryByVideoAPI(token, videoId, "vi");
+        console.log("Summary GET response:", data);
+      }
+
+      if (data && data.summary) {
+        setSummary(data.summary);
+        setStatus("ready");
+      } else {
+        setStatus("pending");
+      }
+    } catch (e) {
+      console.error("Summary fetch error:", e);
+      setError(e.message || "Failed to load summary.");
+      setStatus("error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      const token = localStorage.getItem("access_token");
-      if (!token) {
-        setError("Please sign in to view the AI summary.");
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      setError("");
-      setSummary("");
-      try {
-        const data = videoId
-          ? await aiSummaryByVideoAPI(token, videoId, "vi")
-          : await aiSummaryAPI(token, lessonContext, "vi");
-        if (!cancelled) setSummary(data.summary || "");
-      } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load summary.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+      await fetchSummary(false);
     };
     run();
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, [
     lessonContext?.title,
     lessonContext?.description,
@@ -40,13 +67,37 @@ const CourseSummary = ({ lessonContext, videoId }) => {
     videoId,
   ]);
 
+  if (status === "pending" && !loading) {
+    return (
+      <div className="animate-fade-slide-up text-slate-600">
+        <h3 className="text-lg font-bold text-slate-800 mb-3">
+          Lesson Summary (AI)
+        </h3>
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <p className="text-sm font-bold text-slate-600">
+            Summary đang được chuẩn bị
+          </p>
+          <p className="text-xs text-slate-500 text-center max-w-sm">
+            Hệ thống đang xử lý. Summary sẽ có khi transcript được phân tích xong.
+          </p>
+          <button
+            onClick={() => fetchSummary(true)}
+            className="mt-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold rounded-xl hover:bg-amber-600 transition-all active:scale-95 shadow-sm"
+          >
+            Tạo ngay
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-fade-slide-up text-slate-600">
       <h3 className="text-lg font-bold text-slate-800 mb-3">
-        Lesson Summary (Gemini)
+        Lesson Summary (AI)
       </h3>
       {loading && (
-        <p className="text-sm text-slate-500 italic">Generating summary...</p>
+        <p className="text-sm text-slate-500 italic">Đang tải summary...</p>
       )}
       {error && (
         <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">

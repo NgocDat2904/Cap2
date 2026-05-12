@@ -24,6 +24,61 @@ router = APIRouter(prefix="/learner/ai", tags=["learner-ai"])
 
 
 # =========================
+# GET FROM DB (FAST)
+# =========================
+@router.get("/mindmap/{video_id}")
+async def get_mindmap(
+    video_id: str,
+    language: str = "vi",
+    user=Depends(require_role(["learner"]))
+):
+    """GET mindmap từ DB — không gọi AI, trả nhanh."""
+    if not ObjectId.is_valid(video_id):
+        raise HTTPException(400, "Invalid video_id")
+
+    # 1. Check collection mới
+    doc = db.ai_mindmaps.find_one({
+        "video_id": ObjectId(video_id),
+        "language": language,
+    })
+    if doc and doc.get("markmap_code"):
+        return {"markmap_code": doc["markmap_code"], "status": "ready"}
+
+    # 2. Check cache cũ trong video
+    video = db.videos.find_one({"_id": ObjectId(video_id)})
+    if video and video.get("ai_cache", {}).get("markmap_code", {}).get(language):
+        return {"markmap_code": video["ai_cache"]["markmap_code"][language], "status": "ready"}
+
+    return {"markmap_code": None, "status": "pending"}
+
+
+@router.get("/summary/{video_id}")
+async def get_summary(
+    video_id: str,
+    language: str = "vi",
+    user=Depends(require_role(["learner"]))
+):
+    """GET summary từ DB — không gọi AI, trả nhanh."""
+    if not ObjectId.is_valid(video_id):
+        raise HTTPException(400, "Invalid video_id")
+
+    # 1. Check collection mới
+    doc = db.ai_summaries.find_one({
+        "video_id": ObjectId(video_id),
+        "language": language,
+    })
+    if doc and doc.get("summary"):
+        return {"summary": doc["summary"], "status": "ready"}
+
+    # 2. Check cache cũ trong video
+    video = db.videos.find_one({"_id": ObjectId(video_id)})
+    if video and video.get("ai_cache", {}).get("summary", {}).get(language):
+        return {"summary": video["ai_cache"]["summary"][language], "status": "ready"}
+
+    return {"summary": None, "status": "pending"}
+
+
+# =========================
 # HELPERS
 # =========================
 async def _video_doc(video_id: str) -> dict:

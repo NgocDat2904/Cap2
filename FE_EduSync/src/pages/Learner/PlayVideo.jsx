@@ -73,7 +73,8 @@ const CourseLearningWorkspace = () => {
       id: lesson.id,
 
       videoId:
-        lesson.videos?.[0]?.id ||
+        lesson.video_id ||
+        lesson.videoId ||
         lesson.videos?.[0]?.id ||
         "",
       title: lesson.title || "Untitled lesson",
@@ -129,7 +130,7 @@ const CourseLearningWorkspace = () => {
       activeLesson?.description,
       activeLesson?.transcript,
     ]);
-  const activeVideoId = activeLesson?.videoId;
+  const activeVideoId = activeLesson?.video_id || activeLesson?.videoId;
 
   useEffect(() => {
     if (!activeLesson) return;
@@ -340,18 +341,22 @@ const CourseLearningWorkspace = () => {
             </div>
 
             <div className="bg-white border border-t-0 border-slate-200 rounded-b-2xl p-6 sm:p-8 min-h-[400px] shadow-sm">
-              {activeLeftTab === "summary" && (
+              {/* Summary & Mindmap: dùng display để giữ mounted, tránh call lại API */}
+              <div style={{ display: activeLeftTab === "summary" ? "block" : "none" }}>
                 <CourseSummary
                   lessonContext={lessonContext}
                   videoId={activeVideoId}
                 />
-              )}
-              {activeLeftTab === "mindmap" && (
+              </div>
+              <div style={{ display: activeLeftTab === "mindmap" ? "block" : "none" }}>
                 <CourseMindmap
                   lessonContext={lessonContext}
                   videoId={activeVideoId}
+                  isActive={activeLeftTab === "mindmap"}
                 />
-              )}
+              </div>
+
+              {/* Quiz, Chatbot, Q&A: conditional render (cần fresh state mỗi lần mở) */}
               {activeLeftTab === "quiz" && (
                 <CourseQuiz
                   lessonContext={lessonContext}

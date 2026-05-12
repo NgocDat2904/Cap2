@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Transformer } from "markmap-lib";
 import { Markmap } from "markmap-view";
-import { aiMindmapAPI, aiMindmapByVideoAPI } from "../services/aiAPI";
+import { aiMindmapAPI, aiMindmapByVideoAPI, getMindmapByVideoAPI } from "../services/aiAPI";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -14,7 +14,7 @@ import {
 
 const transformer = new Transformer();
 
-const CourseMindmap = ({ lessonContext, videoId }) => {
+const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
   const svgRef = useRef(null);
   const markmapRef = useRef(null);
   const [markmapCode, setMarkmapCode] = useState("");
@@ -39,9 +39,15 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
       setMarkmapCode("");
       setStatus("loading");
       try {
-        const data = videoId
-          ? await aiMindmapByVideoAPI(token, videoId, "vi")
-          : await aiMindmapAPI(token, lessonContext, "vi");
+        // GET from DB first (fast)
+        if (!videoId) {
+          setStatus("pending");
+          setLoading(false);
+          return;
+        }
+        const data = await getMindmapByVideoAPI(token, videoId, "vi");
+
+          console.log("data", data);
 
         if (!cancelled) {
           const code = data.markmap_code || "";
@@ -116,14 +122,14 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
     }
   }, [markmapCode]);
 
-  // Fit markmap when fullscreen changes
+  // Fit markmap when fullscreen changes or tab becomes active
   useEffect(() => {
     if (markmapRef.current && status === "ready") {
       setTimeout(() => {
         markmapRef.current.fit();
       }, 300);
     }
-  }, [isFullscreen, status]);
+  }, [isFullscreen, status, isActive]);
 
   const handleRetry = useCallback(() => {
     setMarkmapCode("");
@@ -261,11 +267,10 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
   // ─── READY STATE ───
   return (
     <div
-      className={`${
-        isFullscreen
-          ? "fixed inset-0 z-50 bg-white p-4"
-          : "w-full h-[450px] relative"
-      } bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all`}
+      className={`${isFullscreen
+        ? "fixed inset-0 z-50 bg-white p-4"
+        : "w-full h-[450px] relative"
+        } bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all`}
     >
       <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
         <button
