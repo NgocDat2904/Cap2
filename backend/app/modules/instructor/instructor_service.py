@@ -287,7 +287,7 @@ class InstructorService:
 
         learner_ids = list(set([
 
-            enrollment["learner_id"]
+            enrollment["user_id"]
 
             for enrollment in enrollments
         ]))
@@ -348,7 +348,7 @@ class InstructorService:
             student = next(
                 (
                     s for s in students
-                    if s["_id"] == enrollment["learner_id"]
+                    if s["_id"] == enrollment["user_id"]
                 ),
                 None
             )
@@ -374,7 +374,7 @@ class InstructorService:
 
             progress = self.calculate_course_progress(
 
-                learner_id=enrollment["learner_id"],
+                user_id=enrollment["user_id"],
 
                 course_id=enrollment["course_id"]
             )
@@ -389,7 +389,7 @@ class InstructorService:
 
             completed_lessons = db.lesson_progress.count_documents({
 
-                "learner_id": enrollment["learner_id"],
+                "user_id": enrollment["user_id"],
 
                 "is_completed": True,
 
@@ -687,7 +687,7 @@ class InstructorService:
 
             progress = self.calculate_course_progress(
 
-                learner_id=enrollment["learner_id"],
+                learner_id=enrollment["user_id"],
 
                 course_id=enrollment["course_id"]
             )
