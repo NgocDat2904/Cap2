@@ -41,16 +41,16 @@ const AdminLayout = () => {
         if (token) {
           const data = await getProfileAPI(token);
           setAdminProfile({
-            fullName: data.fullName || "Admin",
+            fullName: data.fullName || "Quản trị viên",
             avatarUrl: data.avatarUrl || null,
           });
         }
       } catch (err) {
-        console.error("Error loading admin profile:", err);
+        console.error("Lỗi khi tải thông tin admin:", err);
       }
     };
     loadProfile();
-  }, []); // chỉ chạy 1 lần
+  }, []);
 
   // Xử lý Responsive Sidebar
   useEffect(() => {
@@ -66,50 +66,45 @@ const AdminLayout = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // USE EFFECT ĐỂ CALL API LẤY SỐ LƯỢNG CẦN XỬ LÝ (Chỉ lấy limit=1 cho nhẹ)
+  // USE EFFECT ĐỂ CALL API LẤY SỐ LƯỢNG CẦN XỬ LÝ
   useEffect(() => {
     const loadPendingCount = async () => {
       try {
         const token = localStorage.getItem("access_token");
         if (token) {
-          // Lấy total từ hàm API đã có sẵn
           const data = await fetchPendingCoursesAPI(token, 1, 1);
           setPendingCount(data.total || 0);
         }
       } catch (error) {
-        console.error("Error loading pending courses count:", error);
+        console.error("Lỗi khi tải số lượng khóa học chờ duyệt:", error);
       }
     };
 
     loadPendingCount();
-    
-    // (Tuỳ chọn) Nếu má muốn nó tự động cập nhật mỗi 30s thì dùng setInterval ở đây
-    // const interval = setInterval(loadPendingCount, 30000);
-    // return () => clearInterval(interval);
-  }, [location.pathname]); // Cập nhật lại mỗi khi chuyển trang
+  }, [location.pathname]);
 
-  // ✅ ĐÃ THÊM pendingCount VÀO MENU "Duyệt khóa học"
+  // ✅ DANH SÁCH MENU ĐÃ VIỆT HÓA
   const sidebarLinks = [
-    { name: "Overview", icon: faChartPie, path: "/admin/dashboard" },
-    { name: "User Management", icon: faUsersCog, path: "/admin/users" },
-    { name: "Course Management", icon: faBook, path: "/admin/courses" },
+    { name: "Tổng quan", icon: faChartPie, path: "/admin/dashboard" },
+    { name: "Quản lý người dùng", icon: faUsersCog, path: "/admin/users" },
+    { name: "Quản lý khóa học", icon: faBook, path: "/admin/courses" },
     {
-      name: "Revenue Report",
+      name: "Báo cáo doanh thu",
       icon: faMoneyBillWave,
       path: "/admin/revenue",
     },
-    { name: "Course Categories", icon: faTags, path: "/admin/categories" },
+    { name: "Danh mục khóa học", icon: faTags, path: "/admin/categories" },
     { 
-      name: "Course Approvals", 
+      name: "Duyệt khóa học", 
       icon: faListCheck, 
       path: "/admin/approvals",
-      pendingCount: pendingCount // Móc con số ở trên vào đây!
+      pendingCount: pendingCount 
     },
   ];
 
   const bottomLinks = [
-    { name: "Admin Profile", icon: faUserShield, path: "/admin/profile" },
-    { name: "System Settings", icon: faGears, path: "/admin/settings" },
+    { name: "Hồ sơ cá nhân", icon: faUserShield, path: "/admin/profile" },
+    { name: "Cài đặt hệ thống", icon: faGears, path: "/admin/settings" },
   ];
 
   const handleLinkClick = () => {
@@ -128,7 +123,7 @@ const AdminLayout = () => {
         await logoutAPI(token);
       }
     } catch (error) {
-      console.error("Error during logout API:", error);
+      console.error("Lỗi khi đăng xuất:", error);
     } finally {
       localStorage.removeItem("access_token");
       localStorage.removeItem("user_role");
@@ -139,7 +134,7 @@ const AdminLayout = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden relative">
-      {/* OVERLAY */}
+      {/* LỚP PHỦ (OVERLAY) */}
       {isSidebarOpen && (
         <div
           className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-20 md:hidden transition-opacity duration-300"
@@ -147,7 +142,7 @@ const AdminLayout = () => {
         ></div>
       )}
 
-      {/* SIDEBAR */}
+      {/* THANH ĐIỀU HƯỚNG BÊN (SIDEBAR) */}
       <aside
         className={`fixed md:relative z-30 h-full bg-slate-950 text-slate-300 flex flex-col transition-all duration-300 ease-in-out transform shadow-2xl md:shadow-none border-r border-slate-900
         ${
@@ -183,13 +178,13 @@ const AdminLayout = () => {
                 EduSync
               </span>
               <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mt-1">
-                Admin Panel
+                Quản trị hệ thống
               </span>
             </div>
           </div>
         </div>
 
-        {/* NAVIGATION LINKS */}
+        {/* CÁC ĐƯỜNG DẪN ĐIỀU HƯỚNG */}
         <nav className="flex-1 overflow-y-auto overflow-x-hidden py-6 custom-scrollbar px-3 relative z-10">
           <ul className="space-y-1.5">
             {sidebarLinks.map((link) => {
@@ -224,7 +219,6 @@ const AdminLayout = () => {
                       {link.name}
                     </span>
                     
-                    {/* ✅ BADGE THÔNG BÁO MÀU ĐỎ SẼ HIỆN Ở ĐÂY NẾU pendingCount > 0 */}
                     {link.pendingCount > 0 && (
                       <span className="bg-red-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full shadow-md animate-pulse">
                         {link.pendingCount}
@@ -275,7 +269,7 @@ const AdminLayout = () => {
               className={`w-full group flex items-center py-3 text-sm font-semibold text-red-500 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 focus:outline-none
                         ${isSidebarOpen ? "px-4 gap-3.5" : "px-0 justify-center"}
                       `}
-              title={!isSidebarOpen ? "Sign out" : ""}
+              title={!isSidebarOpen ? "Đăng xuất" : ""}
             >
               <div
                 className={`group-hover:text-red-600 flex items-center justify-center ${isSidebarOpen ? "w-6" : "w-auto"}`}
@@ -288,16 +282,16 @@ const AdminLayout = () => {
               <span
                 className={`whitespace-nowrap transition-all duration-300 ${isSidebarOpen ? "opacity-100 w-auto" : "opacity-0 w-0 hidden"}`}
               >
-                Sign out
+                Đăng xuất
               </span>
             </button>
           </div>
         </nav>
       </aside>
 
-      {/* MAIN CONTENT WRAPPER */}
+      {/* PHẦN NỘI DUNG CHÍNH */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-100/50">
-        {/* HEADER */}
+        {/* THANH ĐẦU TRANG (HEADER) */}
         <header className="h-20 bg-white/80 backdrop-blur-md border-b border-slate-200/60 flex items-center justify-between px-4 sm:px-8 transition-all relative z-10 sticky top-0 shadow-sm">
           <div className="flex items-center flex-1">
             <button
@@ -310,7 +304,7 @@ const AdminLayout = () => {
             <div className="relative w-full max-w-xs sm:max-w-md lg:max-w-xl hidden sm:block">
               <input
                 type="text"
-                placeholder="Search users, payment IDs, courses..."
+                placeholder="Tìm kiếm người dùng, mã thanh toán, khóa học..."
                 className="w-full pl-11 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 text-sm font-medium transition-all shadow-sm"
               />
               <FontAwesomeIcon
@@ -323,7 +317,6 @@ const AdminLayout = () => {
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
             <button className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center">
               <FontAwesomeIcon icon={faBell} className="text-xl" />
-              {/* ✅ MÁ CÓ THỂ ĐẤU CHUNG SỐ LƯỢNG VÀO QUẢ CHUÔNG TRÊN NÀY LUÔN CHO XỊN */}
               {pendingCount > 0 && (
                 <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
                   {pendingCount}
@@ -338,16 +331,16 @@ const AdminLayout = () => {
             >
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 leading-none">
-                  {adminProfile.fullName || "Admin"}
+                  {adminProfile.fullName || "Quản trị viên"}
                 </p>
                 <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mt-1">
-                  Super Admin
+                  Quản trị viên cấp cao
                 </p>
               </div>
               {adminProfile.avatarUrl ? (
                 <img
                   src={adminProfile.avatarUrl}
-                  alt="Avatar"
+                  alt="Ảnh đại diện"
                   className="w-10 h-10 rounded-xl object-cover shadow-md border-2 border-white"
                   onError={(e) => { e.target.style.display = "none"; }}
                 />

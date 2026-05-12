@@ -73,7 +73,7 @@ export async function getMyCoursesAPI() {
 
 export async function enrollFreeCourseAPI(courseId) {
   const token = localStorage.getItem("access_token");
-  const res = await axios.post(`${BASE_URL}/courses/enroll`, { course_id: courseId }, { headers: { Authorization: `Bearer ${token}` } });
+  const res = await axios.post(`${BASE_URL}/learning/enroll`, { course_id: courseId }, { headers: { Authorization: `Bearer ${token}` } });
   return res.data;
 }
 

@@ -11,31 +11,32 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 const AdminDashboard = () => {
+  // Dữ liệu các thẻ tính năng đã được Việt hóa
   const cards = [
     {
-      title: "User Management",
-      description: "View learners, instructors, and account status.",
+      title: "Quản lý người dùng",
+      description: "Quản trị thông tin học viên, giảng viên và trạng thái tài khoản hệ thống.",
       icon: faUsersCog,
       path: "/admin/users",
       accent: "from-blue-600 to-indigo-600",
     },
     {
-      title: "Course Management",
-      description: "Browse courses, pricing, and moderation.",
+      title: "Quản lý khóa học",
+      description: "Theo dõi danh sách khóa học, điều chỉnh giá bán và kiểm soát nội dung.",
       icon: faBook,
       path: "/admin/courses",
       accent: "from-emerald-600 to-teal-600",
     },
     {
-      title: "Course Approvals",
-      description: "Review pending submissions and content updates.",
+      title: "Phê duyệt nội dung",
+      description: "Xem xét các yêu cầu xuất bản khóa học mới và cập nhật bài học.",
       icon: faListCheck,
       path: "/admin/approvals",
       accent: "from-amber-600 to-orange-600",
     },
     {
-      title: "Revenue Report",
-      description: "Financial summaries and reporting.",
+      title: "Báo cáo doanh thu",
+      description: "Thống kê chi tiết tài chính, dòng tiền và các chỉ số tăng trưởng.",
       icon: faMoneyBillWave,
       path: "/admin/revenue",
       accent: "from-violet-600 to-purple-600",
@@ -49,14 +50,14 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-3 text-blue-600 mb-2">
             <FontAwesomeIcon icon={faChartPie} className="text-2xl" />
             <span className="text-xs font-black uppercase tracking-widest">
-              Overview
+              Tổng quan hệ thống
             </span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            Admin dashboard
+            Bảng điều khiển Admin
           </h1>
           <p className="text-slate-600 font-medium mt-2 max-w-xl">
-            Quick access to the main areas of the EduSync admin panel.
+            Truy cập nhanh vào các khu vực quản trị trọng yếu của hệ thống EduSync.
           </p>
         </div>
       </header>
@@ -68,9 +69,10 @@ const AdminDashboard = () => {
             to={card.path}
             className="group bg-white rounded-3xl border border-slate-200/80 shadow-sm hover:shadow-xl hover:shadow-slate-900/5 hover:-translate-y-0.5 transition-all duration-300 overflow-hidden flex flex-col"
           >
+            {/* Thanh màu điểm nhấn phía trên */}
             <div
               className={`h-2 bg-gradient-to-r ${card.accent} shrink-0`}
-              aria-hidden
+              aria-hidden="true"
             />
             <div className="p-6 sm:p-8 flex-1 flex flex-col gap-4">
               <div className="flex items-start justify-between gap-4">
