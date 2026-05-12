@@ -85,3 +85,21 @@ export const adminToggleBlockAPI = async (userId, token) => {
   );
   return response.data;
 };
+
+// Lấy chi tiết user
+export const adminGetUserDetailAPI = async (userId, token) => {
+  const response = await axios.get(
+    `${ADMIN_API_URL}/admin/users/${userId}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};
+
+// Xoá user
+export const adminDeleteUserAPI = async (userId, token) => {
+  const response = await axios.delete(
+    `${ADMIN_API_URL}/admin/users/${userId}`,
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return response.data;
+};

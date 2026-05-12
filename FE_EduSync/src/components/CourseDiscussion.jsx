@@ -10,7 +10,6 @@ import {
   faSpinner
 } from "@fortawesome/free-solid-svg-icons";
 
-// Nhớ import lại hàm postQuestionAPI đã được cập nhật nha má
 import { getLessonQuestionsAPI, postQuestionAPI, postReplyAPI } from "../services/learnerCourseAPI"; 
 
 const formatDateTime = (dateStr) => {
@@ -18,8 +17,6 @@ const formatDateTime = (dateStr) => {
   const date = new Date(dateStr);
   return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 };
-
-// 🚨 Nhận thêm lessonId từ trang cha
 const CourseDiscussion = ({ courseId, lessonId }) => {
   const [qnaList, setQnaList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -61,8 +58,8 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
   // XỬ LÝ GỬI CÂU HỎI MỚI (POST)
   // =========================================================================
   const handleAskQuestion = async (e) => {
-    e.preventDefault();
-    if (!newQuestion.trim()) return;
+    if (e) e.preventDefault();
+    if (!newQuestion.trim() || isSubmitting) return; // 🚨 Chặn gửi nếu đang loading hoặc rỗng
     
     if (!lessonId) {
       alert("Lỗi: Không tìm thấy lesson_id. Bạn đang học bài nào vậy?");
@@ -73,7 +70,6 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
 
     try {
       const token = localStorage.getItem("access_token");
-      //Truyền đủ courseId, lessonId, nội dung, token
       await postQuestionAPI(courseId, lessonId, newQuestion, token);
       setNewQuestion("");
       fetchQnA(); 
@@ -84,11 +80,18 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
     }
   };
 
+  const handleKeyDownNewQuestion = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { // Bấm Enter (không kèm Shift) thì gửi
+      e.preventDefault(); // Ngăn việc rớt xuống dòng mới
+      handleAskQuestion();
+    }
+  };
+
   // =========================================================================
   // XỬ LÝ REPLY
   // =========================================================================
   const handleSubmitReply = async (questionId) => {
-    if (!replyText.trim()) return;
+    if (!replyText.trim() || isSubmitting) return; // 🚨 Chặn gửi nếu đang loading hoặc rỗng
     setIsSubmitting(true);
 
     try {
@@ -101,6 +104,12 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       alert("Failed to post reply. Please try again.");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+  const handleKeyDownReply = (e, questionId) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmitReply(questionId);
     }
   };
 
@@ -118,7 +127,6 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
 
   return (
     <div className="animate-fade-slide-up h-full flex flex-col">
-      {/* ... (Toàn bộ phần giao diện UI bên dưới giữ y chang đoạn code cũ của má) ... */}
       
       {/* HEADER & SEARCH */}
       <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -149,9 +157,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
           <div className="flex flex-col gap-3">
             <textarea
               rows="3"
-              placeholder="What do you want to know about this lesson?"
+              placeholder="What do you want to know about this lesson? (Press Enter to send, Shift+Enter for new line)"
               value={newQuestion}
               onChange={(e) => setNewQuestion(e.target.value)}
+              onKeyDown={handleKeyDownNewQuestion} // 🚨 BẮT PHÍM Ở ĐÂY NÈ MÁ
               className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-y"
             ></textarea>
             <div className="flex justify-between items-center">
@@ -228,9 +237,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
                       <textarea
                         autoFocus
                         rows="2"
-                        placeholder="Write a reply..."
+                        placeholder="Write a reply... (Press Enter to send)"
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => handleKeyDownReply(e, q.id)} // 🚨 BẮT PHÍM Ở ĐÂY NỮA
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 transition-colors resize-y mb-2"
                       />
                       <div className="flex justify-end gap-2">
@@ -269,9 +279,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
                       <textarea
                         autoFocus
                         rows="2"
-                        placeholder="Write a reply..."
+                        placeholder="Write a reply... (Press Enter to send)"
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
+                        onKeyDown={(e) => handleKeyDownReply(e, q.id)} // 🚨 BẮT PHÍM LUÔN CHO CHẮC
                         className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:outline-none focus:border-blue-400 transition-colors resize-y mb-2"
                       />
                       <div className="flex justify-end gap-2">

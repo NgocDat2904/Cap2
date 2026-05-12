@@ -11,55 +11,12 @@ import {
   faCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
-// =========================================================================
-// MOCK DATA: 4 LOẠI THÔNG BÁO CHO LEARNER
-// =========================================================================
-const initialNotifications = [
-  {
-    id: 1,
-    type: "qa", // Tương tác Q&A
-    title: "Instructor replied to you",
-    content:
-      "Mr. Tran Viet Anh answered your question in lesson 'React Hooks'.",
-    time: "10 minutes ago",
-    isRead: false,
-    link: "/course/reactjs/lesson-5",
-  },
-  {
-    id: 2,
-    type: "system", // Admin gửsi
-    title: "New course access granted",
-    content:
-      "Admin has granted you access to the course 'Soft Skills 101'.",
-    time: "2 hours ago",
-    isRead: false,
-    link: "/course/soft-skills",
-  },
-  {
-    id: 3,
-    type: "course_update", // Cập nhật khóa học
-    title: "New lesson added",
-    content: "Course 'Java Backend' just added 2 new API practice videos.",
-    time: "Yesterday",
-    isRead: true,
-    link: "/course/java-backend",
-  },
-  {
-    id: 4,
-    type: "gamification", // Động lực/Nhắc nhở
-    title: "Don't give up! 🔥",
-    content:
-      "You haven't studied for 3 days. Resume your lesson now!",
-    time: "3 days ago",
-    isRead: true,
-    link: "/dashboard",
-  },
-];
+import { getNotificationsAPI, markNotificationReadAPI } from "../services/notificationAPI";
 
 const NotificationDropdown = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("all"); // 'all' hoặc 'unread'
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
 
   const dropdownRef = useRef(null);
   const navigate = useNavigate();
@@ -84,8 +41,28 @@ const NotificationDropdown = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Gọi API lấy thông báo
+  useEffect(() => {
+    const fetchNotifs = async () => {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          const data = await getNotificationsAPI(token);
+          setNotifications(data || []);
+        }
+      } catch (error) {
+        console.error("Lỗi fetch notifications:", error);
+      }
+    };
+    if (isOpen) fetchNotifs(); // Chỉ gọi khi mở, hoặc bỏ if để gọi lúc init
+  }, [isOpen]);
+
   // Xử lý Đánh dấu đã đọc 1 thông báo
-  const markAsRead = (id) => {
+  const markAsRead = async (id) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (token) await markNotificationReadAPI(id, token);
+    } catch (e) {}
     setNotifications(
       notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
     );
@@ -203,15 +180,22 @@ const NotificationDropdown = () => {
                   key={notif.id}
                   onClick={() => {
                     markAsRead(notif.id);
-                    // navigate(notif.link); // Chuyển hướng khi click (Cần import useNavigate)
                     setIsOpen(false);
+                    // Điều hướng dựa trên type
+                    if (notif.type === 'qna_reply') {
+                      navigate(`/courses/${notif.course_id}/lessons/${notif.lesson_id}`, { state: { activeLeftTab: 'q&a' } });
+                    } else if (notif.type === 'new_course' || notif.type === 'new_enroll') {
+                      navigate(`/courses/${notif.course_id}`);
+                    } else if (notif.url) {
+                      navigate(notif.url);
+                    }
                   }}
                   className={`p-4 border-b border-slate-50 flex gap-3 cursor-pointer transition-colors hover:bg-slate-50 relative ${
                     !notif.isRead ? "bg-blue-50/30" : "bg-white"
                   }`}
                 >
                   {/* Icon loại thông báo */}
-                  {renderNotificationIcon(notif.type)}
+                  {renderNotificationIcon(notif.type || notif.category)}
 
                   {/* Nội dung */}
                   <div className="flex-1 min-w-0">
