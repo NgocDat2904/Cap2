@@ -2,12 +2,6 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  fetchAdminCourseDetailAPI,
-  approveCourseAPI,
-  rejectCourseAPI,
-  resolveUpdateAPI
-} from "../../services/adminCourseAPI";
-import {
   faArrowLeft,
   faPlayCircle,
   faCheckCircle,
@@ -27,6 +21,12 @@ import {
   faSpinner,
   faEdit, 
 } from "@fortawesome/free-solid-svg-icons";
+import {
+  fetchAdminCourseDetailAPI,
+  approveCourseAPI,
+  rejectCourseAPI,
+  resolveUpdateAPI
+} from "../../services/adminCourseAPI";
 
 const THUMB_FALLBACK =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
@@ -35,18 +35,8 @@ function formatUpdatedDate(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString("en-US");
+  return d.toLocaleDateString("vi-VN");
 }
-
-const formatFileSize = (bytes) => {
-  if (bytes === "—" || !bytes || bytes === 0) return "—";
-  if (typeof bytes === "string" && bytes.includes("B")) return bytes;
-
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-};
 
 const AdminCourseDetail = () => {
   const navigate = useNavigate();
@@ -56,14 +46,12 @@ const AdminCourseDetail = () => {
   const [adminPrice, setAdminPrice] = useState("");
   const [loadState, setLoadState] = useState({ loading: true, error: "" });
   const [actionLoading, setActionLoading] = useState(false);
-
-  // ✅ BƯỚC 1: Thêm State để lưu trữ Link Video đang được chọn
   const [currentVideoUrl, setCurrentVideoUrl] = useState("");
 
   const loadCourse = useCallback(async () => {
     const token = localStorage.getItem("access_token");
     if (!token || !id) {
-      setLoadState({ loading: false, error: "Missing session or course ID." });
+      setLoadState({ loading: false, error: "Thiếu thông tin phiên đăng nhập hoặc mã định danh khóa học." });
       setCourse(null);
       return;
     }
@@ -82,7 +70,6 @@ const AdminCourseDetail = () => {
         data.price !== undefined && data.price !== null ? String(data.price) : "",
       );
 
-      // ✅ Tự động gán video của bài học đầu tiên vào State khi load xong
       const firstValidLesson = fetchedLessons.find((l) => l.play_url || l.url);
       if (firstValidLesson) {
         setCurrentVideoUrl(firstValidLesson.play_url || firstValidLesson.url);
@@ -91,7 +78,7 @@ const AdminCourseDetail = () => {
       setLoadState({ loading: false, error: "" });
     } catch (e) {
       setCourse(null);
-      setLoadState({ loading: false, error: e.message || "Failed to load course" });
+      setLoadState({ loading: false, error: "Lỗi hệ thống: Không thể truy xuất dữ liệu chi tiết khóa học." });
     }
   }, [id]);
 
@@ -102,11 +89,8 @@ const AdminCourseDetail = () => {
   if (loadState.loading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-400">
-        <FontAwesomeIcon
-          icon={faSpinner}
-          className="text-4xl animate-spin text-blue-500 mb-4"
-        />
-        <p className="font-bold">Loading course information...</p>
+        <FontAwesomeIcon icon={faSpinner} className="text-4xl animate-spin text-blue-500 mb-4" />
+        <p className="font-bold">Đang tải dữ liệu khóa học...</p>
       </div>
     );
   }
@@ -114,13 +98,13 @@ const AdminCourseDetail = () => {
   if (loadState.error || !course) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] p-8 bg-slate-50 text-slate-600">
-        <p className="font-bold text-red-600 mb-4">{loadState.error || "No data available"}</p>
+        <p className="font-bold text-red-600 mb-4">{loadState.error || "Không tìm thấy dữ liệu"}</p>
         <button
           type="button"
           onClick={() => navigate("/admin/approvals")}
           className="px-4 py-2 bg-slate-200 rounded-xl font-bold hover:bg-slate-300"
         >
-          Back to approval queue
+          Quay lại danh sách phê duyệt
         </button>
       </div>
     );
@@ -129,26 +113,30 @@ const AdminCourseDetail = () => {
   const canEdit = !["pending", "rejected", "suspended"].includes(course.status);
 
   // =========================================================================
-  // LOGIC HÀNH ĐỘNG CỦA ADMIN
+  // XỬ LÝ NGHIỆP VỤ QUẢN TRỊ
   // =========================================================================
   const handleApproveCourse = async () => {
     if (course.status !== "pending") return;
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Session expired. Please log in again.");
+      alert("Lỗi xác thực: Phiên làm việc đã hết hạn.");
       return;
     }
     const p = adminPrice === "" || adminPrice === null ? 0 : parseFloat(String(adminPrice).replace(",", "."));
-    if (Number.isNaN(p) || p < 0) { alert("Invalid price (USD, ≥ 0 — 0 = free)."); return; }
-    const label = p === 0 ? "Free" : `$${p}`;
-    if (!window.confirm(`Confirm publishing this course at ${label}?`)) return;
+    if (Number.isNaN(p) || p < 0) { 
+      alert("Tham số không hợp lệ: Giá niêm yết phải là định dạng số dương."); 
+      return; 
+    }
+    
+    if (!window.confirm(`Xác nhận phê duyệt và xuất bản khóa học với mức giá: ${p === 0 ? "Miễn phí" : p + " USD"}?`)) return;
+    
     setActionLoading(true);
     try {
       await approveCourseAPI(id, p, token);
-      alert("Course published successfully.");
+      alert("Hệ thống: Khóa học đã được xuất bản công khai thành công.");
       navigate("/admin/approvals");
     } catch (e) {
-      alert(e.message || "Approval failed");
+      alert("Lỗi nghiệp vụ: Quá trình phê duyệt thất bại.");
     } finally {
       setActionLoading(false);
     }
@@ -157,19 +145,16 @@ const AdminCourseDetail = () => {
   const handleRejectCourse = async () => {
     if (course.status !== "pending") return;
     const token = localStorage.getItem("access_token");
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      return;
-    }
-    const reason = window.prompt("Enter rejection reason to send to the Instructor:", "");
+    const reason = window.prompt("Nhập lý do từ chối phê duyệt (Thông tin này sẽ được gửi tới giảng viên):", "");
     if (reason === null) return;
+    
     setActionLoading(true);
     try {
       await rejectCourseAPI(id, reason, token);
-      alert("Course rejected.");
+      alert("Hệ thống: Đã từ chối phê duyệt khóa học và gửi thông báo phản hồi.");
       await loadCourse();
     } catch (e) {
-      alert(e.message || "Rejection failed");
+      alert("Lỗi hệ thống: Không thể thực hiện thao tác từ chối.");
     } finally {
       setActionLoading(false);
     }
@@ -177,8 +162,8 @@ const AdminCourseDetail = () => {
 
   const handleResolveUpdate = async (isPriceChanged) => {
     const confirmMsg = isPriceChanged
-      ? `Save new price $${adminPrice} and mark update as reviewed?`
-      : "Keep existing price and mark update as reviewed?";
+      ? `Xác nhận lưu mức giá mới (${adminPrice} USD) và cập nhật nội dung khóa học?`
+      : "Xác nhận giữ nguyên mức giá cũ và cập nhật nội dung mới?";
 
     if (window.confirm(confirmMsg)) {
       const token = localStorage.getItem("access_token");
@@ -186,11 +171,10 @@ const AdminCourseDetail = () => {
       try {
         const newPrice = isPriceChanged ? parseFloat(adminPrice) : null;
         await resolveUpdateAPI(id, newPrice, token);
-
-        alert("Update processed successfully!");
+        alert("Thông báo: Đã phê duyệt các bản cập nhật nội dung mới.");
         await loadCourse();
       } catch (e) {
-        alert(e.message || "Processing failed!");
+        alert("Lỗi xử lý: Cập nhật nội dung thất bại.");
       } finally {
         setActionLoading(false);
       }
@@ -199,49 +183,43 @@ const AdminCourseDetail = () => {
 
   const handleToggleSuspension = () => {
     const newStatus = course.status === "suspended" ? "published" : "suspended";
-    if (
-      window.confirm(
-        `Are you sure you want to ${newStatus === "suspended" ? "suspend" : "restore"} this course?`,
-      )
-    ) {
+    const msg = course.status === "suspended" 
+      ? "Khôi phục trạng thái hoạt động cho khóa học này?" 
+      : "Đình chỉ hoạt động khóa học? Người dùng sẽ không thể truy cập nội dung này.";
+      
+    if (window.confirm(msg)) {
       setCourse({ ...course, status: newStatus });
+      alert("Hệ thống: Trạng thái khóa học đã được thay đổi.");
     }
   };
 
   const handleDeleteCourse = () => {
-    alert("Delete course feature is not yet connected to the API.");
+    alert("Tính năng: Xóa khóa học vĩnh viễn hiện đang được bảo trì.");
   };
 
   const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
 
   // =========================================================================
-  // HÀM RENDER CỘT PHẢI
+  // GIAO DIỆN QUẢN TRỊ (RIGHT PANEL)
   // =========================================================================
   const renderAdminActions = () => {
     if (course.has_new_update) {
       return (
         <div className="bg-amber-50 border-2 border-amber-200 rounded-3xl shadow-sm p-6 relative overflow-hidden">
           <h3 className="text-lg font-black text-amber-800 mb-2 flex items-center gap-2">
-            <FontAwesomeIcon
-              icon={faBell}
-              className="text-amber-500 animate-bounce"
-            />
-            Review Pricing
+            <FontAwesomeIcon icon={faBell} className="text-amber-500 animate-bounce" />
+            Kiểm tra mức giá
           </h3>
           <p className="text-amber-700/80 text-xs font-medium mb-5">
-            The instructor just updated the content! You may adjust the price if
-            you feel this update improves the course quality.
+            Giảng viên vừa cập nhật nội dung giáo trình. Bạn có thể điều chỉnh lại giá bán nếu chất lượng khóa học thay đổi.
           </p>
 
           <div className="mb-6">
             <label className="block text-xs font-bold text-amber-800 mb-2 uppercase tracking-wider">
-              New Price (USD)
+              Giá mới (USD)
             </label>
             <div className="relative">
-              <FontAwesomeIcon
-                icon={faDollarSign}
-                className="absolute left-4 top-3.5 text-slate-400"
-              />
+              <FontAwesomeIcon icon={faDollarSign} className="absolute left-4 top-3.5 text-slate-400" />
               <input
                 type="number"
                 min="0"
@@ -256,10 +234,8 @@ const AdminCourseDetail = () => {
             onClick={() => handleResolveUpdate(adminPrice !== course.price)}
             className="w-full py-3.5 bg-amber-500 hover:bg-amber-600 text-white font-black rounded-xl transition-all shadow-md active:scale-95 flex justify-center items-center gap-2"
           >
-            <FontAwesomeIcon icon={faSave} />{" "}
-            {adminPrice !== course.price
-              ? "Save new price & Dismiss notification"
-              : "Keep price & Dismiss notification"}
+            <FontAwesomeIcon icon={faSave} /> 
+            {adminPrice !== course.price ? "Cập nhật giá & Đóng thông báo" : "Giữ nguyên giá & Đóng thông báo"}
           </button>
         </div>
       );
@@ -270,26 +246,20 @@ const AdminCourseDetail = () => {
         <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-3xl shadow-xl p-6 relative overflow-hidden">
           <div className="absolute -right-10 -top-10 w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"></div>
           <h3 className="text-lg font-black text-white mb-2 relative z-10 flex items-center gap-2">
-            <FontAwesomeIcon
-              icon={faCheckCircle}
-              className="text-emerald-400"
-            />
-            Set Listing Price (USD)
+            <FontAwesomeIcon icon={faCheckCircle} className="text-emerald-400" />
+            Thiết lập giá niêm yết
           </h3>
           <p className="text-blue-200 text-xs font-medium mb-5 relative z-10">
-            Content meets the standard? Set a price to publish it to the platform.
+            Nội dung đã đạt yêu cầu kiểm duyệt? Hãy đặt giá để xuất bản lên nền tảng.
           </p>
           <div className="relative z-10 mb-6">
             <div className="relative">
-              <FontAwesomeIcon
-                icon={faDollarSign}
-                className="absolute left-4 top-3.5 text-slate-400"
-              />
+              <FontAwesomeIcon icon={faDollarSign} className="absolute left-4 top-3.5 text-slate-400" />
               <input
                 type="number"
                 min="0"
                 step="0.01"
-                placeholder="E.g: 49.99 (Set 0 if free)"
+                placeholder="Ví dụ: 49.99 (0 là miễn phí)"
                 value={adminPrice}
                 onChange={(e) => setAdminPrice(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-0 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-emerald-500/30 outline-none"
@@ -303,12 +273,8 @@ const AdminCourseDetail = () => {
               disabled={actionLoading}
               className="w-full py-3.5 bg-emerald-500 hover:bg-emerald-400 text-white font-black rounded-xl transition-colors shadow-lg shadow-emerald-500/30 active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50"
             >
-              {actionLoading ? (
-                <FontAwesomeIcon icon={faSpinner} spin />
-              ) : (
-                <FontAwesomeIcon icon={faCheckCircle} />
-              )}{" "}
-              Approve & Publish
+              {actionLoading ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faCheckCircle} />}
+              Phê duyệt & Xuất bản
             </button>
             <button
               type="button"
@@ -316,7 +282,7 @@ const AdminCourseDetail = () => {
               disabled={actionLoading}
               className="w-full py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
             >
-              Reject Course
+              Từ chối phê duyệt
             </button>
           </div>
         </div>
@@ -329,16 +295,11 @@ const AdminCourseDetail = () => {
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-red-500 mb-3 shadow-sm border border-red-100">
             <FontAwesomeIcon icon={faTimesCircle} className="text-2xl" />
           </div>
-          <h3 className="text-base font-black text-red-700 mb-2">
-            This course has been rejected!
-          </h3>
-          <p className="text-xs text-red-600/80 font-medium">
-            You have rejected this course. The instructor needs to revise the
-            content and resubmit for review.
-          </p>
+          <h3 className="text-base font-black text-red-700 mb-2">Đã từ chối khóa học</h3>
+          <p className="text-xs text-red-600/80 font-medium">Hồ sơ đã được gửi trả lại giảng viên để yêu cầu chỉnh sửa nội dung.</p>
           {course.rejectReason ? (
             <p className="text-xs text-red-800 font-bold mt-3 text-left bg-white/60 p-2 rounded-lg border border-red-100">
-              Reason: {course.rejectReason}
+              Lý do: {course.rejectReason}
             </p>
           ) : null}
         </div>
@@ -351,22 +312,15 @@ const AdminCourseDetail = () => {
           <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center mx-auto text-slate-400 mb-3 shadow-sm">
             <FontAwesomeIcon icon={faPenRuler} className="text-xl" />
           </div>
-          <h3 className="text-base font-black text-slate-700 mb-2">
-            Course is in Draft
-          </h3>
-          <p className="text-xs text-slate-500 font-medium">
-            The instructor has not submitted a review request yet. No actions are
-            available at this time.
-          </p>
+          <h3 className="text-base font-black text-slate-700 mb-2">Đang là bản nháp</h3>
+          <p className="text-xs text-slate-500 font-medium">Giảng viên chưa gửi yêu cầu phê duyệt. Hiện không có thao tác nào khả dụng.</p>
         </div>
       );
     }
 
     return (
       <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 overflow-hidden relative">
-        <h3 className="text-lg font-black text-slate-900 mb-5">
-          Post-Publish Actions
-        </h3>
+        <h3 className="text-lg font-black text-slate-900 mb-5">Quản trị sau xuất bản</h3>
         <button
           onClick={handleToggleSuspension}
           className={`w-full py-3.5 px-4 font-bold rounded-xl flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-95 ${
@@ -375,46 +329,26 @@ const AdminCourseDetail = () => {
               : "bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200"
           }`}
         >
-          <FontAwesomeIcon
-            icon={course.status === "published" ? faBan : faCheckCircle}
-          />
-          {course.status === "published"
-            ? "Suspend this course"
-            : "Restore / Unsuspend"}
+          <FontAwesomeIcon icon={course.status === "published" ? faBan : faCheckCircle} />
+          {course.status === "published" ? "Đình chỉ khóa học" : "Khôi phục hoạt động"}
         </button>
       </div>
     );
   };
 
   const renderStatusBadge = (status) => {
-    if (status === "published")
-      return (
-        <span className="px-3 py-1.5 bg-emerald-100 text-emerald-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-emerald-200">
-          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-          Published
-        </span>
-      );
-    if (status === "pending")
-      return (
-        <span className="px-3 py-1.5 bg-amber-100 text-amber-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-amber-200 animate-pulse">
-          <FontAwesomeIcon icon={faClockRotateLeft} /> Pending Review
-        </span>
-      );
-    if (status === "rejected")
-      return (
-        <span className="px-3 py-1.5 bg-red-100 text-red-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-red-200">
-          <FontAwesomeIcon icon={faTimesCircle} /> Rejected
-        </span>
-      );
-    if (status === "draft")
-      return (
-        <span className="px-3 py-1.5 bg-slate-100 text-slate-700 text-sm font-bold rounded-xl flex items-center gap-2 border border-slate-200">
-          <FontAwesomeIcon icon={faPenRuler} /> Instructor Draft
-        </span>
-      );
+    const badges = {
+      published: { color: "bg-emerald-100 text-emerald-700 border-emerald-200", text: "Đã xuất bản", dot: true },
+      pending: { color: "bg-amber-100 text-amber-700 border-amber-200 animate-pulse", text: "Đang chờ duyệt", icon: faClockRotateLeft },
+      rejected: { color: "bg-red-100 text-red-700 border-red-200", text: "Đã từ chối", icon: faTimesCircle },
+      draft: { color: "bg-slate-100 text-slate-700 border-slate-200", text: "Bản nháp", icon: faPenRuler },
+      suspended: { color: "bg-slate-800 text-white border-slate-900", text: "Đang bị đình chỉ", icon: faBan }
+    };
+    const b = badges[status] || badges.suspended;
     return (
-      <span className="px-3 py-1.5 bg-slate-800 text-white text-sm font-bold rounded-xl flex items-center gap-2 border border-slate-900">
-        <FontAwesomeIcon icon={faBan} /> Suspended
+      <span className={`px-3 py-1.5 ${b.color} text-sm font-bold rounded-xl flex items-center gap-2 border`}>
+        {b.dot && <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>}
+        {b.icon && <FontAwesomeIcon icon={b.icon} />} {b.text}
       </span>
     );
   };
@@ -426,7 +360,7 @@ const AdminCourseDetail = () => {
           onClick={() => navigate(-1)}
           className="text-slate-500 hover:text-blue-600 font-bold text-sm flex items-center gap-2 transition-colors mb-6"
         >
-          <FontAwesomeIcon icon={faArrowLeft} /> Back to list
+          <FontAwesomeIcon icon={faArrowLeft} /> Quay lại danh sách
         </button>
 
         {course.has_new_update && (
@@ -435,13 +369,8 @@ const AdminCourseDetail = () => {
               <FontAwesomeIcon icon={faBell} className="animate-bounce" />
             </div>
             <div>
-              <h3 className="text-amber-800 font-bold text-sm">
-                System Notice: New content update available!
-              </h3>
-              <p className="text-amber-700/80 text-xs mt-0.5">
-                The instructor has added or edited lessons. Please check the
-                right panel to take action.
-              </p>
+              <h3 className="text-amber-800 font-bold text-sm">Thông báo hệ thống: Có cập nhật nội dung mới!</h3>
+              <p className="text-amber-700/80 text-xs mt-0.5">Giảng viên đã thay đổi bài học. Vui lòng kiểm tra và xử lý tại bảng điều khiển bên phải.</p>
             </div>
           </div>
         )}
@@ -450,26 +379,18 @@ const AdminCourseDetail = () => {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               {renderStatusBadge(course.status)}
-              <span className="text-slate-400 font-bold text-sm border-l border-slate-300 pl-3">
-                ID: {course.id}
-              </span>
+              <span className="text-slate-400 font-bold text-sm border-l border-slate-300 pl-3">Mã khóa học: {course.id}</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">
-              {course.title}
-            </h1>
-            
-            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mt-3">
-              {course.description || "No description available for this course."}
-            </p>
+            <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight leading-tight">{course.title}</h1>
+            <p className="text-slate-600 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mt-3">{course.description || "Chưa có mô tả cho khóa học này."}</p>
           </div>
-
           {canEdit && (
             <div className="shrink-0 mt-4 xl:mt-0 flex flex-col items-end">
               <button
                 onClick={() => navigate(`/admin/courses/${course.id}/edit`)}
-                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center justify-center gap-2"
+                className="px-6 py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md active:scale-95 flex items-center justify-center gap-2"
               >
-                <FontAwesomeIcon icon={faEdit} /> Edit Course
+                <FontAwesomeIcon icon={faEdit} /> Chỉnh sửa khóa học
               </button>
             </div>
           )}
@@ -477,155 +398,70 @@ const AdminCourseDetail = () => {
       </div>
 
       <div className="max-w-[1600px] mx-auto flex flex-col lg:flex-row gap-8 items-start">
-        {/* CỘT TRÁI: VIDEO & GIÁO TRÌNH */}
         <div className="w-full lg:w-2/3 space-y-8">
-          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-800 aspect-video relative flex flex-col items-center justify-center group">
-            {/* ✅ BƯỚC 2: Sử dụng State currentVideoUrl để phát video */}
+          <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-800 aspect-video relative flex flex-col items-center justify-center">
             {currentVideoUrl ? (
-              <video
-                src={currentVideoUrl}
-                controls
-                autoPlay
-                className="absolute inset-0 w-full h-full object-contain bg-black"
-                playsInline
-              />
+              <video src={currentVideoUrl} controls autoPlay className="absolute inset-0 w-full h-full object-contain bg-black" playsInline />
             ) : (
               <>
-                <img
-                  src={course.thumbnail || THUMB_FALLBACK}
-                  alt="Thumbnail"
-                  className="absolute inset-0 w-full h-full object-cover opacity-40"
-                  onError={(ev) => {
-                    ev.currentTarget.src = THUMB_FALLBACK;
-                  }}
-                />
-                <button
-                  type="button"
-                  className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white hover:bg-blue-600 hover:scale-110 transition-all duration-300 shadow-2xl pointer-events-none"
-                >
+                <img src={course.thumbnail || THUMB_FALLBACK} alt="Thumbnail" className="absolute inset-0 w-full h-full object-cover opacity-40" />
+                <button className="relative z-10 w-20 h-20 bg-white/20 backdrop-blur-md rounded-full flex items-center justify-center text-white pointer-events-none">
                   <FontAwesomeIcon icon={faPlayCircle} className="text-5xl ml-1" />
                 </button>
               </>
             )}
-            <div className="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-black tracking-widest rounded-lg z-20 pointer-events-none">
-              ADMIN AUDIT
-            </div>
+            <div className="absolute top-4 left-4 px-3 py-1 bg-red-500 text-white text-xs font-black tracking-widest rounded-lg z-20">KIỂM DUYỆT ADMIN</div>
           </div>
 
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 sm:p-8">
             <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
-              <FontAwesomeIcon icon={faListUl} className="text-blue-600" />
-              Curriculum ({lessons.length} lessons)
+              <FontAwesomeIcon icon={faListUl} className="text-blue-600" /> Giáo trình học tập ({lessons.length} bài học)
             </h3>
-
             <div className="space-y-3">
               {lessons.map((lesson) => {
-                const isNewLesson = !lesson.play_url && !lesson.url;
                 const videoUrl = lesson.play_url || lesson.url;
                 const isPlaying = currentVideoUrl === videoUrl && videoUrl !== "";
-
                 return (
                   <div
                     key={lesson.id}
-                    // ✅ BƯỚC 3: Thêm sự kiện onClick để đổi Video
-                    onClick={() => {
-                      if (videoUrl) setCurrentVideoUrl(videoUrl);
-                    }}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 hover:border-blue-200 
-                      ${isPlaying ? "bg-blue-50 border-blue-300 shadow-sm" : "bg-white hover:bg-slate-50"} 
-                      ${isNewLesson ? "border-amber-300 bg-amber-50/30" : ""}
-                    `}
+                    onClick={() => videoUrl && setCurrentVideoUrl(videoUrl)}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 ${isPlaying ? "bg-blue-50 border-blue-300" : "bg-white hover:bg-slate-50"}`}
                   >
-                    {/* ✅ BƯỚC 4: Ép cứng chỉ lấy ảnh của Khóa học (course.thumbnail) */}
-                    <img
-                      src={course.thumbnail || THUMB_FALLBACK}
-                      alt="Lesson Thumbnail"
-                      className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200 shadow-sm"
-                      onError={(ev) => {
-                        ev.currentTarget.src = THUMB_FALLBACK;
-                      }}
-                    />
-
+                    <img src={course.thumbnail || THUMB_FALLBACK} alt="Thumbnail" className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200" />
                     <div className="flex-1 min-w-0">
-                      <p className={`font-bold text-sm line-clamp-1 flex items-center gap-2 ${isPlaying ? "text-blue-700" : "text-slate-700"}`}>
-                        {lesson.title}
-                        {isNewLesson && (
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase shadow-sm">
-                            New
-                          </span>
-                        )}
-                        {isPlaying && (
-                           <span className="text-[10px] text-blue-600 font-bold flex items-center gap-1 animate-pulse">
-                             <FontAwesomeIcon icon={faPlayCircle} /> Playing
-                           </span>
-                        )}
+                      <p className={`font-bold text-sm line-clamp-1 ${isPlaying ? "text-blue-700" : "text-slate-700"}`}>
+                        {lesson.title} {isPlaying && <span className="ml-2 text-[10px] animate-pulse text-blue-600"><FontAwesomeIcon icon={faPlayCircle} /> Đang phát</span>}
                       </p>
-                      
                     </div>
-
-                    <div className="shrink-0 text-xs font-bold text-slate-400 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
+                    <div className="shrink-0 text-xs font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-lg">
                       <FontAwesomeIcon icon={faClock} /> {lesson.duration}
                     </div>
                   </div>
                 );
               })}
-
-              {lessons.length === 0 && (
-                <p className="text-sm text-slate-400 text-center py-4">
-                  No lessons yet.
-                </p>
-              )}
             </div>
           </div>
         </div>
 
-        {/* CỘT PHẢI */}
         <div className="w-full lg:w-1/3 space-y-6 sticky top-24">
           {renderAdminActions()}
-
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
             <h3 className="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
-              <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />{" "}
-              General Information
+              <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" /> Thông tin tổng quan
             </h3>
             <ul className="space-y-4">
               <li className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faUserTie} className="w-4" /> Instructor
-                </span>
-                <span className="text-sm font-black text-slate-800">
-                  {course.instructor}
-                </span>
+                <span className="text-sm font-bold text-slate-500 flex items-center gap-2"><FontAwesomeIcon icon={faUserTie} className="w-4" /> Giảng viên</span>
+                <span className="text-sm font-black text-slate-800">{course.instructor}</span>
               </li>
               <li className="flex items-center justify-between">
-                <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faTag} className="w-4" /> Category
-                </span>
-                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">
-                  {course.category}
-                </span>
+                <span className="text-sm font-bold text-slate-500 flex items-center gap-2"><FontAwesomeIcon icon={faTag} className="w-4" /> Danh mục</span>
+                <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">{course.category}</span>
               </li>
-              {course.status !== "pending" &&
-                !course.has_new_update &&
-                course.status !== "draft" && (
-                  <li className="flex items-center justify-between">
-                    <span className="text-sm font-bold text-slate-500 flex items-center gap-2">
-                      <FontAwesomeIcon icon={faDollarSign} className="w-4" />{" "}
-                      Price
-                    </span>
-                    <span className="text-sm font-black text-emerald-600">
-                      ${course.price}
-                    </span>
-                  </li>
-                )}
             </ul>
           </div>
-
-          <button
-            onClick={handleDeleteCourse}
-            className="w-full py-3.5 px-4 bg-white text-red-500 font-bold rounded-2xl border border-red-200 hover:bg-red-50 flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-sm"
-          >
-            <FontAwesomeIcon icon={faTrash} /> Delete permanently from system
+          <button onClick={handleDeleteCourse} className="w-full py-3.5 px-4 bg-white text-red-500 font-bold rounded-2xl border border-red-200 hover:bg-red-50 transition-all active:scale-95 shadow-sm">
+            <FontAwesomeIcon icon={faTrash} /> Xóa vĩnh viễn khỏi hệ thống
           </button>
         </div>
       </div>

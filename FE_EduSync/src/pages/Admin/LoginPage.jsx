@@ -26,7 +26,6 @@ const AdminLoginPage = () => {
     setError("");
     setIsLoading(true);
 
-    // Giả lập call API đăng nhập
     try {
       const response = await loginAdminAPI(email, password);
       if (response?.access_token) {
@@ -35,14 +34,14 @@ const AdminLoginPage = () => {
       }
       navigate("/admin/dashboard");
     } catch (err) {
-      console.error("Lỗi đăng nhập :", err);
-      // Xử lý thông báo lỗi rõ ràng nếu thất bại
+      console.error("Lỗi đăng nhập:", err);
+      // Xử lý thông báo lỗi chuẩn nghiệp vụ
       if (err.response && err.response.status === 401) {
-        setError("Incorrect email or password!");
+        setError("Email hoặc mật khẩu không chính xác.");
       } else if (err.response && err.response.status === 404) {
-        setError("This admin account does not exist on the system!");
+        setError("Tài khoản quản trị không tồn tại trên hệ thống.");
       } else {
-        setError("Login failed. Please check your credentials!");
+        setError("Lỗi kết nối: Không thể thực hiện đăng nhập vào lúc này.");
       }
     } finally {
       setIsLoading(false);
@@ -54,8 +53,9 @@ const AdminLoginPage = () => {
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-[120px] pointer-events-none"></div>
 
-      {/* THẺ FORM ĐĂNG NHẬP (Kính mờ - Glassmorphism) */}
+      {/* THẺ FORM ĐĂNG NHẬP */}
       <div className="animate-fade-slide-up relative z-10 w-full max-w-md bg-slate-900/80 backdrop-blur-xl border border-slate-800 rounded-3xl shadow-2xl shadow-black/50 p-8 sm:p-10">
+        
         {/* HEADER: Logo & Tiêu đề */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-800 border border-slate-700 shadow-inner mb-5">
@@ -66,17 +66,17 @@ const AdminLoginPage = () => {
             />
           </div>
           <h1 className="text-2xl font-bold text-white tracking-tight mb-1">
-            EduSync System
+            Hệ thống EduSync
           </h1>
           <p className="text-sm font-medium text-blue-400 uppercase tracking-widest flex items-center justify-center gap-2">
             <FontAwesomeIcon icon={faShieldHalved} />
-            Admin Portal
+            Cổng quản trị viên
           </p>
         </div>
 
         {/* THÔNG BÁO LỖI */}
         {error && (
-          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 text-red-400 text-sm font-medium rounded-xl text-center animate-pulse">
+          <div className="mb-6 p-3 bg-red-500/10 border border-red-500/50 text-red-400 text-sm font-medium rounded-xl text-center">
             {error}
           </div>
         )}
@@ -86,7 +86,7 @@ const AdminLoginPage = () => {
           {/* Email */}
           <div>
             <label className="block text-sm font-semibold text-slate-300 mb-2">
-              Admin Email
+              Email Quản trị
             </label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -107,7 +107,7 @@ const AdminLoginPage = () => {
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="block text-sm font-semibold text-slate-300">
-                Password
+                Mật khẩu
               </label>
             </div>
             <div className="relative">
@@ -140,19 +140,19 @@ const AdminLoginPage = () => {
               ${
                 isLoading
                   ? "bg-slate-700 cursor-not-allowed text-slate-400"
-                  : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)] hover:shadow-[0_0_25px_rgba(37,99,235,0.5)] active:scale-[0.98]"
+                  : "bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 shadow-[0_0_20px_rgba(37,99,235,0.3)] active:scale-[0.98]"
               }`}
           >
-            {isLoading ? "Signing in..." : <>Sign in</>}
+            {isLoading ? "Đang xác thực..." : "Đăng nhập hệ thống"}
           </button>
         </form>
 
         {/* Footer Cảnh báo bảo mật */}
         <div className="mt-8 pt-6 border-t border-slate-800 text-center">
-          <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            Restricted area. Any unauthorized access{" "}
+          <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+            Khu vực hạn chế. Mọi hành vi truy cập trái phép{" "}
             <br className="hidden sm:block" />
-            will be logged and handled according to regulations.
+            đều được ghi lại và xử lý theo quy định bảo mật.
           </p>
         </div>
       </div>
