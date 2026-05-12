@@ -350,16 +350,13 @@ const CourseLearningWorkspace = () => {
                 />
               )}
 
-              {activeLeftTab === "Q&A" && (
+              {/* Q&A Tab — truyền courseId và lessonId để component gửi câu hỏi đúng */}
+              {activeLeftTab === "q&a" && (
                 <CourseDiscussion
-                  lessonContext={lessonContext}
-                  videoId={activeVideoId}
+                  courseId={courseId}
+                  lessonId={activeLesson?.id}
                 />
               )}
-              {/* ✅ ĐÃ SỬA: Cập nhật điều kiện hiển thị Tab Q&A ở đây */}
-              {(activeLeftTab === "q&a" ||
-                activeLeftTab === "discussion" ||
-                activeLeftTab === "review") && <CourseDiscussion />}
             </div>
           </div>
         </div>

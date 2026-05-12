@@ -27,6 +27,15 @@ class QuestionRepository:
             }).sort("created_at", -1)
         )
 
+    def get_lesson_questions(self, lesson_id):
+
+        return list(
+            db.questions.find({
+                "lesson_id": ObjectId(lesson_id),
+                "type": "question"
+            }).sort("created_at", -1)
+        )
+
     # =========================
     # GET REPLIES
     # =========================
