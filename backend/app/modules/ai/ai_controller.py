@@ -123,11 +123,11 @@ async def ai_mindmap(
     user=Depends(require_role(["learner"]))
 ):
     try:
-        mermaid_code = await gemini_service.generate_mermaid_mindmap(
+        markmap_code = await gemini_service.generate_markmap_mindmap(
             body.context,
             body.language,
         )
-        return {"mermaid_code": mermaid_code}
+        return {"markmap_code": markmap_code}
     except Exception as e:
         _handle_ai_error(e)
 
@@ -265,20 +265,20 @@ async def ai_mindmap_by_video(
         "video_id": ObjectId(body.video_id) if ObjectId.is_valid(body.video_id) else body.video_id,
         "language": body.language,
     })
-    if existing and existing.get("mermaid_code"):
-        return {"mermaid_code": existing["mermaid_code"]}
+    if existing and existing.get("markmap_code"):
+        return {"markmap_code": existing["markmap_code"]}
 
     # 2. Fallback: check ai_cache on video doc
     video = await _video_doc(body.video_id)
-    cache = _cache_get(video, "mermaid_code") or {}
+    cache = _cache_get(video, "markmap_code") or {}
     if body.language in cache:
-        return {"mermaid_code": cache[body.language]}
+        return {"markmap_code": cache[body.language]}
 
     # 3. Generate + save to ai_mindmaps
     context = await _context_from_video(body.video_id)
 
     try:
-        mermaid_code = await gemini_service.generate_mermaid_mindmap(
+        markmap_code = await gemini_service.generate_markmap_mindmap(
             context,
             body.language,
         )
@@ -291,7 +291,7 @@ async def ai_mindmap_by_video(
             },
             {
                 "$set": {
-                    "mermaid_code": mermaid_code,
+                    "markmap_code": markmap_code,
                     "updated_at": datetime.utcnow(),
                 },
                 "$setOnInsert": {
@@ -301,7 +301,7 @@ async def ai_mindmap_by_video(
             upsert=True,
         )
 
-        return {"mermaid_code": mermaid_code}
+        return {"markmap_code": markmap_code}
 
     except Exception as e:
         _handle_ai_error(e)

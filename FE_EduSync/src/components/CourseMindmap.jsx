@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
-import mermaid from "mermaid";
+import { Transformer } from "markmap-lib";
+import { Markmap } from "markmap-view";
 import { aiMindmapAPI, aiMindmapByVideoAPI } from "../services/aiAPI";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -11,38 +12,18 @@ import {
   faClockRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 
-// Initialize mermaid with a nice theme
-mermaid.initialize({
-  startOnLoad: false,
-  theme: "base",
-  themeVariables: {
-    primaryColor: "#e0e7ff",
-    primaryTextColor: "#1e293b",
-    primaryBorderColor: "#818cf8",
-    lineColor: "#94a3b8",
-    secondaryColor: "#f1f5f9",
-    tertiaryColor: "#f8fafc",
-    fontFamily: "Inter, system-ui, sans-serif",
-    fontSize: "14px",
-  },
-  mindmap: {
-    padding: 16,
-    useMaxWidth: true,
-  },
-  securityLevel: "loose",
-});
-
-let mermaidIdCounter = 0;
+const transformer = new Transformer();
 
 const CourseMindmap = ({ lessonContext, videoId }) => {
-  const containerRef = useRef(null);
-  const [mermaidCode, setMermaidCode] = useState("");
+  const svgRef = useRef(null);
+  const markmapRef = useRef(null);
+  const [markmapCode, setMarkmapCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [status, setStatus] = useState("loading"); // loading | pending | ready | error
+  const [status, setStatus] = useState("loading");
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Fetch mermaid code from API
+  // Fetch markmap code from API
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
@@ -55,7 +36,7 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
       }
       setLoading(true);
       setError("");
-      setMermaidCode("");
+      setMarkmapCode("");
       setStatus("loading");
       try {
         const data = videoId
@@ -63,9 +44,9 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
           : await aiMindmapAPI(token, lessonContext, "vi");
 
         if (!cancelled) {
-          const code = data.mermaid_code || "";
+          const code = data.markmap_code || "";
           if (code) {
-            setMermaidCode(code);
+            setMarkmapCode(code);
             setStatus("ready");
           } else {
             setStatus("pending");
@@ -74,7 +55,6 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
       } catch (e) {
         if (!cancelled) {
           const msg = e.message || "";
-          // Check if it's a "not ready" / "pending" status
           if (
             msg.includes("chưa có transcript") ||
             msg.includes("409") ||
@@ -101,48 +81,60 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
     videoId,
   ]);
 
-  // Render mermaid diagram
+  // Render markmap diagram
   useEffect(() => {
-    if (!containerRef.current || !mermaidCode) return;
+    if (!svgRef.current || !markmapCode) return;
 
-    const renderDiagram = async () => {
-      try {
-        containerRef.current.innerHTML = "";
-        const uniqueId = `mindmap-${Date.now()}-${mermaidIdCounter++}`;
-        const { svg } = await mermaid.render(uniqueId, mermaidCode);
-        if (containerRef.current) {
-          containerRef.current.innerHTML = svg;
+    try {
+      const { root } = transformer.transform(markmapCode);
+      svgRef.current.innerHTML = "";
 
-          // Make the SVG responsive
-          const svgEl = containerRef.current.querySelector("svg");
-          if (svgEl) {
-            svgEl.style.width = "100%";
-            svgEl.style.height = "100%";
-            svgEl.style.maxWidth = "100%";
-            svgEl.removeAttribute("height");
-          }
-        }
-      } catch (renderErr) {
-        console.error("Mermaid render error:", renderErr);
-        // Fallback: show the raw code
-        if (containerRef.current) {
-          containerRef.current.innerHTML = `
-            <div style="padding: 24px; font-family: monospace; font-size: 13px; white-space: pre-wrap; color: #475569; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
-              ${mermaidCode.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
-            </div>
-          `;
+      if (markmapRef.current) {
+        markmapRef.current.destroy();
+      }
+
+      markmapRef.current = Markmap.create(svgRef.current, {
+        autoFit: true,
+        duration: 500,
+        maxWidth: 300,
+        paddingX: 16,
+        colorFreezeLevel: 2,
+        initialExpandLevel: 3,
+      }, root);
+    } catch (renderErr) {
+      console.error("Markmap render error:", renderErr);
+      if (svgRef.current) {
+        const parent = svgRef.current.parentElement;
+        if (parent) {
+          const fallbackDiv = document.createElement("div");
+          fallbackDiv.style.cssText =
+            "padding:24px;font-family:monospace;font-size:13px;white-space:pre-wrap;color:#475569;background:#f8fafc;border-radius:12px;border:1px solid #e2e8f0;width:100%;height:100%;overflow:auto;";
+          fallbackDiv.textContent = markmapCode;
+          parent.replaceChild(fallbackDiv, svgRef.current);
         }
       }
-    };
+    }
+  }, [markmapCode]);
 
-    renderDiagram();
-  }, [mermaidCode]);
+  // Fit markmap when fullscreen changes
+  useEffect(() => {
+    if (markmapRef.current && status === "ready") {
+      setTimeout(() => {
+        markmapRef.current.fit();
+      }, 300);
+    }
+  }, [isFullscreen, status]);
 
   const handleRetry = useCallback(() => {
-    setMermaidCode("");
+    setMarkmapCode("");
     setLoading(true);
     setError("");
     setStatus("loading");
+
+    if (markmapRef.current) {
+      markmapRef.current.destroy();
+      markmapRef.current = null;
+    }
 
     const token = localStorage.getItem("access_token");
     if (!token) return;
@@ -152,9 +144,9 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
         const data = videoId
           ? await aiMindmapByVideoAPI(token, videoId, "vi")
           : await aiMindmapAPI(token, lessonContext, "vi");
-        const code = data.mermaid_code || "";
+        const code = data.markmap_code || "";
         if (code) {
-          setMermaidCode(code);
+          setMarkmapCode(code);
           setStatus("ready");
         } else {
           setStatus("pending");
@@ -210,7 +202,7 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
     );
   }
 
-  // ─── PENDING STATE (chưa có transcript / chưa generate) ───
+  // ─── PENDING STATE ───
   if (status === "pending") {
     return (
       <div className="w-full h-[450px] bg-gradient-to-br from-amber-50/50 to-orange-50/30 rounded-2xl border border-amber-200/60 overflow-hidden relative flex flex-col items-center justify-center gap-4 px-6">
@@ -266,7 +258,7 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
     );
   }
 
-  // ─── READY STATE — Render mermaid diagram ───
+  // ─── READY STATE ───
   return (
     <div
       className={`${
@@ -275,7 +267,6 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
           : "w-full h-[450px] relative"
       } bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all`}
     >
-      {/* Toolbar */}
       <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
         <button
           onClick={handleRetry}
@@ -296,13 +287,12 @@ const CourseMindmap = ({ lessonContext, videoId }) => {
         </button>
       </div>
 
-      {/* Mermaid render area */}
-      <div
-        ref={containerRef}
-        className="w-full h-full flex items-center justify-center overflow-auto p-4 custom-scrollbar"
+      <svg
+        ref={svgRef}
+        className="w-full h-full"
+        style={{ minHeight: "100%" }}
       />
 
-      {/* Bottom hint */}
       <p className="absolute bottom-2 left-0 w-full text-center text-[10px] font-semibold text-slate-400 pointer-events-none">
         * Cuộn để phóng to/thu nhỏ — Kéo để di chuyển sơ đồ
       </p>

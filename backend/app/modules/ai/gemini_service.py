@@ -73,12 +73,15 @@ def _fallback_quiz(num_questions: int):
 
 def _fallback_mindmap(ctx: LessonContext):
     safe_title = (ctx.title or "Video").replace('"', "'").replace('(', '').replace(')', '')
-    return f"""mindmap
-  root(({safe_title}))
-    Ý chính 1
-      Ý nhỏ 1.1
-    Ý chính 2
-      Ý nhỏ 2.1
+    return f"""# {safe_title}
+
+## Ý chính 1
+
+### Ý nhỏ 1.1
+
+## Ý chính 2
+
+### Ý nhỏ 2.1
 """
 
 
@@ -299,33 +302,33 @@ Transcript:
         return _fallback_quiz(num_questions)
 
 
-def _extract_mermaid_code(text: str) -> Optional[str]:
+def _extract_markmap_code(text: str) -> Optional[str]:
     """
-    Trích xuất Mermaid mindmap code từ output Gemini.
-    Loại bỏ ```mermaid, ``` và text thừa.
+    Trích xuất Markmap (markdown heading) code từ output Gemini.
+    Loại bỏ ```markdown, ``` và text thừa.
     """
     if not text:
         return None
 
     text = text.strip()
 
-    # Tìm block ```mermaid ... ```
-    match = re.search(r"```mermaid\s*\n(.*?)```", text, re.DOTALL)
+    # Tìm block ```markdown ... ```
+    match = re.search(r"```(?:markdown|md)\s*\n(.*?)```", text, re.DOTALL)
     if match:
         return match.group(1).strip()
 
-    # Tìm block bắt đầu bằng "mindmap"
-    match = re.search(r"(mindmap\s*\n.*)", text, re.DOTALL)
+    # Tìm block bắt đầu bằng heading "# "
+    match = re.search(r"(^#\s+.+$.*)", text, re.DOTALL | re.MULTILINE)
     if match:
-        # Loại bỏ ``` cuối nếu có
         code = match.group(1).strip()
+        # Loại bỏ ``` cuối nếu có
         code = re.sub(r"```\s*$", "", code).strip()
         return code
 
     return None
 
 
-async def generate_mermaid_mindmap(
+async def generate_markmap_mindmap(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ):
@@ -335,29 +338,37 @@ Bạn là một AI chuyên phân tích nội dung video và chuyển thành mind
 Nhiệm vụ:
 - Đọc transcript bên dưới
 - Tóm tắt lại thành các ý chính
-- Chuyển thành mindmap theo format Mermaid
+- Chuyển thành mindmap theo format Markdown Heading (dùng cho thư viện Markmap)
 
 Yêu cầu:
-1. Node trung tâm = chủ đề chính của video
-2. Level 1 = các mục lớn
-3. Level 2 = ý chính trong từng mục
-4. Level 3 = chi tiết (nếu cần)
-5. Ngắn gọn, không dài dòng
-6. Không copy nguyên văn, phải tóm tắt
-7. Giữ cấu trúc rõ ràng, dễ đọc
-8. Sử dụng ngôn ngữ {language}
-9. KHÔNG dùng ký tự đặc biệt trong node labels (không dùng ngoặc tròn, ngoặc vuông, dấu ngoặc kép bên trong label)
+1. Heading cấp 1 (#) = chủ đề chính của video (chỉ 1 dòng duy nhất)
+2. Heading cấp 2 (##) = các mục lớn
+3. Heading cấp 3 (###) = ý chính trong từng mục
+4. Heading cấp 4 (####) = chi tiết (nếu cần)
+5. Có thể dùng bullet list (- ) cho các chi tiết nhỏ bên trong heading
+6. Ngắn gọn, không dài dòng
+7. Không copy nguyên văn, phải tóm tắt
+8. Giữ cấu trúc rõ ràng, dễ đọc
+9. Sử dụng ngôn ngữ {language}
+10. KHÔNG dùng ký tự đặc biệt hoặc HTML trong nội dung
 
-Output chỉ gồm code Mermaid, không giải thích.
+Output chỉ gồm nội dung Markdown, không giải thích.
 
-Format:
-mindmap
-  root((Main Topic))
-    Topic 1
-      Sub 1
-      Sub 2
-    Topic 2
-      Sub 1
+Format mẫu:
+# Chủ đề chính
+
+## Mục lớn 1
+
+### Ý chính 1.1
+
+- Chi tiết a
+- Chi tiết b
+
+### Ý chính 1.2
+
+## Mục lớn 2
+
+### Ý chính 2.1
 
 Transcript:
 {ctx.transcript}
@@ -368,18 +379,18 @@ Transcript:
     if not result:
         return _fallback_mindmap(ctx)
 
-    mermaid_code = _extract_mermaid_code(result)
+    markmap_code = _extract_markmap_code(result)
 
-    if not mermaid_code:
+    if not markmap_code:
         # Nếu không extract được, thử dùng nguyên text (có thể Gemini trả clean)
-        if result.strip().startswith("mindmap"):
+        if result.strip().startswith("#"):
             return result.strip()
         return _fallback_mindmap(ctx)
 
-    return mermaid_code
+    return markmap_code
 
 
-def _build_mermaid_prompt(ctx: LessonContext, language: str = "Vietnamese") -> str:
+def _build_markmap_prompt(ctx: LessonContext, language: str = "Vietnamese") -> str:
     """Prompt dùng chung cho cả async và sync."""
     return f"""
 Bạn là một AI chuyên phân tích nội dung video và chuyển thành mindmap.
@@ -387,58 +398,66 @@ Bạn là một AI chuyên phân tích nội dung video và chuyển thành mind
 Nhiệm vụ:
 - Đọc transcript bên dưới
 - Tóm tắt lại thành các ý chính
-- Chuyển thành mindmap theo format Mermaid
+- Chuyển thành mindmap theo format Markdown Heading (dùng cho thư viện Markmap)
 
 Yêu cầu:
-1. Node trung tâm = chủ đề chính của video
-2. Level 1 = các mục lớn
-3. Level 2 = ý chính trong từng mục
-4. Level 3 = chi tiết (nếu cần)
-5. Ngắn gọn, không dài dòng
-6. Không copy nguyên văn, phải tóm tắt
-7. Giữ cấu trúc rõ ràng, dễ đọc
-8. Sử dụng ngôn ngữ {language}
-9. KHÔNG dùng ký tự đặc biệt trong node labels (không dùng ngoặc tròn, ngoặc vuông, dấu ngoặc kép bên trong label)
+1. Heading cấp 1 (#) = chủ đề chính của video (chỉ 1 dòng duy nhất)
+2. Heading cấp 2 (##) = các mục lớn
+3. Heading cấp 3 (###) = ý chính trong từng mục
+4. Heading cấp 4 (####) = chi tiết (nếu cần)
+5. Có thể dùng bullet list (- ) cho các chi tiết nhỏ bên trong heading
+6. Ngắn gọn, không dài dòng
+7. Không copy nguyên văn, phải tóm tắt
+8. Giữ cấu trúc rõ ràng, dễ đọc
+9. Sử dụng ngôn ngữ {language}
+10. KHÔNG dùng ký tự đặc biệt hoặc HTML trong nội dung
 
-Output chỉ gồm code Mermaid, không giải thích.
+Output chỉ gồm nội dung Markdown, không giải thích.
 
-Format:
-mindmap
-  root((Main Topic))
-    Topic 1
-      Sub 1
-      Sub 2
-    Topic 2
-      Sub 1
+Format mẫu:
+# Chủ đề chính
+
+## Mục lớn 1
+
+### Ý chính 1.1
+
+- Chi tiết a
+- Chi tiết b
+
+### Ý chính 1.2
+
+## Mục lớn 2
+
+### Ý chính 2.1
 
 Transcript:
 {ctx.transcript}
 """
 
 
-def generate_mermaid_mindmap_sync(
+def generate_markmap_mindmap_sync(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ) -> Optional[str]:
     """
     SYNC version — dùng cho background task (video_service).
     """
-    prompt = _build_mermaid_prompt(ctx, language)
+    prompt = _build_markmap_prompt(ctx, language)
     result = _call_gemini_sync(prompt)
 
     if not result:
         print("[MINDMAP] Gemini trả về None → không tạo mindmap")
         return None
 
-    mermaid_code = _extract_mermaid_code(result)
+    markmap_code = _extract_markmap_code(result)
 
-    if not mermaid_code:
-        if result.strip().startswith("mindmap"):
+    if not markmap_code:
+        if result.strip().startswith("#"):
             return result.strip()
-        print("[MINDMAP] Không extract được Mermaid code từ Gemini output")
+        print("[MINDMAP] Không extract được Markmap code từ Gemini output")
         return None
 
-    return mermaid_code
+    return markmap_code
 
 
 async def generate_timeline_json(
