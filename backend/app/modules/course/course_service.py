@@ -162,14 +162,87 @@ class CourseService:
     # ===================== PUBLIC =====================
 
     async def get_public_courses(self, page=1, limit=10):
-        filter = {"status": "APPROVED"}
-        courses = await course_repository.find_public(filter, page, limit, [("created_at", -1)])
-        total = await course_repository.count(filter)
+ 
+        page = max(page, 1)
+        limit = min(max(limit, 1), 100)
+        skip = (page - 1) * limit
+
+        pipeline = [
+            {"$match": {"status": "APPROVED", "is_deleted": {"$ne": True}}},
+
+            {"$sort": {"created_at": -1}},
+
+            {"$skip": skip},
+            {"$limit": limit},
+
+            {"$lookup": {
+                "from": "users",
+                "localField": "instructor_id",
+                "foreignField": "_id",
+                "as": "_instructor",
+            }},
+
+            {"$lookup": {
+                "from": "lessons",
+                "localField": "_id",
+                "foreignField": "course_id",
+                "as": "_lessons",
+            }},
+
+            {"$lookup": {
+                "from": "enrollments",
+                "localField": "_id",
+                "foreignField": "course_id",
+                "as": "_enrollments",
+            }},
+
+            {"$addFields": {
+                "_inst": {"$arrayElemAt": ["$_instructor", 0]},
+                "lesson_count": {"$size": "$_lessons"},
+                "student_count": {"$size": "$_enrollments"},
+            }},
+
+            {"$project": {
+                "_instructor": 0,
+                "_lessons": 0,
+                "_enrollments": 0,
+            }},
+        ]
+
+        courses = list(db.courses.aggregate(pipeline))
+
+        total = db.courses.count_documents({
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True},
+        })
 
         items = []
         for c in courses:
-            item = await self._serialize_public_card(c)
-            items.append(item)
+            inst = c.get("_inst") or {}
+            instructor_name = inst.get("fullName") or inst.get("email") or "Giảng viên EduSync"
+            instructor_avatar = inst.get("avatar_url") or inst.get("avatar") or "https://i.pravatar.cc/150?img=11"
+
+            course_id = str(c["_id"])
+
+            # Ưu tiên lesson_count từ aggregation, fallback embedded lessons array
+            video_count = c.get("lesson_count", 0)
+            if video_count == 0:
+                video_count = len(c.get("lessons", []))
+
+            items.append({
+                "id": course_id,
+                "title": c.get("title", ""),
+                "description": c.get("description", ""),
+                "category": c.get("category", ""),
+                "categoryLabel": self._category_display(c.get("category")),
+                "thumbnail": c.get("image") or "",
+                "price": float(c.get("price") or 0),
+                "instructor": instructor_name,
+                "instructor_avatar": instructor_avatar,
+                "students": c.get("student_count", 0),
+                "videoCount": video_count,
+                "status": c.get("status"),
+            })
 
         return {
             "items": items,

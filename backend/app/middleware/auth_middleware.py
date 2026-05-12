@@ -16,19 +16,19 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     # print("PAYLOAD:", payload)
 
     if not payload:
-        print("❌ Invalid token")
+        # print("❌ Invalid token")
         raise HTTPException(status_code=401, detail="Invalid or revoked token")
 
     user = get_user_by_email(payload["email"])
-    print("USER FROM DB:", user)
+    # print("USER FROM DB:", user)
 
     if not user:
-        print("❌ User not found")
+        # print("❌ User not found")
         raise HTTPException(status_code=401, detail="User not found")
 
 
-    print("USER _id (raw):", user["_id"])
-    print("USER ID (string):", str(user["_id"]))
+    # print("USER _id (raw):", user["_id"])
+    # print("USER ID (string):", str(user["_id"]))
 
     # FIX ObjectId + bảo mật
     user["id"] = str(user["_id"])
@@ -36,8 +36,8 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     user.pop("password", None)
 
 
-    print("FINAL USER RETURN:", user)
-    print("===== AUTH DEBUG END =====\n")
+    # print("FINAL USER RETURN:", user)
+    # print("===== AUTH DEBUG END =====\n")
 
 
     return user

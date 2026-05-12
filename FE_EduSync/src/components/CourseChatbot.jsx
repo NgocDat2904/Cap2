@@ -54,23 +54,17 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
     setSending(true);
 
     try {
-      // FORMAT FOR BACKEND
-      const payloadMessages = nextMessages.map((m) => ({
-        is_ai: m.isAi,
-        text: m.text,
-      }));
-
       // CALL API
       const data = videoId
         ? await aiChatByVideoAPI(
             token,
             videoId,
-            payloadMessages
+            nextMessages
           )
         : await aiChatAPI(
             token,
             lessonContext,
-            payloadMessages
+            nextMessages
           );
 
       // AI RESPONSE

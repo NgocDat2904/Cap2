@@ -460,6 +460,35 @@ def generate_markmap_mindmap_sync(
     return markmap_code
 
 
+def summarize_lesson_sync(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+) -> Optional[str]:
+    """
+    SYNC version — dùng cho background task (video_service).
+    """
+    prompt = f"""
+Tóm tắt bài học bằng {language}.
+
+YÊU CẦU:
+- Ngắn gọn
+- Dạng bullet point
+- Dễ hiểu
+
+Nội dung:
+Tiêu đề: {ctx.title}
+Mô tả: {ctx.description}
+
+Transcript:
+{ctx.transcript}
+"""
+    result = _call_gemini_sync(prompt)
+    if not result:
+        print("[SUMMARY] Gemini trả về None → không tạo summary")
+        return None
+    return result
+
+
 async def generate_timeline_json(
     ctx: LessonContext,
     language: str = "Vietnamese"

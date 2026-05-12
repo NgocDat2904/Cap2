@@ -221,6 +221,32 @@ class VideoService:
                     print(f"[MINDMAP] ⚠️ Gemini không khả dụng, mindmap chưa được tạo cho video {video_id} (thiếu GEMINI_API_KEY?)")
             except Exception as mindmap_err:
                 print(f"[MINDMAP] ❌ Lỗi auto-generate mindmap cho video {video_id}: {mindmap_err}")
+
+            # ===================== AUTO GENERATE SUMMARY =====================
+            try:
+                from app.modules.ai.gemini_service import summarize_lesson_sync
+
+                summary_text = summarize_lesson_sync(ctx, "vi")
+
+                if summary_text:
+                    db.ai_summaries.update_one(
+                        {"video_id": ObjectId(video_id), "language": "vi"},
+                        {
+                            "$set": {
+                                "summary": summary_text,
+                                "updated_at": datetime.utcnow(),
+                            },
+                            "$setOnInsert": {
+                                "created_at": datetime.utcnow(),
+                            },
+                        },
+                        upsert=True,
+                    )
+                    print(f"[SUMMARY]  Summary đã tạo thành công cho video {video_id}")
+                else:
+                    print(f"[SUMMARY] ⚠️ Gemini không khả dụng, summary chưa được tạo cho video {video_id}")
+            except Exception as summary_err:
+                print(f"[SUMMARY]  Lỗi auto-generate summary cho video {video_id}: {summary_err}")
         except Exception as e:
             print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")
             db.videos.update_one(

@@ -128,6 +128,26 @@ export async function aiMindmapByVideoAPI(token, videoId, language = "vi") {
   return res.json();
 }
 
+// ==========================================
+// GET FROM DB (FAST — no AI generation)
+// ==========================================
+
+export async function getMindmapByVideoAPI(token, videoId, language = "vi") {
+  const res = await fetch(`${BASE_URL}/learner/ai/mindmap/${videoId}?language=${language}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load mindmap"));
+  return res.json();
+}
+
+export async function getSummaryByVideoAPI(token, videoId, language = "vi") {
+  const res = await fetch(`${BASE_URL}/learner/ai/summary/${videoId}?language=${language}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load summary"));
+  return res.json();
+}
+
 export async function aiTimelineAPI(token, context, language = "vi") {
   const res = await fetch(`${BASE_URL}/learner/ai/timeline`, {
     method: "POST",
