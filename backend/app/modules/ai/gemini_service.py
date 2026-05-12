@@ -191,7 +191,6 @@ Transcript:
     result = await _call_gemini(prompt)
     return result or _fallback_summary(ctx)
 
-
 async def generate_quiz_json(
     ctx: LessonContext,
     num_questions: int = 5,
@@ -203,18 +202,38 @@ Tạo {num_questions} câu hỏi trắc nghiệm bằng {language}.
 YÊU CẦU:
 - Trả về JSON array
 - KHÔNG thêm text ngoài JSON
-- Format:
+- Mỗi câu hỏi phải có:
+  + question
+  + options
+  + correct_index
+  + explanation
+
+FORMAT:
 
 [
   {{
     "id": 1,
-    "question": "...",
-    "options": ["A", "B", "C", "D"],
-    "correct_index": 0
+    "question": "Câu hỏi?",
+    "options": [
+      "A",
+      "B",
+      "C",
+      "D"
+    ],
+    "correct_index": 0,
+    "explanation": "Giải thích vì sao đáp án đúng."
   }}
 ]
 
-Nội dung:
+Nội dung bài học:
+
+Tiêu đề:
+{ctx.title}
+
+Mô tả:
+{ctx.description}
+
+Transcript:
 {ctx.transcript}
 """
 
@@ -233,6 +252,9 @@ Nội dung:
     except Exception as e:
         print("⚠️ JSON parse lỗi:", e)
         return _fallback_quiz(num_questions)
+
+
+
 
 
 async def generate_mindmap_markdown(
@@ -306,4 +328,4 @@ Transcript: {ctx.transcript}
         return json.loads(clean_json)
     except Exception as e:
         print("⚠️ JSON parse lỗi:", e)
-        return _fallback_timeline(ctx)
+        return _fallback_timeline(ctx)
