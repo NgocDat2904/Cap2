@@ -137,6 +137,8 @@ const InstructorDashboardPage = () => {
         const token = localStorage.getItem("access_token");
         if (!token) return;
         const data = await getInstructorDashboardAPI(token);
+        // 🔥 DEBUG Ở ĐÂY: Mở F12 -> Console để xem định dạng mảng chart
+        console.log("🔥 DỮ LIỆU CHART TỪ BACKEND:", JSON.stringify(data.student_chart, null, 2));
         setDashboardData(data);
       } catch (err) {
         console.error("Failed to load dashboard data", err);

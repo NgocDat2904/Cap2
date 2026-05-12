@@ -149,9 +149,10 @@ class UserService:
             created_at = user.get("created_at")
 
             if isinstance(created_at, datetime):
-                created_at = created_at.strftime("%d/%m/%Y")
+                created_at_str = created_at.isoformat()
             else:
-                created_at = ""
+                from bson import ObjectId
+                created_at_str = user["_id"].generation_time.isoformat() if isinstance(user.get("_id"), ObjectId) else ""
 
             result.append({
                 "id": str(user["_id"]),
@@ -160,7 +161,7 @@ class UserService:
                 "avatar": user.get("avatar_url"),
                 "role": user.get("role"),
                 "status": "blocked" if user.get("is_blocked") else "active",
-                "createdAt": created_at
+                "createdAt": created_at_str
             })
 
         return {
@@ -178,6 +179,40 @@ class UserService:
             },
             "users": result
         }
+
+    def get_user_detail(self, user_id: str):
+        user = get_user_by_id(user_id)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+            
+        created_at = user.get("created_at")
+        if isinstance(created_at, datetime):
+            created_at_str = created_at.isoformat()
+        else:
+            from bson import ObjectId
+            created_at_str = user["_id"].generation_time.isoformat() if isinstance(user.get("_id"), ObjectId) else ""
+
+        return {
+            "id": str(user["_id"]),
+            "fullName": user.get("fullName"),
+            "email": user.get("email"),
+            "avatarUrl": user.get("avatar_url"),
+            "phone": user.get("phone"),
+            "dob": user.get("dob"),
+            "gender": user.get("gender"),
+            "address": user.get("address"),
+            "role": user.get("role"),
+            "status": "blocked" if user.get("is_blocked") else "active",
+            "createdAt": created_at_str
+        }
+
+    def delete_user(self, user_id: str):
+        from bson import ObjectId
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        db.users.delete_one({"_id": ObjectId(user_id)})
+        return {"message": "User deleted successfully"}
 
     # 🔒 BLOCK / UNBLOCK USER
     def toggle_block_user(self, user_id: str):

@@ -33,7 +33,7 @@ import {
   faGraduationCap,
   faGlobe
 } from "@fortawesome/free-solid-svg-icons";
-import { adminGetUsersAPI, adminToggleBlockAPI } from "../../services/userAPI";
+import { adminGetUsersAPI, adminToggleBlockAPI, adminGetUserDetailAPI, adminDeleteUserAPI } from "../../services/userAPI";
 
 // =========================================================================
 // HELPER: Lấy token từ localStorage
@@ -55,6 +55,18 @@ const getAvatarSrc = (avatar, name) => {
 // HELPER: Normalize role
 // =========================================================================
 const normalizeRole = (role) => (role || "").toLowerCase();
+
+// =========================================================================
+// HELPER: Format Date
+// =========================================================================
+const formatJoinedDate = (dateString) => {
+  if (!dateString) return "—";
+  const date = new Date(dateString);
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const year = date.getFullYear();
+  return `${day}/${month}/${year}`;
+};
 
 // =========================================================================
 // COMPONENT BADGE
@@ -212,11 +224,19 @@ const AdminUserManagement = () => {
     }
   };
 
-  const handleViewDetail = (user) => {
-    setSelectedUser(user);
+  const handleViewDetail = async (user) => {
+    setOpenActionMenuId(null);
+    try {
+      const token = getToken();
+      // Nếu API backend trả về thêm thông tin chi tiết (bio, phone, etc...)
+      const detail = await adminGetUserDetailAPI(user.id, token);
+      setSelectedUser({ ...user, ...detail });
+    } catch (err) {
+      // Fallback nếu API bị lỗi, vẫn show data có sẵn trên bảng
+      setSelectedUser(user);
+    }
     setDetailTab("personal"); 
     setIsDetailModalOpen(true);
-    setOpenActionMenuId(null);
   };
 
   const handleDeleteUser = async (user) => {
@@ -224,6 +244,8 @@ const AdminUserManagement = () => {
     const confirmDelete = window.confirm(`Are you sure you want to permanently delete user: ${user.fullName}?`);
     if (confirmDelete) {
       try {
+        const token = getToken();
+        await adminDeleteUserAPI(user.id, token);
         alert(`User ${user.fullName} has been deleted successfully!`);
         handleRefresh(); 
       } catch (err) {
@@ -426,7 +448,7 @@ const AdminUserManagement = () => {
                       <td className="p-5"><RoleBadge role={user.role} /></td>
                       <td className="p-5"><StatusBadge status={user.status} /></td>
                       <td className="p-5 text-sm font-medium text-slate-600">
-                        {user.createdAt || <span className="text-slate-400">—</span>}
+                        {formatJoinedDate(user.createdAt)}
                       </td>
                       <td className="p-5 text-center relative" onClick={(e) => e.stopPropagation()}>
                         {togglingId === user.id ? (
