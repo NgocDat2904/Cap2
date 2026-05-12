@@ -127,6 +127,23 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
                 );
               })}
             </div>
+            {submitted && (
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+    
+                <p className="text-sm font-semibold text-slate-800">
+                  Correct Answer:
+                  <span className="ml-2 text-green-600">
+                    {q.options[q.correct_index]}
+                  </span>
+                </p>
+
+                {q.explanation && (
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                    {q.explanation}
+                  </p>
+                )}
+              </div>
+            )}
             <div className="mt-4 flex justify-end">
               <button
                 type="button"

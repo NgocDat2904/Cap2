@@ -71,11 +71,17 @@ const CourseLearningWorkspace = () => {
 
     return lessons.map((lesson) => ({
       id: lesson.id,
-      video_id: lesson.video_id,
+
+      videoId:
+        lesson.videos?.[0]?.id ||
+        lesson.videos?.[0]?.id ||
+        "",
       title: lesson.title || "Untitled lesson",
       duration: lesson.duration || "00:00",
       description: lesson.description || "",
-      transcript: lesson.transcript || "",
+      transcript: lesson.transcript || 
+      lesson.videos?.[0]?.transcript ||
+      "",
       image: lesson.image || courseDetail?.thumbnail || "",
 
       // Lấy link video
@@ -106,15 +112,24 @@ const CourseLearningWorkspace = () => {
   }, [playlist, lessonId]);
 
   const lessonContext = useMemo(
-    () => ({
+    () => {
+      console.log("ACTIVE LESSON:", activeLesson);
+    const context = {
       title: activeLesson?.title || "",
       description: activeLesson?.description || "",
-      transcript: activeLesson?.transcript || undefined,
-    }),
-    [activeLesson?.title, activeLesson?.description, activeLesson?.transcript],
-  );
-  const activeVideoId = activeLesson?.video_id || activeLesson?.id;
-  console.log(activeLesson);
+      transcript: activeLesson?.transcript || "",
+    };
+    
+    console.log("LESSON CONTEXT:", context);
+    console.log("TRANSCRIPT", context.transcript);
+
+    return context;
+  },[
+      activeLesson?.title,
+      activeLesson?.description,
+      activeLesson?.transcript,
+    ]);
+  const activeVideoId = activeLesson?.videoId;
 
   useEffect(() => {
     if (!activeLesson) return;
