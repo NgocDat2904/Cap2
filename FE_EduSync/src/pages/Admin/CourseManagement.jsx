@@ -19,18 +19,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 
-// =========================================================================
-// =========================================================================
+// Danh mục đã được Việt hóa
 const CATEGORIES = [
-  { label: "All", value: "all" },
-  { label: "Frontend Web Development", value: "frontend" },
-  { label: "Backend Web Development", value: "backend" },
-  { label: "Mobile Programming", value: "mobile" },
-  { label: "AI & Machine Learning", value: "ai" },
-  { label: "Data Analysis", value: "data_analysis" },
-  { label: "Data Engineering", value: "data_engineer" },
-  { label: "UI/UX Design", value: "uiux" },
-  { label: "Business Analysis", value: "ba" },
+  { label: "Tất cả danh mục", value: "all" },
+  { label: "Phát triển Web Frontend", value: "frontend" },
+  { label: "Phát triển Web Backend", value: "backend" },
+  { label: "Lập trình Di động", value: "mobile" },
+  { label: "AI & Học máy", value: "ai" },
+  { label: "Phân tích Dữ liệu", value: "data_analysis" },
+  { label: "Kỹ thuật Dữ liệu", value: "data_engineer" },
+  { label: "Thiết kế UI/UX", value: "uiux" },
+  { label: "Phân tích Nghiệp vụ (BA)", value: "ba" },
 ];
 
 const AdminCourseManagement = () => {
@@ -50,7 +49,7 @@ const AdminCourseManagement = () => {
       const data = await fetchAllAdminCoursesAPI(token, { limit: 1000 });
       setCourses(data.courses || []);
     } catch (err) {
-      console.error(err);
+      console.error("Lỗi truy xuất danh sách khóa học:", err);
     } finally {
       setLoading(false);
     }
@@ -60,14 +59,12 @@ const AdminCourseManagement = () => {
     fetchCourses();
   }, [fetchCourses]);
 
-  // ==================== HÀM REFRESH/RESET ====================
   const handleRefresh = () => {
     setSearchTerm("");
     setCategoryFilter("all");
     setStatusFilter("all");
     fetchCourses();
   };
-  // ===========================================================
 
   const stats = {
     total: courses.length,
@@ -83,25 +80,16 @@ const AdminCourseManagement = () => {
     const instructor = (course.instructor || "").toLowerCase();
     const search = searchTerm.toLowerCase();
 
-    const matchesSearch =
-      title.includes(search) ||
-      instructor.includes(search);
-
-    const matchesCategory =
-      categoryFilter === "all" ||
-      (course.category || "").toLowerCase() ===
-      categoryFilter.toLowerCase();
+    const matchesSearch = title.includes(search) || instructor.includes(search);
+    const matchesCategory = categoryFilter === "all" || (course.category || "").toLowerCase() === categoryFilter.toLowerCase();
 
     let matchesStatus = false;
-
     if (statusFilter === "all") {
       matchesStatus = true;
     } else if (statusFilter === "has_update") {
       matchesStatus = course.has_new_update === true;
     } else {
-      matchesStatus =
-        (course.status || "").toLowerCase() ===
-        statusFilter.toLowerCase();
+      matchesStatus = (course.status || "").toLowerCase() === statusFilter.toLowerCase();
     }
 
     return matchesSearch && matchesCategory && matchesStatus;
@@ -109,11 +97,9 @@ const AdminCourseManagement = () => {
 
   const toggleCourseSuspension = async (id, currentStatus) => {
     const newStatus = currentStatus === "suspended" ? "published" : "suspended";
-
-    const confirmMsg =
-      newStatus === "suspended"
-        ? "Suspend this course? It will be removed from the homepage immediately."
-        : "Restore this course to the platform?";
+    const confirmMsg = newStatus === "suspended"
+        ? "Xác nhận đình chỉ khóa học này? Nội dung sẽ bị gỡ khỏi trang chủ ngay lập tức."
+        : "Khôi phục quyền truy cập cho khóa học này trên nền tảng?";
 
     if (window.confirm(confirmMsg)) {
       try {
@@ -122,25 +108,21 @@ const AdminCourseManagement = () => {
         await moderateCourseAPI(id, newStatus, token);
         fetchCourses();
       } catch (err) {
-        alert("Action failed: " + err.message);
+        alert("Thao tác thất bại: " + err.message);
       }
       setOpenActionMenuId(null);
     }
   };
 
   const deleteCourse = async (id) => {
-    if (
-      window.confirm(
-        "Warning: Are you sure you want to permanently delete this course from the system?",
-      )
-    ) {
+    if (window.confirm("Cảnh báo: Bạn có chắc chắn muốn xóa vĩnh viễn khóa học này khỏi hệ thống? dữ liệu sẽ không thể khôi phục.")) {
       const token = localStorage.getItem("access_token");
       try {
         const { moderateCourseAPI } = await import("../../services/adminCourseAPI");
         await moderateCourseAPI(id, "REJECTED", token);
         fetchCourses();
       } catch (err) {
-        alert("Action failed: " + err.message);
+        alert("Lỗi hệ thống: Không thể thực hiện lệnh xóa.");
       }
       setOpenActionMenuId(null);
     }
@@ -152,32 +134,31 @@ const AdminCourseManagement = () => {
       case "approved":
         return (
           <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-emerald-200">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span>{" "}
-            Published
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Đã xuất bản
           </span>
         );
       case "pending":
         return (
           <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-amber-200 animate-pulse shadow-sm shadow-amber-200/50">
-            <FontAwesomeIcon icon={faClockRotateLeft} /> Pending Review
+            <FontAwesomeIcon icon={faClockRotateLeft} /> Chờ kiểm duyệt
           </span>
         );
       case "draft":
         return (
           <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-slate-200">
-            <FontAwesomeIcon icon={faPenRuler} /> Instructor Draft
+            <FontAwesomeIcon icon={faPenRuler} /> Bản nháp
           </span>
         );
       case "rejected":
         return (
           <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-red-200">
-            <FontAwesomeIcon icon={faTimesCircle} /> Rejected
+            <FontAwesomeIcon icon={faTimesCircle} /> Đã từ chối
           </span>
         );
       case "suspended":
         return (
           <span className="px-2.5 py-1 bg-slate-800 text-white text-xs font-bold rounded-lg flex items-center gap-1.5 w-max border border-slate-900">
-            <FontAwesomeIcon icon={faBan} /> Suspended
+            <FontAwesomeIcon icon={faBan} /> Đang đình chỉ
           </span>
         );
       default:
@@ -187,80 +168,57 @@ const AdminCourseManagement = () => {
 
   return (
     <div className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up h-full">
-      {/* HEADER */}
+      {/* TIÊU ĐỀ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Course Management
-          </h1>
-          <p className="text-slate-500 font-medium mt-1 text-sm">
-            Approve new courses, set pricing and handle content violations.
-          </p>
+          <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Quản Lý Khóa Học</h1>
+          <p className="text-slate-500 font-medium mt-1 text-sm">Phê duyệt nội dung mới, thiết lập giá niêm yết và xử lý vi phạm.</p>
         </div>
         
-        {/* BUTTON GROUP: Refresh & Export */}
         <div className="flex items-center gap-3">
-          {/* NÚT REFRESH ĐÃ ĐƯỢC CHỈNH GIỐNG TRANG USER */}
           <button
             onClick={handleRefresh}
             disabled={loading}
-            className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm flex items-center gap-2 active:scale-95 disabled:opacity-70"
           >
-            <FontAwesomeIcon 
-              icon={faRotateRight} 
-              className={loading ? "animate-spin" : ""} 
-            />
-            <span className="hidden sm:inline">Refresh</span>
+            <FontAwesomeIcon icon={faRotateRight} className={loading ? "animate-spin" : ""} />
+            <span className="hidden sm:inline">Làm mới</span>
           </button>
 
           <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition shadow-sm flex items-center gap-2">
-            <FontAwesomeIcon icon={faFileExport} /> <span className="hidden sm:inline">Export Report</span>
+            <FontAwesomeIcon icon={faFileExport} /> <span className="hidden sm:inline">Xuất báo cáo</span>
           </button>
         </div>
       </div>
 
-      {/* WIDGETS THỐNG KÊ */}
+      {/* THỐNG KÊ NHANH */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Courses", value: stats.total, icon: faBookOpen, color: "text-blue-600", bg: "bg-blue-100" },
-          { label: "Pending Review & Pricing", value: stats.pending, icon: faClockRotateLeft, color: "text-amber-600", bg: "bg-amber-100" },
-          { label: "Published", value: stats.published, icon: faCheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Draft / Rejected / Banned", value: stats.others, icon: faBan, color: "text-slate-600", bg: "bg-slate-200" },
+          { label: "Tổng số khóa học", value: stats.total, icon: faBookOpen, color: "text-blue-600", bg: "bg-blue-100" },
+          { label: "Đang chờ duyệt & giá", value: stats.pending, icon: faClockRotateLeft, color: "text-amber-600", bg: "bg-amber-100" },
+          { label: "Đã xuất bản", value: stats.published, icon: faCheckCircle, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Nháp / Từ chối / Cấm", value: stats.others, icon: faBan, color: "text-slate-600", bg: "bg-slate-200" },
         ].map((stat, idx) => (
-          <div
-            key={idx}
-            className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4 relative overflow-hidden"
-          >
-            {idx === 1 && stats.pending > 0 && (
-              <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-400 animate-pulse"></div>
-            )}
-            <div
-              className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${stat.bg} ${stat.color}`}
-            >
-              <FontAwesomeIcon icon={stat.icon} />
-            </div>
+          <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center gap-4 relative overflow-hidden">
+            {idx === 1 && stats.pending > 0 && <div className="absolute top-0 right-0 w-1.5 h-full bg-amber-400 animate-pulse"></div>}
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${stat.bg} ${stat.color}`}><FontAwesomeIcon icon={stat.icon} /></div>
             <div>
               <p className="text-sm font-bold text-slate-500">{stat.label}</p>
-              <h3 className="text-2xl font-black text-slate-800">
-                {stat.value}
-              </h3>
+              <h3 className="text-2xl font-black text-slate-800">{stat.value}</h3>
             </div>
           </div>
         ))}
       </div>
 
-      {/*KHU VỰC DANH SÁCH KHÓA HỌC */}
-      <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
-        {/*TOOLBAR TÌM KIẾM */}
+      {/* BẢNG DỮ LIỆU */}
+      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
+        {/* THANH CÔNG CỤ */}
         <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
           <div className="relative w-full md:w-96">
-            <FontAwesomeIcon
-              icon={faSearch}
-              className="absolute left-4 top-3 text-slate-400"
-            />
+            <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Search course name, instructor..."
+              placeholder="Tìm tên khóa học, giảng viên..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20"
@@ -270,157 +228,82 @@ const AdminCourseManagement = () => {
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full md:w-48 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer truncate"
+              className="w-full md:w-48 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none"
             >
               {CATEGORIES.map((cat) => (
-                <option key={cat.value} value={cat.value}>
-                  {cat.label}
-                </option>
+                <option key={cat.value} value={cat.value}>{cat.label}</option>
               ))}
             </select>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="flex-1 md:w-56 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none cursor-pointer"
+              className="flex-1 md:w-56 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none"
             >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending Review (New)</option>
-              <option value="has_update">🔔 Has content update</option>
-              <option value="published">Published</option>
-              <option value="rejected">Rejected</option>
-              <option value="draft">Draft</option>
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Chờ kiểm duyệt (Mới)</option>
+              <option value="has_update">🔔 Có cập nhật nội dung</option>
+              <option value="published">Đã xuất bản</option>
+              <option value="rejected">Đã từ chối</option>
+              <option value="draft">Bản nháp</option>
             </select>
           </div>
         </div>
 
-        {/*KHU VỰC BẢNG NỘI DUNG */}
         <div className="overflow-y-auto flex-1 custom-scrollbar">
           <table className="w-full text-left border-collapse">
-            <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
+            <thead className="sticky top-0 z-10 bg-white shadow-sm">
               <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                 <th className="p-5 w-20 text-center">ID</th>
-                <th className="p-5 min-w-[300px]">Course Info</th>
-                <th className="p-5">Category</th>
-                <th className="p-5 text-right">Price</th>
-                <th className="p-5">Status</th>
-                <th className="p-5 text-center">Actions</th>
+                <th className="p-5 min-w-[300px]">Thông tin khóa học</th>
+                <th className="p-5">Danh mục</th>
+                <th className="p-5 text-right">Giá niêm yết</th>
+                <th className="p-5">Trạng thái</th>
+                <th className="p-5 text-center">Quản lý</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
                 <tr>
                   <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">
-                    <FontAwesomeIcon icon={faRotateRight} className="animate-spin mr-2 text-blue-500" />
-                    Loading courses...
+                    <FontAwesomeIcon icon={faRotateRight} className="animate-spin mr-2 text-blue-500" /> Đang tải dữ liệu...
                   </td>
                 </tr>
               ) : filteredCourses.length > 0 ? (
                 filteredCourses.map((course) => (
-                  <tr
-                    key={course.id}
-                    className={`hover:bg-slate-50/80 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}
-                  >
+                  <tr key={course.id} className={`hover:bg-slate-50 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}>
                     <td className="p-5 text-center">
-                      <div className="relative group/id flex items-center justify-center">
-                        <span
-                          className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono"
-                          title={course.id}
-                        >
-                          {course.id}
-                        </span>
-                        <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
-                          <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
-                            <span className="select-all">{course.id}</span>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigator.clipboard.writeText(course.id);
-                                e.currentTarget.innerText = "✓";
-                                setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
-                              }}
-                              className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
-                            >
-                              Copy
-                            </button>
-                          </div>
-                          <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
-                        </div>
-                      </div>
+                      <span className="text-sm font-bold text-slate-400 font-mono">{course.id.substring(0, 8)}...</span>
                     </td>
                     <td className="p-5">
                       <div className="flex items-start gap-4">
-                        <img
-                          src={course.thumbnail}
-                          alt="Thumbnail"
-                          className="w-20 h-12 rounded-lg object-cover border border-slate-200 shadow-sm mt-1"
-                        />
+                        <img src={course.thumbnail} alt="" className="w-20 h-12 rounded-lg object-cover border border-slate-200 mt-1" />
                         <div className="min-w-0">
-                          <p
-                            onClick={() =>
-                              navigate(`/admin/courses/${course.id}`)
-                            }
-                            className="text-sm font-extrabold text-slate-800 line-clamp-1 hover:text-blue-600 cursor-pointer transition-colors"
-                          >
-                            {course.title}
-                          </p>
-
+                          <p onClick={() => navigate(`/admin/courses/${course.id}`)} className="text-sm font-extrabold text-slate-800 line-clamp-1 hover:text-blue-600 cursor-pointer">{course.title}</p>
                           {course.has_new_update && (
-                            <span className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md shadow-sm border border-amber-200 animate-pulse">
-                              <FontAwesomeIcon icon={faBell} /> NEW UPDATE
+                            <span className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200 animate-pulse">
+                              <FontAwesomeIcon icon={faBell} /> CÓ CẬP NHẬT
                             </span>
                           )}
-
-                          {!course.has_new_update && (
-                            <p className="text-xs font-medium text-slate-500 mt-1">
-                              Instructor:{" "}
-                              <span className="font-bold text-slate-700">
-                                {course.instructor}
-                              </span>
-                            </p>
-                          )}
+                          {!course.has_new_update && <p className="text-xs font-medium text-slate-500 mt-1">Giảng viên: <span className="font-bold text-slate-700">{course.instructor}</span></p>}
                         </div>
                       </div>
                     </td>
                     <td className="p-5">
                       <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[11px] font-bold rounded-md">
-                        {
-                          {
-                            frontend: "Frontend Web Development",
-                            backend: "Backend Web Development",
-                            mobile: "Mobile Programming",
-                            ai: "AI & Machine Learning",
-                            data_analysis: "Data Analysis",
-                            data_engineer: "Data Engineering",
-                            uiux: "UI/UX Design",
-                            ba: "Business Analysis",
-                          }[course.category] || course.category
-                        }
+                        {CATEGORIES.find(c => c.value === course.category)?.label || course.category}
                       </span>
                     </td>
                     <td className="p-5 text-right">
-                      {course.status === "pending" ||
-                        course.status === "draft" ? (
-                        <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-md">
-                          Awaiting pricing
-                        </span>
-                      ) : course.price === 0 ? (
-                        <span className="text-sm font-black text-emerald-600">
-                          Free
-                        </span>
+                      {course.status === "pending" || course.status === "draft" ? (
+                        <span className="text-xs font-bold text-amber-600">Đang chờ định giá</span>
                       ) : (
-                        <span className="text-sm font-black text-slate-700">
-                          ${course.price}
-                        </span>
+                        <span className="text-sm font-black text-slate-700">{course.price === 0 ? "Miễn phí" : `$${course.price}`}</span>
                       )}
                     </td>
                     <td className="p-5">{renderStatusBadge(course.status)}</td>
                     <td className="p-5 text-center relative">
                       <button
-                        onClick={() =>
-                          setOpenActionMenuId(
-                            openActionMenuId === course.id ? null : course.id,
-                          )
-                        }
+                        onClick={() => setOpenActionMenuId(openActionMenuId === course.id ? null : course.id)}
                         className="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200"
                       >
                         <FontAwesomeIcon icon={faEllipsisVertical} />
@@ -428,82 +311,30 @@ const AdminCourseManagement = () => {
 
                       {openActionMenuId === course.id && (
                         <>
-                          <div
-                            className="fixed inset-0 z-10"
-                            onClick={() => setOpenActionMenuId(null)}
-                          ></div>
-                          <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden animate-fade-slide-up">
+                          <div className="fixed inset-0 z-10" onClick={() => setOpenActionMenuId(null)}></div>
+                          <div className="absolute right-8 top-10 w-48 bg-white border border-slate-200 rounded-xl shadow-lg z-20 py-1 overflow-hidden">
                             <button
-                              onClick={() => {
-                                setOpenActionMenuId(null);
-                                navigate(
-                                  `/admin/courses/${course.id}/approval`,
-                                );
-                              }}
-                              className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2 ${course.has_new_update
-                                ? "text-amber-700 bg-amber-50 hover:bg-amber-100"
-                                : course.status === "pending"
-                                  ? "text-blue-700 bg-blue-50 hover:bg-blue-100"
-                                  : "text-slate-700 hover:bg-slate-50"
-                                }`}
+                              onClick={() => { setOpenActionMenuId(null); navigate(`/admin/courses/${course.id}/approval`); }}
+                              className={`w-full text-left px-4 py-2.5 text-sm font-bold flex items-center gap-2 ${course.has_new_update ? "text-amber-700 bg-amber-50" : "text-slate-700 hover:bg-slate-50"}`}
                             >
-                              <FontAwesomeIcon
-                                icon={course.has_new_update ? faBell : faEye}
-                                className="w-4"
-                              />{" "}
-                              {course.has_new_update
-                                ? "Process Update"
-                                : course.status === "pending"
-                                  ? "Review & Price"
-                                  : "View Details"}
+                              <FontAwesomeIcon icon={course.has_new_update ? faBell : faEye} className="w-4" />
+                              {course.has_new_update ? "Xử lý cập nhật" : course.status === "pending" ? "Duyệt & Định giá" : "Xem chi tiết"}
                             </button>
 
                             {(course.status === "published" || course.status === "approved") && (
-                              <button
-                                onClick={() =>
-                                  toggleCourseSuspension(
-                                    course.id,
-                                    course.status,
-                                  )
-                                }
-                                className="w-full text-left px-4 py-2.5 text-sm font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2"
-                              >
-                                <FontAwesomeIcon icon={faBan} className="w-4" />{" "}
-                                Suspend
+                              <button onClick={() => toggleCourseSuspension(course.id, course.status)} className="w-full text-left px-4 py-2.5 text-sm font-bold text-amber-600 hover:bg-amber-50 flex items-center gap-2">
+                                <FontAwesomeIcon icon={faBan} className="w-4" /> Đình chỉ
                               </button>
                             )}
 
                             {course.status === "suspended" && (
-                              <button
-                                onClick={() =>
-                                  toggleCourseSuspension(
-                                    course.id,
-                                    course.status,
-                                  )
-                                }
-                                className="w-full text-left px-4 py-2.5 text-sm font-bold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2"
-                              >
-                                <FontAwesomeIcon
-                                  icon={faCheckCircle}
-                                  className="w-4"
-                                />{" "}
-                                Restore
+                              <button onClick={() => toggleCourseSuspension(course.id, course.status)} className="w-full text-left px-4 py-2.5 text-sm font-bold text-emerald-600 hover:bg-emerald-50 flex items-center gap-2">
+                                <FontAwesomeIcon icon={faCheckCircle} className="w-4" /> Khôi phục
                               </button>
                             )}
 
-                            <button
-                              onClick={() => deleteCourse(course.id)}
-                              className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
-                            >
-                              <FontAwesomeIcon icon={faXmark} className="w-4" />{" "}
-                              Reject / Disable
-                            </button>
-                            <button
-                              
-                              className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100"
-                            >
-                              <FontAwesomeIcon icon={faTrash} className="w-4" />{" "}
-                              Delete
+                            <button onClick={() => deleteCourse(course.id)} className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-slate-100">
+                              <FontAwesomeIcon icon={faTrash} className="w-4" /> Xóa vĩnh viễn
                             </button>
                           </div>
                         </>
@@ -513,12 +344,7 @@ const AdminCourseManagement = () => {
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan="6"
-                    className="p-10 text-center text-slate-500 font-medium"
-                  >
-                    No courses found.
-                  </td>
+                  <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">Không tìm thấy khóa học nào phù hợp.</td>
                 </tr>
               )}
             </tbody>

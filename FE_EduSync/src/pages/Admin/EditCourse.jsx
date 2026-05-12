@@ -19,21 +19,20 @@ import {
   faTimes
 } from "@fortawesome/free-solid-svg-icons";
 
-// Giả sử có API này, Backend cần cung cấp endpoint lấy và cập nhật thông tin
 import { fetchAdminCourseDetailAPI } from "../../services/adminCourseAPI";
 
 const THUMB_FALLBACK =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
 
 const CATEGORIES = [
-  "Frontend Web Development",
-  "Backend Web Development",
-  "Mobile Programming",
-  "AI & Machine Learning",
-  "Data Analysis",
-  "Data Engineering",
-  "UI/UX Design",
-  "Business Analysis"
+  "Phát triển Web Frontend",
+  "Phát triển Web Backend",
+  "Lập trình Di động",
+  "AI & Học máy",
+  "Phân tích Dữ liệu",
+  "Kỹ thuật Dữ liệu",
+  "Thiết kế UI/UX",
+  "Phân tích Nghiệp vụ"
 ];
 
 const AdminEditCourse = () => {
@@ -41,7 +40,7 @@ const AdminEditCourse = () => {
   const { id } = useParams();
 
   // =========================================================================
-  // STATE MANAGEMENT
+  // QUẢN LÝ TRẠNG THÁI (STATE)
   // =========================================================================
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -58,21 +57,18 @@ const AdminEditCourse = () => {
 
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const fileInputRef = useRef(null);
-  
-  // ✅ MỚI THÊM: State quản lý video/bài giảng
   const [uploadedVideos, setUploadedVideos] = useState([]);
   const videoInputRef = useRef(null);
 
   // =========================================================================
-  // FETCH DATA
+  // TRUY XUẤT DỮ LIỆU
   // =========================================================================
   useEffect(() => {
     const loadCourse = async () => {
       try {
         const token = localStorage.getItem("access_token");
-        if (!token) throw new Error("Missing session token.");
+        if (!token) throw new Error("Phiên đăng nhập đã hết hạn.");
 
-        // Gọi API lấy thông tin chi tiết để edit
         const data = await fetchAdminCourseDetailAPI(id, token);
         
         setCourseData({
@@ -84,21 +80,20 @@ const AdminEditCourse = () => {
           thumbnail: data.thumbnail || "",
         });
 
-        // ✅ Giả lập nạp sẵn danh sách video cũ từ backend vào state
         if (data.lessons) {
           const formattedLessons = data.lessons.map(lesson => ({
             id: lesson.id,
-            originalName: lesson.file_name || "video_file.mp4",
-            size: lesson.size ? (lesson.size / (1024 * 1024)).toFixed(2) : "Unknown",
+            originalName: lesson.file_name || "video_dinh_kem.mp4",
+            size: lesson.size ? (lesson.size / (1024 * 1024)).toFixed(2) : "Không rõ",
             title: lesson.title,
             description: lesson.description || "",
-            isExisting: true // Đánh dấu là video cũ đã có trên hệ thống
+            isExisting: true 
           }));
           setUploadedVideos(formattedLessons);
         }
 
       } catch (err) {
-        setError(err.message || "Failed to load course data.");
+        setError(err.message || "Không thể tải dữ liệu khóa học.");
       } finally {
         setIsLoading(false);
       }
@@ -127,7 +122,6 @@ const AdminEditCourse = () => {
     }
   };
 
-  // ✅ MỚI THÊM: Logic xử lý Video
   const handleVideoUploadClick = () => videoInputRef.current.click();
 
   const handleVideoFileChange = (e) => {
@@ -141,7 +135,7 @@ const AdminEditCourse = () => {
       size: (file.size / (1024 * 1024)).toFixed(2),
       title: file.name.split(".").slice(0, -1).join("."),
       description: "",
-      isExisting: false // Video mới thêm vào
+      isExisting: false 
     }));
 
     setUploadedVideos((prev) => [...prev, ...newVideos]);
@@ -157,7 +151,7 @@ const AdminEditCourse = () => {
   };
 
   const removeVideo = (videoId) => {
-    if (window.confirm("Are you sure you want to remove this lesson?")) {
+    if (window.confirm("Xác nhận gỡ bỏ bài giảng này khỏi giáo trình?")) {
       setUploadedVideos((prev) => prev.filter((video) => video.id !== videoId));
     }
   };
@@ -166,29 +160,23 @@ const AdminEditCourse = () => {
     e.preventDefault();
     setIsSaving(true);
     try {
-      // 🚨 GỌI API LƯU TẠI ĐÂY (Bao gồm cả text, ảnh và mảng uploadedVideos)
-      // await updateAdminCourseAPI(id, courseData, uploadedVideos, token);
-      
-      // Giả lập thời gian call API
+      // Giả lập thời gian call API lưu dữ liệu
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      alert("Course updated successfully!");
+      alert("Hệ thống: Cập nhật thông tin khóa học thành công.");
       navigate(`/admin/courses/${id}`);
     } catch (err) {
-      alert("Failed to update course: " + err.message);
+      alert("Lỗi: Không thể lưu thay đổi. Vui lòng kiểm tra lại kết nối server.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  // =========================================================================
-  // RENDER UI
-  // =========================================================================
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center h-screen bg-slate-50 text-slate-400">
         <FontAwesomeIcon icon={faSpinner} className="text-5xl animate-spin text-blue-600 mb-6" />
-        <p className="font-bold text-lg tracking-wide animate-pulse">Initializing Editor...</p>
+        <p className="font-bold text-lg tracking-wide animate-pulse">Đang khởi tạo trình chỉnh sửa...</p>
       </div>
     );
   }
@@ -199,7 +187,7 @@ const AdminEditCourse = () => {
         <FontAwesomeIcon icon={faExclamationTriangle} className="text-6xl text-red-400 mb-6" />
         <p className="font-bold text-red-600 mb-6 text-xl">{error}</p>
         <button onClick={() => navigate(-1)} className="px-8 py-3 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg active:scale-95">
-          Go Back
+          Quay lại
         </button>
       </div>
     );
@@ -215,7 +203,7 @@ const AdminEditCourse = () => {
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-6 text-sm font-bold uppercase tracking-wider"
           >
-            <FontAwesomeIcon icon={faArrowLeft} /> Back to Course
+            <FontAwesomeIcon icon={faArrowLeft} /> Quay lại khóa học
           </button>
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center border border-white/20 shadow-xl shrink-0">
@@ -223,10 +211,10 @@ const AdminEditCourse = () => {
             </div>
             <div>
               <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tight">
-                Edit Course
+                Chỉnh sửa khóa học
               </h1>
               <p className="text-slate-400 font-medium mt-1">
-                Course ID: <span className="text-blue-300 font-bold">{id}</span>
+                Mã khóa học: <span className="text-blue-300 font-bold">{id}</span>
               </p>
             </div>
           </div>
@@ -237,37 +225,37 @@ const AdminEditCourse = () => {
       <div className="max-w-[1400px] w-full mx-auto px-4 sm:px-8 lg:px-12 -mt-12 relative z-20 flex-1 pb-16">
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* ================= CỘT TRÁI (MAIN INFO & CURRICULUM) ================= */}
+          {/* ================= CỘT TRÁI (THÔNG TIN CHÍNH & GIÁO TRÌNH) ================= */}
           <div className="w-full lg:flex-1 space-y-8">
             
             {/* KHỐI 1: THÔNG TIN CHUNG */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 lg:p-10 animate-fade-slide-up">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 lg:p-10">
               <h2 className="text-xl font-black text-slate-800 mb-8 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
                   <FontAwesomeIcon icon={faInfoCircle} />
                 </span>
-                General Details
+                Thông tin cơ bản
               </h2>
 
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                    Course Title
+                    Tên khóa học
                   </label>
                   <input
                     type="text"
                     name="title"
                     value={courseData.title}
                     onChange={handleInputChange}
-                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all placeholder:text-slate-400"
-                    placeholder="E.g: Master ReactJS 2026..."
+                    className="w-full px-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 font-bold focus:outline-none focus:border-blue-500 transition-all placeholder:text-slate-400"
+                    placeholder="Ví dụ: Lập trình ReactJS nâng cao 2026..."
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                      Category
+                      Danh mục
                     </label>
                     <div className="relative">
                       <FontAwesomeIcon icon={faTag} className="absolute left-5 top-4 text-slate-400" />
@@ -275,7 +263,7 @@ const AdminEditCourse = () => {
                         name="category"
                         value={courseData.category}
                         onChange={handleInputChange}
-                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-bold focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all cursor-pointer appearance-none"
+                        className="w-full pl-12 pr-5 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-bold focus:outline-none focus:border-blue-500 transition-all cursor-pointer appearance-none"
                       >
                         {CATEGORIES.map(cat => (
                           <option key={cat} value={cat}>{cat}</option>
@@ -286,7 +274,7 @@ const AdminEditCourse = () => {
 
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                      Visibility Status
+                      Trạng thái hiển thị
                     </label>
                     <div className="relative">
                       <FontAwesomeIcon icon={faEye} className="absolute left-5 top-4 text-slate-400" />
@@ -294,17 +282,17 @@ const AdminEditCourse = () => {
                         name="status"
                         value={courseData.status}
                         onChange={handleInputChange}
-                        className={`w-full pl-12 pr-5 py-3.5 border rounded-2xl font-bold focus:outline-none focus:ring-4 transition-all cursor-pointer appearance-none ${
-                          courseData.status === "published" ? "bg-emerald-50 border-emerald-200 text-emerald-700 focus:ring-emerald-500/20 focus:border-emerald-500" :
-                          courseData.status === "pending" ? "bg-amber-50 border-amber-200 text-amber-700 focus:ring-amber-500/20 focus:border-amber-500" :
-                          courseData.status === "suspended" ? "bg-red-50 border-red-200 text-red-700 focus:ring-red-500/20 focus:border-red-500" :
-                          "bg-slate-50 border-slate-200 text-slate-700 focus:ring-slate-500/20 focus:border-slate-500"
+                        className={`w-full pl-12 pr-5 py-3.5 border rounded-2xl font-bold focus:outline-none transition-all cursor-pointer appearance-none ${
+                          courseData.status === "published" ? "bg-emerald-50 border-emerald-200 text-emerald-700 focus:border-emerald-500" :
+                          courseData.status === "pending" ? "bg-amber-50 border-amber-200 text-amber-700 focus:border-amber-500" :
+                          courseData.status === "suspended" ? "bg-red-50 border-red-200 text-red-700 focus:border-red-500" :
+                          "bg-slate-50 border-slate-200 text-slate-700 focus:border-slate-500"
                         }`}
                       >
-                        <option value="published">Published (Active)</option>
-                        <option value="pending">Pending Review</option>
-                        <option value="draft">Draft</option>
-                        <option value="suspended">Suspended (Hidden)</option>
+                        <option value="published">Đã xuất bản (Công khai)</option>
+                        <option value="pending">Chờ kiểm duyệt</option>
+                        <option value="draft">Bản nháp</option>
+                        <option value="suspended">Đang đình chỉ (Ẩn)</option>
                       </select>
                     </div>
                   </div>
@@ -312,101 +300,92 @@ const AdminEditCourse = () => {
 
                 <div>
                   <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                    Course Description
+                    Mô tả khóa học
                   </label>
                   <textarea
                     name="description"
                     rows="6"
                     value={courseData.description}
                     onChange={handleInputChange}
-                    placeholder="Provide a detailed description of what students will learn..."
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-medium focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all resize-y leading-relaxed"
+                    placeholder="Mô tả chi tiết nội dung và những gì học viên sẽ đạt được..."
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-800 font-medium focus:outline-none focus:border-blue-500 transition-all resize-y leading-relaxed"
                   />
                 </div>
               </div>
             </div>
 
-            {/* KHỐI 2: QUẢN LÝ GIÁO TRÌNH (CURRICULUM) */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 lg:p-10 animate-fade-slide-up" style={{ animationDelay: "0.1s" }}>
+            {/* KHỐI 2: QUẢN LÝ GIÁO TRÌNH */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 lg:p-10">
               <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                   <FontAwesomeIcon icon={faListUl} />
                 </span>
-                Course Curriculum
+                Giáo trình khóa học
               </h2>
 
               <p className="text-slate-500 text-sm mb-6">
-                As an Admin, you have full control over the course content. You can upload new video lessons or modify existing ones below.
+                Với quyền Quản trị viên, bạn có thể kiểm soát toàn bộ nội dung khóa học. Tải lên video bài giảng mới hoặc chỉnh sửa các bài hiện có bên dưới.
               </p>
 
-              {/* Upload Zone */}
               <div 
                 onClick={handleVideoUploadClick} 
                 className="border-2 border-dashed border-blue-200 bg-blue-50/50 hover:bg-blue-50 hover:border-blue-400 rounded-3xl p-8 text-center cursor-pointer transition-all group mb-8 flex flex-col items-center justify-center"
               >
                 <input type="file" multiple accept="video/*" className="hidden" ref={videoInputRef} onChange={handleVideoFileChange} />
-                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform group-hover:shadow-md">
+                <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:scale-110 transition-transform">
                   <FontAwesomeIcon icon={faCloudArrowUp} className="text-3xl text-blue-600" />
                 </div>
-                <h3 className="text-base font-bold text-slate-800 mb-1">Drag & drop new videos here</h3>
-                <p className="text-slate-500 text-xs">Supports MP4, WebM. Max 5GB/file.</p>
+                <h3 className="text-base font-bold text-slate-800 mb-1">Kéo và thả video bài giảng vào đây</h3>
+                <p className="text-slate-500 text-xs">Hỗ trợ định dạng MP4, WebM. Dung lượng tối đa 5GB/file.</p>
               </div>
 
-              {/* Danh sách Video */}
               {uploadedVideos.length > 0 ? (
                 <div className="space-y-6">
                   <h3 className="font-bold text-slate-800 text-sm uppercase tracking-wider border-b border-slate-100 pb-3">
-                    Lessons ({uploadedVideos.length})
+                    Danh sách bài học ({uploadedVideos.length})
                   </h3>
                   
                   {uploadedVideos.map((video, index) => (
                     <div key={video.id} className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 shadow-sm hover:shadow-md transition-shadow">
-                      
-                      {/* Bố cục header của từng video (Badge & Nút Xóa) */}
                       <div className="flex items-center justify-between mb-5 pb-4 border-b border-slate-100">
                         <div className={`text-[10px] font-bold px-3 py-1.5 rounded-lg uppercase tracking-wider ${video.isExisting ? "bg-slate-100 text-slate-600" : "bg-emerald-100 text-emerald-700"}`}>
-                          {video.isExisting ? `Existing Lesson ${index + 1}` : `New Upload ${index + 1}`}
+                          {video.isExisting ? `Bài học hiện tại ${index + 1}` : `Video mới tải lên ${index + 1}`}
                         </div>
                         <button 
                           onClick={() => removeVideo(video.id)} 
                           className="text-slate-400 hover:text-red-500 hover:bg-red-50 w-8 h-8 rounded-xl flex items-center justify-center transition-colors" 
-                          title="Delete lesson"
                         >
                           <FontAwesomeIcon icon={faTimes} />
                         </button>
                       </div>
                       
-                      {/* Chi tiết File */}
                       <div className="flex flex-col sm:flex-row items-start gap-4 mb-6">
-                        <div className="w-12 h-12 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 shrink-0 shadow-sm">
+                        <div className="w-12 h-12 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-center text-slate-400 shrink-0">
                           <FontAwesomeIcon icon={faVideo} className="text-lg" />
                         </div>
                         <div className="min-w-0 flex-1 w-full pt-1">
-                          <p className="text-sm font-bold text-slate-800 truncate mb-0.5" title={video.originalName}>
-                            {video.originalName}
-                          </p>
-                          <p className="text-xs text-slate-500 font-medium">Size: {video.size} MB</p>
+                          <p className="text-sm font-bold text-slate-800 truncate mb-0.5">{video.originalName}</p>
+                          <p className="text-xs text-slate-500 font-medium">Dung lượng: {video.size} MB</p>
                         </div>
                       </div>
                       
-                      {/* Form nhập liệu của Video */}
                       <div className="grid grid-cols-1 gap-5">
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Lesson Title</label>
+                          <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Tiêu đề bài học</label>
                           <input 
                             type="text" 
                             value={video.title} 
                             onChange={(e) => handleVideoDetailChange(video.id, "title", e.target.value)} 
-                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-colors text-slate-800 font-bold text-sm" 
+                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-colors text-slate-800 font-bold text-sm" 
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Short description (Optional)</label>
+                          <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">Mô tả ngắn (Tùy chọn)</label>
                           <textarea 
                             rows="2" 
                             value={video.description} 
                             onChange={(e) => handleVideoDetailChange(video.id, "description", e.target.value)} 
-                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium text-sm resize-y"
+                            className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:border-blue-500 outline-none transition-colors text-slate-700 font-medium text-sm resize-y"
                           ></textarea>
                         </div>
                       </div>
@@ -415,36 +394,29 @@ const AdminEditCourse = () => {
                 </div>
               ) : (
                 <div className="text-center py-12 bg-slate-50 rounded-3xl border-2 border-dashed border-slate-200">
-                  <p className="text-slate-500 font-medium">No lessons available. Upload a video to start building curriculum.</p>
+                  <p className="text-slate-500 font-medium">Chưa có bài học nào. Hãy tải lên video để bắt đầu xây dựng giáo trình.</p>
                 </div>
               )}
             </div>
-
           </div>
 
-          {/* ================= CỘT PHẢI (MEDIA & PRICING) ================= */}
+          {/* ================= CỘT PHẢI (MEDIA & GIÁ CẢ) ================= */}
           <div className="w-full lg:w-[400px] xl:w-[420px] space-y-8 shrink-0 lg:sticky lg:top-8">
             
-            {/* THUMBNAIL UPLOAD ZONE */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 animate-fade-slide-up" style={{ animationDelay: "0.2s" }}>
+            {/* ẢNH ĐẠI DIỆN KHÓA HỌC */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8">
               <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
                   <FontAwesomeIcon icon={faImage} />
                 </span>
-                Course Media
+                Hình ảnh khóa học
               </h2>
               
               <div 
                 onClick={() => fileInputRef.current.click()}
                 className="relative group border-2 border-dashed border-slate-300 rounded-3xl overflow-hidden bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-300 transition-all cursor-pointer aspect-video flex flex-col items-center justify-center"
               >
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  ref={fileInputRef}
-                  onChange={handleImageChange}
-                />
+                <input type="file" accept="image/*" className="hidden" ref={fileInputRef} onChange={handleImageChange} />
                 
                 {courseData.thumbnail ? (
                   <>
@@ -456,31 +428,31 @@ const AdminEditCourse = () => {
                     />
                     <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center text-white">
                       <FontAwesomeIcon icon={faCloudArrowUp} className="text-3xl mb-2" />
-                      <span className="font-bold">Replace Image</span>
+                      <span className="font-bold">Thay đổi hình ảnh</span>
                     </div>
                   </>
                 ) : (
-                  <div className="text-center p-6 text-slate-500 group-hover:text-indigo-600 transition-colors">
+                  <div className="text-center p-6 text-slate-500">
                     <FontAwesomeIcon icon={faCloudArrowUp} className="text-4xl mb-3" />
-                    <p className="font-bold">Click or drag image here</p>
-                    <p className="text-xs mt-1 opacity-70">1280x720 (16:9) recommended</p>
+                    <p className="font-bold">Nhấn để tải ảnh lên</p>
+                    <p className="text-xs mt-1 opacity-70">Khuyến nghị: 1280x720 (16:9)</p>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* PRICING */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8 animate-fade-slide-up" style={{ animationDelay: "0.3s" }}>
+            {/* CHIẾN LƯỢC GIÁ */}
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-xl shadow-slate-200/40 p-6 sm:p-8">
               <h2 className="text-xl font-black text-slate-800 mb-6 flex items-center gap-3">
                 <span className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
                   <FontAwesomeIcon icon={faDollarSign} />
                 </span>
-                Pricing Strategy
+                Chiến lược giá bán
               </h2>
               
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                  Listed Price (USD)
+                  Giá niêm yết (USD)
                 </label>
                 <div className="relative">
                   <span className="absolute left-5 top-4 text-emerald-600 font-black text-lg">$</span>
@@ -491,52 +463,51 @@ const AdminEditCourse = () => {
                     step="0.01"
                     value={courseData.price}
                     onChange={handleInputChange}
-                    className="w-full pl-10 pr-5 py-4 bg-emerald-50/30 border border-emerald-200 rounded-2xl text-emerald-900 font-black text-2xl focus:outline-none focus:ring-4 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
+                    className="w-full pl-10 pr-5 py-4 bg-emerald-50/30 border border-emerald-200 rounded-2xl text-emerald-900 font-black text-2xl focus:outline-none focus:border-emerald-500 transition-all"
                   />
                 </div>
                 <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 mt-4">
                   <p className="text-xs text-blue-800 font-medium leading-relaxed">
                     <FontAwesomeIcon icon={faInfoCircle} className="mr-1" />
-                    As an admin, you have the authority to override the instructor's price. Set to <strong>0</strong> to make it free.
+                    Với quyền quản trị, bạn có thể ghi đè giá của giảng viên. Để giá <strong>0</strong> nếu muốn khóa học này miễn phí.
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* DANGER ZONE */}
-            <div className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-200/20 p-6 sm:p-8 animate-fade-slide-up" style={{ animationDelay: "0.4s" }}>
+            {/* KHU VỰC NGUY HIỂM */}
+            <div className="bg-white rounded-3xl border border-rose-100 shadow-xl shadow-rose-200/20 p-6 sm:p-8">
               <h2 className="text-xl font-black text-rose-700 mb-2 flex items-center gap-3">
                 <FontAwesomeIcon icon={faExclamationTriangle} />
-                Danger Zone
+                Khu vực nguy hiểm
               </h2>
-              <p className="text-sm text-slate-500 mb-6">Irreversible actions for this course.</p>
+              <p className="text-sm text-slate-500 mb-6">Các hành động này sẽ ảnh hưởng vĩnh viễn đến khóa học.</p>
               
               <button 
-                onClick={() => alert('Delete action disabled in demo.')}
-                className="w-full py-3.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-2xl hover:bg-rose-50 hover:border-rose-600 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-2"
+                onClick={() => alert('Hệ thống: Tính năng xóa hiện đã được tạm khóa trong bản demo.')}
+                className="w-full py-3.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-2xl hover:bg-rose-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                <FontAwesomeIcon icon={faTrash} /> Delete Course
+                <FontAwesomeIcon icon={faTrash} /> Xóa khóa học này
               </button>
             </div>
-
           </div>
         </div>
 
-        {/* ================= NÚT LƯU Ở CUỐI TRANG ================= */}
+        {/* NÚT THAO TÁC CUỐI TRANG */}
         <div className="mt-12 pt-8 border-t border-slate-200 flex justify-end gap-4 w-full">
           <button
             onClick={() => navigate(-1)}
-            className="px-8 py-3.5 bg-white text-slate-600 font-bold rounded-xl border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm"
+            className="px-8 py-3.5 bg-white text-slate-600 font-bold rounded-xl border border-slate-300 hover:bg-slate-50 transition-colors"
           >
-            Cancel
+            Hủy bỏ
           </button>
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="px-10 py-3.5 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/30 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+            className="px-10 py-3.5 bg-blue-600 text-white font-black rounded-xl hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/30 active:scale-95 flex items-center justify-center gap-2 disabled:opacity-70"
           >
             {isSaving ? <FontAwesomeIcon icon={faSpinner} spin className="text-lg" /> : <FontAwesomeIcon icon={faSave} className="text-lg" />}
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
 

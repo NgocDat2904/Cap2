@@ -27,7 +27,7 @@ const DEFAULT_AVATAR = (name) =>
   `https://ui-avatars.com/api/?background=1e3a5f&color=fff&bold=true&size=200&name=${encodeURIComponent(name || "A")}`;
 
 // =========================================================================
-// TOAST COMPONENT (inline, nhẹ)
+// TOAST COMPONENT (Thông báo nhẹ)
 // =========================================================================
 const Toast = ({ type, message, onClose }) => {
   useEffect(() => {
@@ -66,13 +66,13 @@ const AdminProfile = () => {
     address: "",
     avatarUrl: "",
   });
-  const [formData, setFormData] = useState({ ...profile }); // bản nháp đang chỉnh sửa
+  const [formData, setFormData] = useState({ ...profile });
 
   // --- State UI ---
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  const [toast, setToast] = useState(null); // { type: "success"|"error", message }
+  const [toast, setToast] = useState(null); 
 
   // --- State đổi mật khẩu ---
   const [showPwSection, setShowPwSection] = useState(false);
@@ -83,7 +83,7 @@ const AdminProfile = () => {
   const fileInputRef = useRef(null);
 
   // =========================================================================
-  // FETCH PROFILE
+  // TRUY XUẤT THÔNG TIN
   // =========================================================================
   useEffect(() => {
     const fetchProfile = async () => {
@@ -103,7 +103,7 @@ const AdminProfile = () => {
         setProfile(p);
         setFormData(p);
       } catch (err) {
-        showToast("error", err?.response?.data?.detail || err.message || "Failed to load information.");
+        showToast("error", "Lỗi: Không thể tải thông tin hồ sơ từ máy chủ.");
       } finally {
         setLoading(false);
       }
@@ -111,20 +111,17 @@ const AdminProfile = () => {
     fetchProfile();
   }, []);
 
-  // =========================================================================
-  // HELPERS
-  // =========================================================================
   const showToast = (type, message) => setToast({ type, message });
 
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
   // =========================================================================
-  // SAVE PROFILE
+  // LƯU THÔNG TIN
   // =========================================================================
   const handleSave = async () => {
     if (!formData.fullName.trim()) {
-      showToast("error", "Full name cannot be empty.");
+      showToast("error", "Họ và tên không được để trống.");
       return;
     }
     setSaving(true);
@@ -140,34 +137,32 @@ const AdminProfile = () => {
         },
         token
       );
-      setProfile({ ...formData }); // đồng bộ lại profile gốc
-      showToast("success", "Profile updated successfully!");
+      setProfile({ ...formData });
+      showToast("success", "Cập nhật thông tin cá nhân thành công!");
     } catch (err) {
-      showToast("error", err?.response?.data?.detail || err.message || "Save failed.");
+      showToast("error", "Lưu thay đổi thất bại.");
     } finally {
       setSaving(false);
     }
   };
 
   // =========================================================================
-  // UPLOAD AVATAR
+  // TẢI LÊN ẢNH ĐẠI DIỆN
   // =========================================================================
   const handleAvatarChange = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith("image/")) {
-      showToast("error", "Only image files are accepted (jpg, png, webp...).");
+      showToast("error", "Định dạng không hợp lệ. Chỉ chấp nhận tệp tin hình ảnh.");
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      showToast("error", "Image must not exceed 5MB.");
+      showToast("error", "Dung lượng ảnh quá lớn (vượt quá 5MB).");
       return;
     }
 
-    // Preview tức thì
     const previewUrl = URL.createObjectURL(file);
     setFormData((prev) => ({ ...prev, avatarUrl: previewUrl }));
-    setProfile((prev) => ({ ...prev, avatarUrl: previewUrl }));
 
     setUploadingAvatar(true);
     try {
@@ -176,26 +171,21 @@ const AdminProfile = () => {
       const newUrl = res.avatarUrl;
       setFormData((prev) => ({ ...prev, avatarUrl: newUrl }));
       setProfile((prev) => ({ ...prev, avatarUrl: newUrl }));
-      showToast("success", "Avatar updated successfully!");
+      showToast("success", "Thay đổi ảnh đại diện thành công!");
     } catch (err) {
-      // Hoàn nguyên preview nếu lỗi
       setFormData((prev) => ({ ...prev, avatarUrl: profile.avatarUrl }));
-      setProfile((prev) => ({ ...prev, avatarUrl: profile.avatarUrl }));
-      showToast("error", err?.response?.data?.detail || "Image upload failed.");
+      // showToast("error", "Lỗi: Không thể tải ảnh lên máy chủ.");
     } finally {
       setUploadingAvatar(false);
     }
   };
 
-  // =========================================================================
-  // RENDER
-  // =========================================================================
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-4 text-slate-500">
           <FontAwesomeIcon icon={faSpinner} className="text-4xl text-blue-500 animate-spin" />
-          <p className="font-semibold">Loading information...</p>
+          <p className="font-semibold">Đang truy xuất dữ liệu...</p>
         </div>
       </div>
     );
@@ -203,27 +193,25 @@ const AdminProfile = () => {
 
   return (
     <div className="flex-1 p-6 sm:p-8 bg-slate-50 min-h-screen font-sans animate-fade-slide-up pb-20 overflow-y-auto max-h-screen scrollbar-thin">
-      {/* TOAST */}
       {toast && (
         <Toast type={toast.type} message={toast.message} onClose={() => setToast(null)} />
       )}
 
-      {/* HEADER */}
+      {/* TIÊU ĐỀ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">
-            Admin Profile
+            Hồ sơ Quản trị viên
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Manage your personal information and account security settings.
+            Quản lý thông tin cá nhân và thiết lập bảo mật tài khoản hệ thống.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
-        {/* CỘT TRÁI: AVATAR & BADGES */}
+        {/* CỘT TRÁI: AVATAR & TRẠNG THÁI */}
         <div className="bg-white p-8 rounded-3xl border border-slate-200/60 shadow-sm text-center">
-          {/* Avatar */}
           <div
             className="relative w-40 h-40 mx-auto mb-6 group cursor-pointer"
             onClick={() => !uploadingAvatar && fileInputRef.current?.click()}
@@ -241,12 +229,11 @@ const AdminProfile = () => {
                 <FontAwesomeIcon icon={faCamera} className="text-3xl text-white" />
               )}
             </div>
-            <div className="absolute bottom-1 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-white">
+            <div className="absolute bottom-1 right-3 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center text-white border-4 border-white shadow-md">
               <span className="w-1.5 h-1.5 bg-white rounded-full animate-pulse" />
             </div>
           </div>
 
-          {/* Hidden file input */}
           <input
             ref={fileInputRef}
             type="file"
@@ -256,7 +243,7 @@ const AdminProfile = () => {
           />
 
           <h2 className="text-2xl font-extrabold text-slate-800">
-            {profile.fullName || "Admin"}
+            {profile.fullName || "Quản trị viên"}
           </h2>
           <p className="text-sm font-medium text-slate-500 mt-1 flex items-center justify-center gap-1.5">
             <FontAwesomeIcon icon={faEnvelope} className="text-blue-500" />
@@ -265,11 +252,10 @@ const AdminProfile = () => {
 
           <div className="mt-5 space-y-3 flex flex-col items-center">
             <span className="px-3 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-full flex items-center gap-1.5 border border-amber-200">
-              <FontAwesomeIcon icon={faUserShield} /> Administrator
+              <FontAwesomeIcon icon={faUserShield} /> Quyền Quản trị viên
             </span>
             <span className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-full flex items-center gap-1.5 border border-blue-100">
-              Security level:{" "}
-              <span className="font-black text-blue-800">Verified</span>
+              Trạng thái xác minh: <span className="font-black text-blue-800 uppercase">Đã xác thực</span>
             </span>
           </div>
 
@@ -277,58 +263,45 @@ const AdminProfile = () => {
             <button
               onClick={handleSave}
               disabled={saving}
-              className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition duration-300 shadow-sm shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-95 disabled:opacity-60"
+              className="w-full py-3.5 bg-blue-600 text-white font-bold rounded-2xl hover:bg-blue-700 transition duration-300 shadow-sm flex items-center justify-center gap-2 active:scale-95 disabled:opacity-60"
             >
-              {saving ? (
-                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
-              ) : (
-                <FontAwesomeIcon icon={faSave} />
-              )}
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? <FontAwesomeIcon icon={faSpinner} className="animate-spin" /> : <FontAwesomeIcon icon={faSave} />}
+              {saving ? "Đang lưu..." : "Lưu thay đổi"}
             </button>
             <button
               onClick={() => setShowPwSection(!showPwSection)}
               className="w-full py-3.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-2xl hover:bg-slate-100 transition duration-300 flex items-center justify-center gap-2"
             >
               <FontAwesomeIcon icon={faKey} />
-              {showPwSection ? "Hide Password Settings" : "Change Password"}
+              {showPwSection ? "Ẩn thiết lập mật khẩu" : "Đổi mật khẩu"}
             </button>
           </div>
-
-          {/* Gợi ý ảnh đại diện */}
-          <p className="text-xs text-slate-400 mt-4">
-            Click the image to change avatar (JPG, PNG, max 5MB)
+          <p className="text-[11px] text-slate-400 mt-4 italic">
+            Nhấp vào ảnh để thay đổi đại diện (JPG, PNG, tối đa 5MB)
           </p>
         </div>
 
-        {/* CỘT PHẢI: FORM */}
+        {/* CỘT PHẢI: FORM NHẬP LIỆU */}
         <div className="md:col-span-2 space-y-6">
-          {/* THÔNG TIN CÁ NHÂN */}
           <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/60 shadow-sm">
             <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
-              Personal Information
+              Thông tin định danh
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              {/* Họ và tên */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Full Name <span className="text-red-500">*</span>
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Họ và tên <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   value={formData.fullName}
                   onChange={(e) => handleChange("fullName", e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
-                  placeholder="Enter full name"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:border-blue-500 outline-none transition"
+                  placeholder="Nhập đầy đủ họ tên"
                 />
               </div>
 
-              {/* Email (readonly) */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Email (System)
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Email hệ thống</label>
                 <input
                   type="email"
                   value={formData.email}
@@ -337,147 +310,111 @@ const AdminProfile = () => {
                 />
               </div>
 
-              {/* Số điện thoại */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Phone Number
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Số điện thoại</label>
                 <input
                   type="text"
                   value={formData.phone}
                   onChange={(e) => handleChange("phone", e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
-                  placeholder="Enter phone number"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:border-blue-500 outline-none transition"
+                  placeholder="Ví dụ: 090xxxxxxx"
                 />
               </div>
 
-              {/* Ngày sinh */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Date of Birth
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Ngày sinh</label>
                 <input
                   type="date"
                   value={formData.dob}
                   onChange={(e) => handleChange("dob", e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:border-blue-500 outline-none transition"
                 />
               </div>
 
-              {/* Giới tính */}
               <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Gender
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Giới tính</label>
                 <select
                   value={formData.gender}
                   onChange={(e) => handleChange("gender", e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-bold focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer focus:border-blue-500 transition"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-bold outline-none cursor-pointer focus:border-blue-500 transition"
                 >
-                  <option value="">-- Select Gender --</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="">-- Chọn giới tính --</option>
+                  <option value="male">Nam</option>
+                  <option value="female">Nữ</option>
+                  <option value="other">Khác</option>
                 </select>
               </div>
 
-              {/* Địa chỉ */}
               <div className="sm:col-span-2">
-                <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                  Current Address
-                </label>
+                <label className="block text-sm font-bold text-slate-700 mb-1.5">Địa chỉ liên lạc</label>
                 <textarea
                   rows="3"
                   value={formData.address}
                   onChange={(e) => handleChange("address", e.target.value)}
-                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition resize-y"
-                  placeholder="Enter address"
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:border-blue-500 outline-none transition resize-y"
+                  placeholder="Địa chỉ hiện tại của bạn"
                 />
               </div>
             </div>
-
-            <p className="text-xs text-slate-400 font-medium text-right mt-6">
-              Last updated: {new Date().toLocaleDateString("en-US")}
-            </p>
           </div>
 
-          {/* ĐỔI MẬT KHẨU (ẩn/hiện) */}
+          {/* ĐỔI MẬT KHẨU */}
           {showPwSection && (
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/60 shadow-sm animate-fade-slide-up">
               <h3 className="text-xl font-extrabold text-slate-800 mb-6 flex items-center gap-3 border-b border-slate-100 pb-4">
                 <FontAwesomeIcon icon={faKey} className="text-blue-500" />
-                Change Password
+                Thay đổi mật khẩu tài khoản
               </h3>
               <div className="space-y-4 max-w-md">
-                {/* Mật khẩu cũ */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Current Password
-                  </label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Mật khẩu hiện tại</label>
                   <div className="relative">
                     <input
                       type={showOldPw ? "text" : "password"}
                       value={pwForm.old}
                       onChange={(e) => setPwForm((p) => ({ ...p, old: e.target.value }))}
-                      className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
+                      className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none"
                       placeholder="••••••••"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowOldPw(!showOldPw)}
-                      className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-blue-600"
-                    >
+                    <button type="button" onClick={() => setShowOldPw(!showOldPw)} className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-blue-600">
                       <FontAwesomeIcon icon={showOldPw ? faEyeSlash : faEye} />
                     </button>
                   </div>
                 </div>
 
-                {/* Mật khẩu mới */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    New Password
-                  </label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Mật khẩu mới</label>
                   <div className="relative">
                     <input
                       type={showNewPw ? "text" : "password"}
                       value={pwForm.new}
                       onChange={(e) => setPwForm((p) => ({ ...p, new: e.target.value }))}
-                      className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition"
-                      placeholder="Minimum 8 characters"
+                      className="w-full pl-4 pr-12 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 font-medium outline-none"
+                      placeholder="Tối thiểu 8 ký tự"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPw(!showNewPw)}
-                      className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-blue-600"
-                    >
+                    <button type="button" onClick={() => setShowNewPw(!showNewPw)} className="absolute inset-y-0 right-4 flex items-center text-slate-400 hover:text-blue-600">
                       <FontAwesomeIcon icon={showNewPw ? faEyeSlash : faEye} />
                     </button>
                   </div>
                 </div>
 
-                {/* Xác nhận */}
                 <div>
-                  <label className="block text-sm font-bold text-slate-700 mb-1.5">
-                    Confirm New Password
-                  </label>
+                  <label className="block text-sm font-bold text-slate-700 mb-1.5">Xác nhận mật khẩu mới</label>
                   <input
                     type="password"
                     value={pwForm.confirm}
                     onChange={(e) => setPwForm((p) => ({ ...p, confirm: e.target.value }))}
                     className={`w-full px-4 py-3 bg-slate-50 border rounded-xl text-slate-700 font-medium outline-none transition ${
-                      pwForm.confirm && pwForm.confirm !== pwForm.new
-                        ? "border-red-400 focus:ring-red-200"
-                        : "border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      pwForm.confirm && pwForm.confirm !== pwForm.new ? "border-red-400" : "border-slate-200"
                     }`}
-                    placeholder="Re-enter new password"
+                    placeholder="Nhập lại mật khẩu mới"
                   />
                   {pwForm.confirm && pwForm.confirm !== pwForm.new && (
-                    <p className="text-xs text-red-500 mt-1">⚠ Passwords do not match</p>
+                    <p className="text-xs text-red-500 mt-1 italic">Mật khẩu xác nhận không khớp</p>
                   )}
                 </div>
-
-                <p className="text-xs text-slate-400 pt-2">
-                  * Password change functionality requires integration with the backend change-password API.
+                <p className="text-[11px] text-slate-400 pt-2">
+                  * Chức năng thay đổi mật khẩu yêu cầu tích hợp với API bảo mật của hệ thống.
                 </p>
               </div>
             </div>
