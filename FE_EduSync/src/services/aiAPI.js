@@ -23,7 +23,7 @@ export async function aiChatAPI(token, context, messages) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ context, messages }),
+    body: JSON.stringify({ context, messages: messages.map(m => ({ is_ai: m.isAi, text: m.text })) }),
   });
   if (!res.ok) throw new Error(await parseError(res, "Failed to call AI chat"));
   return res.json();
@@ -66,7 +66,7 @@ export async function aiChatByVideoAPI(token, videoId, messages) {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ video_id: videoId, messages }),
+    body: JSON.stringify({ video_id: videoId, messages: messages.map(m => ({ is_ai: m.isAi, text: m.text })) }),
   });
   if (!res.ok) throw new Error(await parseError(res, "Failed to call AI chat"));
   return res.json();
