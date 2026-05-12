@@ -23,12 +23,12 @@ const revenueStats = {
 
 // Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
 const chartData = [
-  { month: "Oct", revenue: 15000 },
-  { month: "Nov", revenue: 18500 },
-  { month: "Dec", revenue: 14200 },
-  { month: "Jan", revenue: 22000 },
-  { month: "Feb", revenue: 28400 },
-  { month: "Mar", revenue: 27330 },
+  { month: "Th10", revenue: 15000 },
+  { month: "Th11", revenue: 18500 },
+  { month: "Th12", revenue: 14200 },
+  { month: "Th01", revenue: 22000 },
+  { month: "Th02", revenue: 28400 },
+  { month: "Th03", revenue: 27330 },
 ];
 const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
 
@@ -36,7 +36,7 @@ const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
 const topCourses = [
   {
     id: "CRS-101",
-    title: "ReactJS in Practice – EduSync Project",
+    title: "Thực chiến ReactJS – Dự án EduSync",
     instructor: "Tran Viet Anh",
     price: 49.99,
     sales: 845,
@@ -45,7 +45,7 @@ const topCourses = [
   },
   {
     id: "CRS-089",
-    title: "IELTS 7.0 Intensive Course",
+    title: "Khóa học IELTS 7.0 Cấp tốc",
     instructor: "Ms. Mai English",
     price: 99.0,
     sales: 512,
@@ -54,7 +54,7 @@ const topCourses = [
   },
   {
     id: "CRS-055",
-    title: "Mastering Python for Data Science",
+    title: "Làm chủ Python cho Khoa học Dữ liệu",
     instructor: "David Pham",
     price: 65.5,
     sales: 320,
@@ -63,7 +63,7 @@ const topCourses = [
   },
   {
     id: "CRS-112",
-    title: "UI/UX Design with Figma 2026",
+    title: "Thiết kế UI/UX với Figma 2026",
     instructor: "Huong Design",
     price: 35.0,
     sales: 215,
@@ -88,10 +88,10 @@ const AdminRevenueReport = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            Revenue Report
+            Báo cáo Doanh thu
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Track total platform revenue and course performance.
+            Theo dõi tổng doanh thu nền tảng và hiệu suất của các khóa học.
           </p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
@@ -105,20 +105,20 @@ const AdminRevenueReport = () => {
               onChange={(e) => setTimeRange(e.target.value)}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="thisMonth">This month</option>
-              <option value="6months">Last 6 months</option>
-              <option value="thisYear">This year</option>
+              <option value="thisMonth">Tháng này</option>
+              <option value="6months">6 tháng qua</option>
+              <option value="thisYear">Năm nay</option>
             </select>
           </div>
           <button className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-600/20 flex items-center gap-2 shrink-0 active:scale-95">
-            <FontAwesomeIcon icon={faDownload} /> Export Excel
+            <FontAwesomeIcon icon={faDownload} /> Xuất báo cáo Excel
           </button>
         </div>
       </div>
 
-      {/* WIDGETS TỔNG QUAN (Đã sửa lại theo Trung tâm) */}
+      {/* WIDGETS TỔNG QUAN */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
-        {/* Tổng Doanh thu Trung tâm (Quan trọng nhất) */}
+        {/* Tổng Doanh thu Trung tâm */}
         <div className="bg-gradient-to-br from-emerald-600 to-teal-800 p-6 rounded-3xl shadow-lg relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl group-hover:bg-emerald-300/30 transition-colors"></div>
           <div className="flex justify-between items-start mb-4 relative z-10">
@@ -131,7 +131,7 @@ const AdminRevenueReport = () => {
           </div>
           <div className="relative z-10">
             <p className="text-sm font-bold text-emerald-100 mb-1">
-              Total Platform Revenue
+              Tổng doanh thu nền tảng
             </p>
             <h3 className="text-3xl sm:text-4xl font-black text-white">
               {formatMoney(revenueStats.totalRevenue)}
@@ -148,11 +148,11 @@ const AdminRevenueReport = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-slate-500 mb-1">
-              Total Course Sales
+              Tổng lượt bán khóa học
             </p>
             <h3 className="text-3xl font-black text-slate-800">
               {revenueStats.totalSales.toLocaleString()}{" "}
-              <span className="text-lg text-slate-500 font-bold">sales</span>
+              <span className="text-lg text-slate-500 font-bold">lượt</span>
             </h3>
           </div>
         </div>
@@ -166,11 +166,11 @@ const AdminRevenueReport = () => {
           </div>
           <div>
             <p className="text-sm font-bold text-slate-500 mb-1">
-              Active Learners
+              Học viên đang hoạt động
             </p>
             <h3 className="text-3xl font-black text-slate-800">
               {revenueStats.activeLearners.toLocaleString()}{" "}
-              <span className="text-lg text-slate-500 font-bold">users</span>
+              <span className="text-lg text-slate-500 font-bold">học viên</span>
             </h3>
           </div>
         </div>
@@ -183,15 +183,15 @@ const AdminRevenueReport = () => {
           <div className="flex justify-between items-end mb-8">
             <div>
               <h2 className="text-xl font-extrabold text-slate-800">
-                Revenue Chart
+                Biểu đồ doanh thu
               </h2>
               <p className="text-sm text-slate-500 font-medium mt-1">
-                Revenue trend over the last 6 months
+                Xu hướng doanh thu trong 6 tháng gần nhất
               </p>
             </div>
           </div>
 
-          {/* KHU VỰC BIỂU ĐỒ CỘT BẰNG TAILWIND (Đã sửa thành 1 cột Doanh thu) */}
+          {/* KHU VỰC BIỂU ĐỒ CỘT BẰNG TAILWIND */}
           <div className="h-72 w-full flex items-end justify-between gap-4 sm:gap-8 pt-6 border-b border-slate-200 relative">
             <div className="absolute w-full h-full flex flex-col justify-between pb-6 pointer-events-none">
               {[100, 75, 50, 25, 0].map((percent) => (
@@ -215,7 +215,7 @@ const AdminRevenueReport = () => {
                 className="flex-1 flex flex-col justify-end items-center group relative z-10 h-full pb-0.5"
               >
                 <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
-                  Revenue:{" "}
+                  Doanh thu:{" "}
                   <span className="text-emerald-400">
                     {formatMoney(data.revenue)}
                   </span>
@@ -242,7 +242,7 @@ const AdminRevenueReport = () => {
           <div className="p-6 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-lg font-extrabold text-slate-800 flex items-center gap-2">
               <FontAwesomeIcon icon={faTrophy} className="text-amber-500" />{" "}
-              Top Revenue Courses
+              Top Khóa học Doanh thu Cao
             </h2>
           </div>
 
@@ -275,14 +275,13 @@ const AdminRevenueReport = () => {
                   </p>
                   <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
                     <FontAwesomeIcon icon={faGraduationCap} className="w-3" />{" "}
-                    Instructor: {course.instructor}
+                    Giảng viên: {course.instructor}
                   </p>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="text-xs font-bold text-slate-500">
-                      {course.sales} sales
+                      {course.sales} lượt bán
                     </span>
                     <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    {/* Hiển thị 100% doanh thu của khóa học đó */}
                     <span className="text-xs font-black text-emerald-600">
                       {formatMoney(course.totalEarned)}
                     </span>

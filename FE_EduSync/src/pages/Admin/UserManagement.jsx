@@ -76,18 +76,18 @@ const RoleBadge = ({ role }) => {
   if (r === "admin")
     return (
       <span className="px-2.5 py-1 bg-amber-100 text-amber-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max">
-        <FontAwesomeIcon icon={faUserShield} /> Administrator
+        <FontAwesomeIcon icon={faUserShield} /> Quản trị viên
       </span>
     );
   if (r === "instructor")
     return (
       <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max">
-        <FontAwesomeIcon icon={faChalkboardTeacher} /> Instructor
+        <FontAwesomeIcon icon={faChalkboardTeacher} /> Giảng viên
       </span>
     );
   return (
     <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max">
-      <FontAwesomeIcon icon={faUserGraduate} /> Learner
+      <FontAwesomeIcon icon={faUserGraduate} /> Học viên
     </span>
   );
 };
@@ -96,11 +96,11 @@ const StatusBadge = ({ status }) =>
   status === "active" ? (
     <span className="px-2.5 py-1 bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max">
       <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
-      Active
+      Hoạt động
     </span>
   ) : (
     <span className="px-2.5 py-1 bg-red-100 text-red-700 text-xs font-bold rounded-lg flex items-center gap-1.5 w-max">
-      <FontAwesomeIcon icon={faBan} /> Blocked
+      <FontAwesomeIcon icon={faBan} /> Đã khóa
     </span>
   );
 
@@ -146,7 +146,7 @@ const AdminUserManagement = () => {
   const fetchUsers = useCallback(async (params) => {
     const token = getToken();
     if (!token) {
-      setError("You are not logged in or do not have admin access.");
+      setError("Không tìm thấy phiên đăng nhập quản trị hợp lệ.");
       setLoading(false);
       return;
     }
@@ -158,7 +158,7 @@ const AdminUserManagement = () => {
       setStats(data.stats || {});
       setPagination(data.pagination || { page: 1, limit: 10, total: 0 });
     } catch (err) {
-      setError(err?.response?.data?.detail || err?.message || "Cannot load user data.");
+      setError(err?.response?.data?.detail || err?.message || "Lỗi truy xuất: Không thể kết nối tới cơ sở dữ liệu người dùng.");
     } finally {
       setLoading(false);
     }
@@ -218,7 +218,7 @@ const AdminUserManagement = () => {
         blocked: user.status === "active" ? prev.blocked + 1 : prev.blocked - 1,
       }));
     } catch (err) {
-      alert(err?.response?.data?.detail || err?.message || "Operation failed, please try again.");
+      alert("Lỗi xử lý: " + (err?.response?.data?.detail || err?.message || "Thao tác thay đổi trạng thái thất bại."));
     } finally {
       setTogglingId(null);
     }
@@ -228,11 +228,9 @@ const AdminUserManagement = () => {
     setOpenActionMenuId(null);
     try {
       const token = getToken();
-      // Nếu API backend trả về thêm thông tin chi tiết (bio, phone, etc...)
       const detail = await adminGetUserDetailAPI(user.id, token);
       setSelectedUser({ ...user, ...detail });
     } catch (err) {
-      // Fallback nếu API bị lỗi, vẫn show data có sẵn trên bảng
       setSelectedUser(user);
     }
     setDetailTab("personal"); 
@@ -241,15 +239,15 @@ const AdminUserManagement = () => {
 
   const handleDeleteUser = async (user) => {
     setOpenActionMenuId(null);
-    const confirmDelete = window.confirm(`Are you sure you want to permanently delete user: ${user.fullName}?`);
+    const confirmDelete = window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn người dùng [${user.fullName}]? Dữ liệu sẽ không thể khôi phục.`);
     if (confirmDelete) {
       try {
         const token = getToken();
         await adminDeleteUserAPI(user.id, token);
-        alert(`User ${user.fullName} has been deleted successfully!`);
+        alert(`Đã xóa tài khoản [${user.fullName}] thành công.`);
         handleRefresh(); 
       } catch (err) {
-        alert(err?.response?.data?.detail || err?.message || "Failed to delete user.");
+        alert("Lỗi: " + (err?.response?.data?.detail || err?.message || "Không thể thực hiện thao tác xóa."));
       }
     }
   };
@@ -264,11 +262,11 @@ const AdminUserManagement = () => {
     setIsCreating(true);
     try {
       await new Promise(resolve => setTimeout(resolve, 1500));
-      alert("User created successfully!");
+      alert("Khởi tạo tài khoản người dùng mới thành công.");
       setIsAddModalOpen(false);
       handleRefresh(); 
     } catch (err) {
-      alert(err.message || "Failed to create user.");
+      alert("Lỗi: Không thể khởi tạo người dùng. Vui lòng kiểm tra lại thông tin.");
     } finally {
       setIsCreating(false);
     }
@@ -287,13 +285,14 @@ const AdminUserManagement = () => {
       className="flex-1 p-6 sm:p-8 bg-slate-50 font-sans animate-fade-slide-up min-h-screen relative"
       onClick={() => setOpenActionMenuId(null)}
     >
+      {/* TIÊU ĐỀ */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-            User Management
+            Quản lý Người dùng
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Monitor, assign roles and manage accounts across the platform.
+            Giám sát, phân quyền và quản lý hồ sơ tài khoản trên toàn hệ thống.
           </p>
         </div>
         
@@ -304,7 +303,7 @@ const AdminUserManagement = () => {
             className="px-5 py-2.5 bg-white border border-slate-200 text-slate-600 font-bold rounded-xl hover:bg-slate-100 transition duration-300 shadow-sm flex items-center gap-2 active:scale-95 disabled:opacity-70 disabled:cursor-not-allowed"
           >
             <FontAwesomeIcon icon={faRotateRight} className={loading ? "animate-spin" : ""} />
-            <span className="hidden sm:inline">Refresh</span>
+            <span className="hidden sm:inline">Làm mới</span>
           </button>
           
           <button
@@ -312,17 +311,18 @@ const AdminUserManagement = () => {
             className="flex-1 sm:flex-none px-6 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-md shadow-blue-600/20 flex items-center justify-center gap-2 active:scale-95"
           >
             <FontAwesomeIcon icon={faPlus} />
-            <span>Add User</span>
+            <span>Thêm người dùng</span>
           </button>
         </div>
       </div>
 
+      {/* THỐNG KÊ */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {[
-          { label: "Total Users",      value: stats.totalUsers ?? 0,    icon: faUsers,             color: "text-blue-600",    bg: "bg-blue-100" },
-          { label: "Learners",          value: stats.learners ?? 0,      icon: faUserGraduate,        color: "text-emerald-600", bg: "bg-emerald-100" },
-          { label: "Instructors",       value: stats.instructors ?? 0,   icon: faChalkboardTeacher,   color: "text-purple-600", bg: "bg-purple-100" },
-          { label: "Blocked Accounts",  value: stats.blocked ?? 0,       icon: faBan,                 color: "text-red-600",    bg: "bg-red-100" },
+          { label: "Tổng người dùng", value: stats.totalUsers ?? 0, icon: faUsers, color: "text-blue-600", bg: "bg-blue-100" },
+          { label: "Học viên", value: stats.learners ?? 0, icon: faUserGraduate, color: "text-emerald-600", bg: "bg-emerald-100" },
+          { label: "Giảng viên", value: stats.instructors ?? 0, icon: faChalkboardTeacher, color: "text-purple-600", bg: "bg-purple-100" },
+          { label: "Tài khoản bị khóa", value: stats.blocked ?? 0, icon: faBan, color: "text-red-600", bg: "bg-red-100" },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white p-5 rounded-2xl border border-slate-200/60 shadow-sm flex items-center gap-4">
             <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl ${stat.bg} ${stat.color}`}>
@@ -336,16 +336,17 @@ const AdminUserManagement = () => {
         ))}
       </div>
 
+      {/* BẢNG DỮ LIỆU & BỘ LỌC */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
         <div className="sticky top-0 z-10 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm" onClick={(e) => e.stopPropagation()}>
           <div className="relative w-full md:w-80">
             <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-3 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Tìm kiếm theo tên, email..."
               value={searchTerm}
               onChange={handleSearchChange}
-              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
+              className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors outline-none"
             />
           </div>
 
@@ -357,10 +358,10 @@ const AdminUserManagement = () => {
                 onChange={handleRoleChange}
                 className="w-full pl-8 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:ring-2 focus:ring-blue-500/20 outline-none appearance-none cursor-pointer"
               >
-                <option value="">All roles</option>
-                <option value="learner">Learner</option>
-                <option value="instructor">Instructor</option>
-                <option value="admin">Administrator</option>
+                <option value="">Tất cả vai trò</option>
+                <option value="learner">Học viên</option>
+                <option value="instructor">Giảng viên</option>
+                <option value="admin">Quản trị viên</option>
               </select>
             </div>
             <select
@@ -368,9 +369,9 @@ const AdminUserManagement = () => {
               onChange={handleStatusChange}
               className="flex-1 md:w-44 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 focus:ring-2 focus:ring-blue-500/20 outline-none cursor-pointer"
             >
-              <option value="">All statuses</option>
-              <option value="active">Active</option>
-              <option value="blocked">Blocked</option>
+              <option value="">Tất cả trạng thái</option>
+              <option value="active">Hoạt động</option>
+              <option value="blocked">Đã khóa</option>
             </select>
           </div>
         </div>
@@ -379,7 +380,7 @@ const AdminUserManagement = () => {
           {loading && (
             <div className="flex flex-col items-center justify-center h-full gap-3 text-slate-500">
               <FontAwesomeIcon icon={faRotateRight} className="text-3xl text-blue-500 animate-spin" />
-              <p className="font-semibold text-sm">Loading data...</p>
+              <p className="font-semibold text-sm">Đang truy xuất dữ liệu...</p>
             </div>
           )}
 
@@ -387,7 +388,7 @@ const AdminUserManagement = () => {
             <div className="flex flex-col items-center justify-center h-full gap-3 text-red-500">
               <FontAwesomeIcon icon={faExclamationTriangle} className="text-3xl" />
               <p className="font-bold">{error}</p>
-              <button onClick={handleRefresh} className="text-sm text-blue-600 underline hover:no-underline">Try again</button>
+              <button onClick={handleRefresh} className="text-sm text-blue-600 underline hover:no-underline">Thử lại</button>
             </div>
           )}
 
@@ -396,11 +397,11 @@ const AdminUserManagement = () => {
               <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
                 <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                   <th className="p-5 text-center">ID</th>
-                  <th className="p-5">User</th>
-                  <th className="p-5">Role</th>
-                  <th className="p-5">Status</th>
-                  <th className="p-5">Joined Date</th>
-                  <th className="p-5 text-center">Actions</th>
+                  <th className="p-5">Người dùng</th>
+                  <th className="p-5">Vai trò</th>
+                  <th className="p-5">Trạng thái</th>
+                  <th className="p-5">Ngày tham gia</th>
+                  <th className="p-5 text-center">Quản lý</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -418,11 +419,11 @@ const AdminUserManagement = () => {
                                   e.stopPropagation();
                                   navigator.clipboard.writeText(user.id);
                                   e.currentTarget.innerText = "✓";
-                                  setTimeout(() => { e.currentTarget.innerText = "Copy"; }, 1500);
+                                  setTimeout(() => { e.currentTarget.innerText = "Chép"; }, 1500);
                                 }}
                                 className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
                               >
-                                Copy
+                                Chép
                               </button>
                             </div>
                             <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
@@ -439,7 +440,7 @@ const AdminUserManagement = () => {
                           />
                           <div>
                             <p className="text-sm font-bold text-slate-800">
-                              {user.fullName || <span className="text-slate-400 italic font-normal">Not updated</span>}
+                              {user.fullName || <span className="text-slate-400 italic font-normal">Chưa cập nhật</span>}
                             </p>
                             <p className="text-xs font-medium text-slate-500">{user.email}</p>
                           </div>
@@ -468,7 +469,7 @@ const AdminUserManagement = () => {
                                   onClick={() => handleViewDetail(user)}
                                   className="w-full text-left px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-50 transition-colors flex items-center gap-2.5"
                                 >
-                                  <FontAwesomeIcon icon={faEye} className="w-4 text-slate-400" /> View Details
+                                  <FontAwesomeIcon icon={faEye} className="w-4 text-slate-400" /> Xem chi tiết
                                 </button>
                                 {normalizeRole(user.role) !== "admin" && (
                                   <button
@@ -476,7 +477,7 @@ const AdminUserManagement = () => {
                                     className={`w-full text-left px-4 py-2.5 text-sm font-bold transition-colors flex items-center gap-2.5 ${user.status === "active" ? "text-amber-600 hover:bg-amber-50" : "text-emerald-600 hover:bg-emerald-50"}`}
                                   >
                                     <FontAwesomeIcon icon={user.status === "active" ? faBan : faUnlock} className="w-4" />
-                                    {user.status === "active" ? "Block Account" : "Unblock Account"}
+                                    {user.status === "active" ? "Đình chỉ tài khoản" : "Khôi phục tài khoản"}
                                   </button>
                                 )}
                                 {normalizeRole(user.role) !== "admin" && (
@@ -484,12 +485,12 @@ const AdminUserManagement = () => {
                                     onClick={() => handleDeleteUser(user)}
                                     className="w-full text-left px-4 py-2.5 text-sm font-bold text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2.5 border-t border-slate-100"
                                   >
-                                    <FontAwesomeIcon icon={faTrash} className="w-4" /> Delete User
+                                    <FontAwesomeIcon icon={faTrash} className="w-4" /> Xóa tài khoản
                                   </button>
                                 )}
                                 {normalizeRole(user.role) === "admin" && (
                                   <div className="px-4 py-2 border-t border-slate-100 mt-1">
-                                    <p className="text-[11px] text-slate-400 italic leading-tight">Cannot block or delete Admin accounts</p>
+                                    <p className="text-[11px] text-slate-400 italic leading-tight">Không thể tác động lên tài khoản Quản trị.</p>
                                   </div>
                                 )}
                               </div>
@@ -501,7 +502,7 @@ const AdminUserManagement = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">No users found matching your criteria.</td>
+                    <td colSpan="6" className="p-10 text-center text-slate-500 font-medium">Không tìm thấy bản ghi nào khớp với điều kiện lọc.</td>
                   </tr>
                 )}
               </tbody>
@@ -512,7 +513,7 @@ const AdminUserManagement = () => {
         {!loading && !error && totalPages > 1 && (
           <div className="border-t border-slate-200 px-5 py-3 flex items-center justify-between bg-white">
             <p className="text-xs text-slate-500 font-medium">
-              Showing <span className="font-bold text-slate-700">{(currentPage - 1) * pagination.limit + 1}–{Math.min(currentPage * pagination.limit, pagination.total)}</span> / {pagination.total} users
+              Hiển thị <span className="font-bold text-slate-700">{(currentPage - 1) * pagination.limit + 1}–{Math.min(currentPage * pagination.limit, pagination.total)}</span> / {pagination.total} bản ghi
             </p>
             <div className="flex items-center gap-2">
               <button onClick={() => goToPage(currentPage - 1)} disabled={currentPage === 1} className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed transition">
@@ -547,7 +548,7 @@ const AdminUserManagement = () => {
       </div>
 
       {/* ========================================================================= */}
-      {/* MODAL XEM CHI TIẾT USER (GIAO DIỆN ĐỘNG THEO ROLE) */}
+      {/* MODAL XEM CHI TIẾT USER */}
       {/* ========================================================================= */}
       {isDetailModalOpen && selectedUser && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
@@ -561,7 +562,7 @@ const AdminUserManagement = () => {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-white z-10 shrink-0">
               <h2 className="text-lg font-black text-slate-800 flex items-center gap-2">
                 <FontAwesomeIcon icon={faIdCard} className="text-blue-600" />
-                User Profile
+                Hồ sơ Người dùng
               </h2>
               <button
                 onClick={() => setIsDetailModalOpen(false)}
@@ -574,7 +575,7 @@ const AdminUserManagement = () => {
             <div className="flex-1 overflow-y-auto bg-slate-50 p-6">
               <div className="flex flex-col lg:flex-row gap-6 h-full">
                 
-                {/* CỘT TRÁI: AVATAR (VÀ ACHIEVEMENTS NẾU LÀ INSTRUCTOR) */}
+                {/* CỘT TRÁI: AVATAR & THÀNH TÍCH */}
                 <div className="w-full lg:w-1/3 flex flex-col gap-6 shrink-0">
                   <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center text-center shadow-sm relative overflow-hidden">
                     {isInstructor ? (
@@ -591,7 +592,7 @@ const AdminUserManagement = () => {
                     />
                     
                     <h3 className="text-2xl font-black text-slate-900 mt-4 flex items-center gap-2">
-                      {selectedUser.fullName || "User Name"}
+                      {selectedUser.fullName || "Chưa có tên"}
                       {isInstructor && (
                         <div className="w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center text-white text-[10px]">✓</div>
                       )}
@@ -599,13 +600,13 @@ const AdminUserManagement = () => {
                     
                     {isInstructor && (
                       <p className="text-blue-600 font-bold text-sm mt-1">
-                        {selectedUser.headline || 'Instructor'}
+                        {selectedUser.headline || 'Giảng viên chuyên môn'}
                       </p>
                     )}
 
                     <div className="w-full mt-6 bg-slate-50 rounded-xl p-3 border border-slate-100 text-left">
                       <p className="text-xs font-bold text-slate-400 uppercase mb-1">
-                        {isInstructor ? "Work Email" : "Account Email"}
+                        {isInstructor ? "Email Công tác" : "Email Tài khoản"}
                       </p>
                       <p className="text-sm font-semibold text-slate-700 flex items-center gap-2 truncate">
                         <FontAwesomeIcon icon={faEnvelope} className="text-slate-400" />
@@ -617,7 +618,7 @@ const AdminUserManagement = () => {
                   {isInstructor && (
                     <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
                       <h4 className="font-black text-slate-800 mb-5 border-l-4 border-blue-600 pl-3">
-                        Achievements Overview
+                        Tổng quan hoạt động
                       </h4>
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -625,7 +626,7 @@ const AdminUserManagement = () => {
                             <FontAwesomeIcon icon={faUsers} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Students</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Học viên quản lý</p>
                             <p className="text-xl font-black text-slate-900">{selectedUser.totalStudents || 0}</p>
                           </div>
                         </div>
@@ -634,7 +635,7 @@ const AdminUserManagement = () => {
                             <FontAwesomeIcon icon={faBookOpen} />
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Courses</p>
+                            <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Khóa học phụ trách</p>
                             <p className="text-xl font-black text-slate-900">{selectedUser.totalCourses || 0}</p>
                           </div>
                         </div>
@@ -652,7 +653,7 @@ const AdminUserManagement = () => {
                       className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${detailTab === "personal" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
                     >
                       <FontAwesomeIcon icon={faUser} className="mr-2" /> 
-                      {isInstructor ? "Personal Info" : "Personal Information"}
+                      Thông tin cá nhân
                     </button>
                     
                     {isInstructor && (
@@ -660,7 +661,7 @@ const AdminUserManagement = () => {
                         onClick={() => setDetailTab("professional")}
                         className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${detailTab === "professional" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
                       >
-                        <FontAwesomeIcon icon={faBriefcase} className="mr-2" /> Professional Profile
+                        <FontAwesomeIcon icon={faBriefcase} className="mr-2" /> Hồ sơ năng lực
                       </button>
                     )}
                     
@@ -669,42 +670,42 @@ const AdminUserManagement = () => {
                         onClick={() => setDetailTab("links")}
                         className={`px-6 py-4 text-sm font-bold border-b-2 transition-colors whitespace-nowrap ${detailTab === "links" ? "border-blue-600 text-blue-600" : "border-transparent text-slate-500 hover:text-slate-800"}`}
                       >
-                        <FontAwesomeIcon icon={faGlobe} className="mr-2" /> External Links
+                        <FontAwesomeIcon icon={faGlobe} className="mr-2" /> Nền tảng liên kết
                       </button>
                     )}
                   </div>
 
                   <div className="p-6 overflow-y-auto flex-1">
                     
-                    {/* TAB 1: PERSONAL INFO (Dùng chung cho cả 2 Role, thiết kế layout Learner) */}
+                    {/* TAB 1: THÔNG TIN CÁ NHÂN */}
                     {detailTab === "personal" && (
                       <div className="space-y-8 animate-fade-slide-up">
                         <div>
                           {isInstructor && (
                             <h4 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
                               <div className="w-6 h-6 rounded bg-blue-100 text-blue-600 flex items-center justify-center text-xs"><FontAwesomeIcon icon={faUser} /></div>
-                              Basic Information
+                              Dữ liệu nhân thân
                             </h4>
                           )}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Full Name</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Họ và tên</p>
                               <p className="font-semibold text-slate-800">{selectedUser.fullName || "—"}</p>
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Date of Birth</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Ngày sinh</p>
                               <p className="font-semibold text-slate-800">{selectedUser.dob || "—"}</p>
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Gender</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Giới tính</p>
                               <p className="font-semibold text-slate-800 capitalize">{selectedUser.gender || "—"}</p>
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Phone Number</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Số điện thoại liên hệ</p>
                               <p className="font-semibold text-slate-800">{selectedUser.phone || "—"}</p>
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 md:col-span-2">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Address</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1 flex items-center gap-1.5">Địa chỉ lưu trú</p>
                               <p className="font-semibold text-slate-800">{selectedUser.address || "—"}</p>
                             </div>
                           </div>
@@ -713,19 +714,19 @@ const AdminUserManagement = () => {
                         <div className="border-t border-slate-100 pt-6">
                           <h4 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
                             <div className="w-6 h-6 rounded bg-slate-100 text-slate-600 flex items-center justify-center text-xs"><FontAwesomeIcon icon={faLock} /></div>
-                            System Info
+                            Dữ liệu tài khoản
                           </h4>
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-1">User ID</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-1">Mã định danh (ID)</p>
                               <p className="font-semibold text-slate-800 text-xs truncate" title={selectedUser.id}>{selectedUser.id}</p>
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Role</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Nhóm quyền</p>
                               <RoleBadge role={selectedUser.role} />
                             </div>
                             <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Status</p>
+                              <p className="text-xs font-bold text-slate-400 uppercase mb-2">Trạng thái hệ thống</p>
                               <StatusBadge status={selectedUser.status} />
                             </div>
                           </div>
@@ -733,23 +734,23 @@ const AdminUserManagement = () => {
                       </div>
                     )}
 
-                    {/* TAB 2: PROFESSIONAL PROFILE (Chỉ hiện cho Instructor) */}
+                    {/* TAB 2: HỒ SƠ CHUYÊN MÔN (Instructor) */}
                     {isInstructor && detailTab === "professional" && (
                       <div className="space-y-6 animate-fade-slide-up">
                         <h4 className="font-bold text-slate-800 flex items-center gap-2 mb-2 border-b border-slate-100 pb-4">
                           <div className="w-6 h-6 rounded bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs"><FontAwesomeIcon icon={faBriefcase} /></div>
-                          Professional Profile
+                          Kinh nghiệm & Chuyên môn
                         </h4>
                         
                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase mb-2">Job Title / Headline</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase mb-2">Chức danh công việc</p>
                           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold">
                             {selectedUser.headline || "—"}
                           </div>
                         </div>
 
                         <div>
-                          <p className="text-xs font-bold text-slate-400 uppercase mb-2">About Yourself (Bio)</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase mb-2">Tóm tắt tiểu sử (Bio)</p>
                           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 leading-relaxed min-h-[100px] whitespace-pre-wrap">
                             {selectedUser.bio || "—"}
                           </div>
@@ -757,7 +758,7 @@ const AdminUserManagement = () => {
 
                         <div>
                           <p className="text-xs font-bold text-slate-400 uppercase mb-2 flex items-center gap-2">
-                            <FontAwesomeIcon icon={faGraduationCap} /> Main Teaching Specializations
+                            <FontAwesomeIcon icon={faGraduationCap} /> Chuyên ngành giảng dạy trọng tâm
                           </p>
                           <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold">
                             {selectedUser.specializations || "—"}
@@ -766,34 +767,34 @@ const AdminUserManagement = () => {
                       </div>
                     )}
 
-                    {/* TAB 3: EXTERNAL LINKS (Chỉ hiện cho Instructor) */}
+                    {/* TAB 3: LIÊN KẾT NGOÀI (Instructor) */}
                     {isInstructor && detailTab === "links" && (
                       <div className="space-y-6 animate-fade-slide-up">
                         <div className="bg-blue-50 text-blue-700 p-4 rounded-xl text-sm font-medium border border-blue-100 mb-6">
-                          External links provided by the user for portfolio and social media.
+                          Mạng lưới thông tin bên ngoài do giảng viên tự khai báo nhằm xác thực năng lực nghiệp vụ.
                         </div>
                         
                         <div className="space-y-4">
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">LinkedIn Profile</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Hồ sơ LinkedIn</p>
                             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium">
                               {selectedUser.linkedin || "—"}
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">GitHub Account</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Kho mã nguồn GitHub</p>
                             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium">
                               {selectedUser.github || "—"}
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">YouTube Channel</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Nền tảng YouTube</p>
                             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium">
                               {selectedUser.youtube || "—"}
                             </div>
                           </div>
                           <div>
-                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Personal Website / Portfolio</p>
+                            <p className="text-xs font-bold text-slate-400 uppercase mb-2">Website cá nhân / Portfolio</p>
                             <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-medium">
                               {selectedUser.website || "—"}
                             </div>
@@ -809,6 +810,7 @@ const AdminUserManagement = () => {
         </div>
       )}
 
+      {/* MODAL THÊM USER MỚI */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div 
@@ -822,7 +824,7 @@ const AdminUserManagement = () => {
                 <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center text-sm">
                   <FontAwesomeIcon icon={faPlus} />
                 </div>
-                Create New User
+                Khởi tạo tài khoản
               </h2>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -837,14 +839,14 @@ const AdminUserManagement = () => {
               <form id="createUserForm" onSubmit={handleCreateUser} className="space-y-5">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Full Name <span className="text-red-500">*</span>
+                    Họ và tên <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <FontAwesomeIcon icon={faUser} className="absolute left-4 top-3.5 text-slate-400" />
                     <input
                       type="text"
                       required
-                      placeholder="e.g. Nguyen Van A"
+                      placeholder="Ví dụ: Nguyễn Văn A"
                       value={newUser.fullName}
                       onChange={(e) => setNewUser({ ...newUser, fullName: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
@@ -854,14 +856,14 @@ const AdminUserManagement = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                    Email Address <span className="text-red-500">*</span>
+                    Địa chỉ Email <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <FontAwesomeIcon icon={faEnvelope} className="absolute left-4 top-3.5 text-slate-400" />
                     <input
                       type="email"
                       required
-                      placeholder="e.g. user@edusync.com"
+                      placeholder="Ví dụ: user@edusync.com"
                       value={newUser.email}
                       onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
                       className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
@@ -872,7 +874,7 @@ const AdminUserManagement = () => {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                      Assign Role
+                      Phân quyền
                     </label>
                     <div className="relative">
                       <FontAwesomeIcon icon={faUserTag} className="absolute left-4 top-3.5 text-slate-400" />
@@ -881,16 +883,16 @@ const AdminUserManagement = () => {
                         onChange={(e) => setNewUser({ ...newUser, role: e.target.value })}
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-bold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none appearance-none cursor-pointer transition-colors"
                       >
-                        <option value="learner">Learner</option>
-                        <option value="instructor">Instructor</option>
-                        <option value="admin">Admin</option>
+                        <option value="learner">Học viên</option>
+                        <option value="instructor">Giảng viên</option>
+                        <option value="admin">Quản trị viên</option>
                       </select>
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                      Temporary Password <span className="text-red-500">*</span>
+                      Mật khẩu tạm thời <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                       <FontAwesomeIcon icon={faLock} className="absolute left-4 top-3.5 text-slate-400" />
@@ -898,7 +900,7 @@ const AdminUserManagement = () => {
                         type="text"
                         required
                         minLength={6}
-                        placeholder="Min 6 chars"
+                        placeholder="Tối thiểu 6 ký tự"
                         value={newUser.password}
                         onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
                         className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 font-semibold focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-colors"
@@ -916,7 +918,7 @@ const AdminUserManagement = () => {
                 disabled={isCreating}
                 className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-100 transition-colors disabled:opacity-50"
               >
-                Cancel
+                Hủy bỏ
               </button>
               <button
                 type="submit"
@@ -924,7 +926,7 @@ const AdminUserManagement = () => {
                 disabled={isCreating}
                 className="px-8 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-all shadow-md shadow-blue-600/20 active:scale-95 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {isCreating ? <FontAwesomeIcon icon={faSpinner} spin /> : "Create User"}
+                {isCreating ? <FontAwesomeIcon icon={faSpinner} spin /> : "Xác nhận tạo"}
               </button>
             </div>
           </div>

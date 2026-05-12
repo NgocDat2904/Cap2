@@ -14,7 +14,7 @@ import {
   faBoltLightning,
   faGraduationCap 
 } from "@fortawesome/free-solid-svg-icons";
-import { getCourseDetailAPI, enrollFreeCourseAPI } from "../../services/learnerCourseAPI"; 
+import { getCourseDetailAPI, enrollFreeCourseAPI, getMyCoursesAPI } from "../../services/learnerCourseAPI"; 
 
 const formatTimeAgo = (date) => {
   if (!date) return "Recently";
@@ -55,9 +55,18 @@ const CourseDetailPage = () => {
         const data = await getCourseDetailAPI(courseId);
         if (!cancelled) {
           setCourseDetail(data);
-          // Giả sử Backend trả về cờ is_enrolled (hoặc tương tự) để biết User đã mua chưa
-          // Nếu Backend chưa có cờ này, mặc định là false
-          setIsEnrolled(data.is_enrolled || false);
+          
+          if (isLoggedIn) {
+            try {
+              const myCourses = await getMyCoursesAPI();
+              const isEnrolledNow = myCourses.some(c => String(c.id) === String(courseId));
+              setIsEnrolled(isEnrolledNow);
+            } catch (err) {
+              console.error("Failed to fetch my courses:", err);
+            }
+          } else {
+            setIsEnrolled(false);
+          }
         }
       } catch (e) {
         if (!cancelled) setError(e.message || "Failed to load course details");
@@ -69,7 +78,7 @@ const CourseDetailPage = () => {
     return () => {
       cancelled = true;
     };
-  }, [courseId]);
+  }, [courseId, isLoggedIn]);
 
   const lessons = useMemo(() => {
     if (!courseDetail?.lessons) return [];
@@ -112,7 +121,7 @@ const CourseDetailPage = () => {
       if (firstLessonId) {
         navigate(`/courses/${courseId || "1"}/lessons/${firstLessonId}`);
       } else {
-        alert("This course has no lessons yet.");
+        alert("This course currently has no lessons.");
       }
       return;
     }
@@ -132,12 +141,12 @@ const CourseDetailPage = () => {
         // Thành công: Chuyển trạng thái nút thành "Đã đăng ký"
         setIsEnrolled(true);
         
-        // Optional: Hiện thông báo cho User biết (Hệ thống đã lưu vào My Courses)
-        alert("Successfully enrolled! You can now find this course in your My Courses page.");
+        // Optional: Hiện thông báo cho User biết
+        alert("Registration successful!");
         
       } catch (err) {
         console.error("Enrollment failed:", err);
-        alert(err.response?.data?.message || err.response?.data?.detail || "Failed to enroll. Please try again.");
+        alert("The system is experiencing an issue. Please try again later.");
       } finally {
         setIsProcessingAction(false);
       }
