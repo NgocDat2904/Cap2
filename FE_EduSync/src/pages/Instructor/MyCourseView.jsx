@@ -1,76 +1,71 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate, Link, useParams } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
-  faUsers,
   faClock,
-  faCheckCircle,
   faVideo,
   faEdit,
-  faEye,
-  faChevronDown,
-  faChevronUp,
   faTrophy,
-  faSearch,
-  faFilter,
   faReply,
-  faToggleOn,
-  faToggleOff,
-  faExclamationTriangle,
-  faWandMagicSparkles,
   faSpinner,
-  faChalkboardTeacher,
   faPaperPlane,
   faCommentDots,
-  faTimes
+  faTimes,
 } from "@fortawesome/free-solid-svg-icons";
-import { getInstructorCourseDetailAPI } from "../../services/instructorAPI";
+
+import { getInstructorCourseDetailAPI, getCourseQuestionsAPI, postReplyAPI } from "../../services/instructorAPI";
+
+const formatDateTime = (dateStr) => {
+  if (!dateStr) return "Just now";
+  const date = new Date(dateStr);
+  return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
 
 // =========================================================================
-// 1. COMPONENT BÀI GIẢNG (Lesson Accordion)
+// 1. COMPONENT BÀI GIẢNG (Flat Card — không còn accordion dropdown)
 // =========================================================================
-const LessonAccordion = ({ lesson, lessonQna, replyInputs, setReplyInputs, handleSendReply, targetLessonId }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const accordionRef = useRef(null);
-
-  useEffect(() => {
-    if (targetLessonId === lesson.id) {
-      setIsOpen(true);
-      setTimeout(() => {
-        accordionRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 300);
-    }
-  }, [targetLessonId, lesson.id]);
+const LessonCard = ({ lesson, lessonQna, onOpenVideo }) => {
+  const cardRef = useRef(null);
 
   return (
     <div
-      ref={accordionRef}
-      className={`bg-white border transition-all duration-500 rounded-2xl mb-4 overflow-hidden shadow-sm hover:shadow-md ${isOpen ? "border-blue-400 ring-4 ring-blue-50" : "border-slate-200"} ${targetLessonId === lesson.id ? "animate-pulse" : ""}`}
+      ref={cardRef}
+      className="bg-white border border-slate-200 rounded-2xl mb-4 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
     >
-      <div
-        className="flex items-start gap-4 p-5 cursor-pointer bg-white"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner">
+      <div className="flex items-start gap-4 p-5">
+        {/* Thumbnail — click để xem video */}
+        <button
+          onClick={() => onOpenVideo(lesson.videoUrl, lesson.title)}
+          className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden bg-slate-100 border border-slate-200 shadow-inner group relative"
+          title="Watch video"
+        >
           <img
             src={lesson.thumbnail_url}
             alt={lesson.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-cover group-hover:opacity-60 transition-opacity"
             onError={(e) => { e.target.src = "https://via.placeholder.com/150"; }}
           />
-        </div>
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            <FontAwesomeIcon icon={faVideo} className="text-white text-xl drop-shadow" />
+          </div>
+        </button>
+
         <div className="flex-1 min-w-0">
-          <h4 className="font-extrabold text-slate-900 text-lg leading-snug group-hover:text-blue-600 transition-colors">
+          <h4 className="font-extrabold text-slate-900 text-lg leading-snug">
             {lesson.title}
           </h4>
           <p className="text-slate-500 text-sm leading-relaxed mt-1 line-clamp-1">
             {lesson.description || "No description available for this lesson."}
           </p>
           <div className="flex flex-wrap items-center gap-3 mt-3 text-xs font-bold">
-            <span className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100">
+            {/* Nút Video — click mở modal */}
+            <button
+              onClick={() => onOpenVideo(lesson.videoUrl, lesson.title)}
+              className="flex items-center gap-1.5 bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md border border-blue-100 hover:bg-blue-100 transition-colors"
+            >
               <FontAwesomeIcon icon={faVideo} /> Video
-            </span>
+            </button>
             <span className="flex items-center gap-1.5 text-slate-500 bg-slate-50 px-2 py-1 rounded-md">
               <FontAwesomeIcon icon={faClock} /> {lesson.duration}
             </span>
@@ -86,120 +81,7 @@ const LessonAccordion = ({ lesson, lessonQna, replyInputs, setReplyInputs, handl
             )}
           </div>
         </div>
-        <div className="flex items-center gap-2 mt-1">
-          <button className="text-slate-400 p-2.5 rounded-full hover:bg-slate-100 hover:text-slate-600 transition-colors">
-            <FontAwesomeIcon icon={isOpen ? faChevronUp : faChevronDown} className="text-lg" />
-          </button>
-        </div>
       </div>
-
-      {isOpen && (
-        <div className="border-t border-slate-200 bg-[#f8fafc] animate-fade-slide-up flex flex-col">
-          <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-slate-200">
-            <div className="p-6 flex flex-col gap-8 bg-white/50">
-              <div>
-                <h5 className="font-extrabold text-slate-800 mb-4 text-xs uppercase tracking-wider flex items-center gap-2">
-                  <FontAwesomeIcon icon={faEye} className="text-blue-500" /> Video Performance
-                </h5>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <span className="text-slate-500 text-xs font-bold uppercase mb-1 block">Views</span>
-                    <span className="font-black text-xl text-slate-900">{lesson.views || 0}</span>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                    <span className="text-slate-500 text-xs font-bold uppercase mb-1 block">Completion</span>
-                    <span className="font-black text-xl text-green-600">{lesson.completion || "0%"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h5 className="font-extrabold text-slate-800 mb-4 text-xs uppercase tracking-wider flex items-center gap-2">
-                  <FontAwesomeIcon icon={faTrophy} className="text-amber-500" /> Quiz Results
-                </h5>
-                {lesson.quizStatus === "published" ? (
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <span className="text-slate-500 text-xs font-bold uppercase mb-1 block">Pass Rate</span>
-                      <span className="font-black text-xl text-blue-600">{lesson.quizStats?.passRate || "0%"}</span>
-                    </div>
-                    <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                      <span className="text-slate-500 text-xs font-bold uppercase mb-1 block">Avg. Score</span>
-                      <span className="font-black text-xl text-slate-900">{lesson.quizStats?.avgScore || "0"}</span>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center bg-slate-50 border border-dashed border-slate-200 rounded-xl p-6 opacity-60">
-                    <FontAwesomeIcon icon={faTrophy} className="text-2xl text-slate-300 mb-2" />
-                    <p className="text-xs font-bold text-slate-400">No exercises</p>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="p-6 bg-[#f8fafc]">
-              <h5 className="font-extrabold text-slate-800 mb-5 text-xs uppercase tracking-wider flex justify-between items-center">
-                <span className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faCommentDots} className="text-rose-500" /> Q&A ({lessonQna?.length || 0})
-                </span>
-              </h5>
-              
-              {lessonQna && lessonQna.length > 0 ? (
-                <div className="space-y-4 max-h-[350px] overflow-y-auto custom-scrollbar pr-2 pb-2">
-                  {lessonQna.map((q) => (
-                    <div key={q.id} className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm relative transition-all hover:shadow-md">
-                      <div className="flex justify-between items-start mb-2">
-                        <p className="text-xs font-bold text-slate-800 flex items-center gap-2">
-                          <span className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-[10px]">
-                            {q.avatar}
-                          </span>
-                          {q.student}
-                        </p>
-                        <span className={`text-[9px] font-bold px-2 py-1 rounded uppercase ${q.status === 'unanswered' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          {q.status}
-                        </span>
-                      </div>
-                      <p className="text-sm text-slate-700 mb-4 leading-relaxed font-medium bg-slate-50 p-3 rounded-lg border border-slate-100">
-                        {q.text}
-                      </p>
-                      <div>
-                        {q.status === "answered" ? (
-                          <div className="ml-4 pl-4 border-l-2 border-blue-400 bg-blue-50/50 p-3 rounded-r-xl relative animate-fade-slide-up">
-                            <p className="text-[10px] font-black text-slate-800 uppercase mb-1">Instructor Reply</p>
-                            <p className="text-sm text-slate-700 font-medium">{q.reply}</p>
-                          </div>
-                        ) : (
-                          <div className="flex flex-col gap-2 mt-2 animate-fade-slide-up">
-                            <textarea
-                              rows="2"
-                              placeholder="Write a helpful response..."
-                              value={replyInputs[q.id] || ""}
-                              onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })}
-                              className="w-full border border-slate-300 rounded-xl px-3 py-2 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all font-medium bg-white"
-                            />
-                            <button 
-                              onClick={() => handleSendReply(q.id)}
-                              disabled={!replyInputs[q.id]?.trim()}
-                              className="self-end px-4 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-bold text-xs rounded-lg shadow-md flex items-center gap-2"
-                            >
-                              <FontAwesomeIcon icon={faPaperPlane} /> Reply
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[200px] opacity-60">
-                  <FontAwesomeIcon icon={faReply} className="text-3xl text-slate-300 mb-2" />
-                  <p className="text-xs font-bold text-slate-400">No questions yet</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
@@ -231,10 +113,10 @@ const InstructorCourseDetailPage = () => {
   const [lessonsList, setLessonsList] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [isPublished, setIsPublished] = useState(false);
 
   const [qnaData, setQnaData] = useState([]);
   const [replyInputs, setReplyInputs] = useState({});
+  const [isReplying, setIsReplying] = useState(false);
   const [targetLessonId, setTargetLessonId] = useState(null);
   
   const [videoModal, setVideoModal] = useState({ isOpen: false, url: "", title: "" });
@@ -242,6 +124,7 @@ const InstructorCourseDetailPage = () => {
   const totalSeconds = lessonsList.reduce((total, lesson) => total + parseDuration(lesson.duration), 0);
   const totalDuration = formatDuration(totalSeconds);
 
+  // TẢI THÔNG TIN KHÓA HỌC
   useEffect(() => {
     const fetchCourseDetail = async () => {
       try {
@@ -257,43 +140,23 @@ const InstructorCourseDetailPage = () => {
           image: courseInfo.thumbnail || "",
         });
 
-        // ✅ FIX LỖI ẢNH ĐẠI DIỆN: Ép tất cả dùng courseInfo.thumbnail
         const fetchedLessons = data.lessonsList || [];
         const enhancedLessons = fetchedLessons.map((lesson, index) => {
           let realVideoUrl = "";
           if (lesson.videos && lesson.videos.length > 0) {
             realVideoUrl = lesson.videos[0].video_url;
           }
-
           return {
             ...lesson,
             videoUrl: realVideoUrl,
-            thumbnail_url: courseInfo.thumbnail, // ✅ LUÔN DÙNG ẢNH KHÓA HỌC NHƯ MÁ YÊU CẦU
+            thumbnail_url: courseInfo.thumbnail,
             views: lesson.views || Math.floor(Math.random() * 50) + 5, 
             completion: lesson.completion || "0%",
             quizStatus: index === 0 ? "published" : "none",
             quizStats: index === 0 ? { passRate: "92%", avgScore: "8.5" } : null,
           };
         });
-        
         setLessonsList(enhancedLessons);
-
-        if (fetchedLessons.length > 0) {
-          setQnaData([
-            {
-              id: 1,
-              lessonId: fetchedLessons[0]?.id, 
-              student: "Hoàng Nguyễn",
-              avatar: "HN",
-              time: "2 hours ago",
-              lesson: fetchedLessons[0]?.title || "Lesson 1",
-              text: "Can React be used for Mobile App Development? I heard something about React Native.",
-              status: "unanswered",
-              reply: "",
-            }
-          ]);
-        }
-
       } catch (err) {
         console.error(err);
         setError("Error loading course details");
@@ -305,17 +168,55 @@ const InstructorCourseDetailPage = () => {
     if (courseId) fetchCourseDetail();
   }, [courseId]);
 
-  const handleSendReply = (questionId) => {
+  // TẢI Q&A TỪ API CHUẨN
+  const fetchQnA = useCallback(async () => {
+    if (!courseId) return;
+    try {
+      const token = localStorage.getItem("access_token");
+      const data = await getCourseQuestionsAPI(courseId, token);
+      setQnaData(data || []);
+    } catch (err) {
+      console.error("Failed to load QnA", err);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    if (courseId) fetchQnA();
+  }, [fetchQnA, courseId]);
+
+  // GỬI REPLY LÊN API
+  const handleSendReply = async (questionId) => {
     const replyText = replyInputs[questionId];
     if (!replyText || replyText.trim() === "") return;
-    setQnaData(prev => prev.map(q => q.id === questionId ? { ...q, status: "answered", reply: replyText } : q));
-    setReplyInputs(prev => ({ ...prev, [questionId]: "" }));
+    
+    setIsReplying(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      await postReplyAPI(questionId, replyText, token);
+      
+      // Xóa input form sau khi gửi thành công
+      setReplyInputs(prev => ({ ...prev, [questionId]: "" }));
+      
+      // Refresh danh sách Q&A để hiện câu trả lời mới
+      fetchQnA();
+    } catch (error) {
+      alert("Failed to post reply. Please try again.");
+    } finally {
+      setIsReplying(false);
+    }
+  };
+
+  // Helper tìm tên bài học
+  const getLessonTitle = (lessonId) => {
+    const lesson = lessonsList.find(l => l.id === lessonId);
+    return lesson ? lesson.title : "General Lesson";
   };
 
   if (isLoading) return <div className="h-screen flex items-center justify-center text-slate-400"><FontAwesomeIcon icon={faSpinner} spin className="text-4xl" /></div>;
   if (error || !courseDetail) return <div className="p-20 text-center text-red-500 font-bold">{error || "Data not found"}</div>;
 
-  const unansweredCount = qnaData.filter(q => q.status === "unanswered").length;
+  // Tính số câu hỏi chưa trả lời (Những câu có array replies rỗng)
+  const unansweredCount = qnaData.filter(q => !q.replies || q.replies.length === 0).length;
 
   return (
     <div className="flex-1 bg-slate-50 w-full animate-fade-slide-up p-4 sm:p-8 relative">
@@ -333,7 +234,7 @@ const InstructorCourseDetailPage = () => {
             <h2 className="text-white/90 text-xl font-bold mb-3">{courseDetail.title}</h2>
             <div className="flex gap-8 mt-6">
                <div><p className="text-xs text-white/60 font-bold uppercase">Students</p><p className="font-black text-lg">{courseDetail.students}</p></div>
-               <div><p className="text-xs text-white/60 font-bold uppercase">Duration</p><p className="font-black text-lg">{courseDetail.duration}</p></div>
+               <div><p className="text-xs text-white/60 font-bold uppercase">Duration</p><p className="font-black text-lg">{totalDuration}</p></div>
             </div>
           </div>
           <div className="w-full lg:w-[320px] bg-white rounded-2xl p-4 shadow-2xl border border-slate-100 flex flex-col lg:-mb-24 z-10 relative">
@@ -352,9 +253,9 @@ const InstructorCourseDetailPage = () => {
       <div className="flex flex-col lg:flex-row gap-8 mt-10">
         <div className="flex-1">
           <div className="flex gap-3 mb-6 border-b border-slate-200 pb-2 overflow-x-auto">
-            {["Curriculum", "Q&A", "Settings"].map((tab) => (
+            {["Curriculum", "Q&A"].map((tab) => (
               <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-2.5 text-sm font-bold rounded-full transition-all ${activeTab === tab ? "bg-slate-900 text-white" : "text-slate-500 hover:bg-slate-200/50"}`}>
-                {tab} {tab === "Q&A" && unansweredCount > 0 && <span className="ml-1 w-2 h-2 bg-red-500 rounded-full inline-block animate-pulse"></span>}
+                {tab} {tab === "Q&A" && unansweredCount > 0 && <span className="ml-1.5 px-1.5 py-0.5 bg-red-500 text-white text-[10px] rounded-full">{unansweredCount}</span>}
               </button>
             ))}
           </div>
@@ -365,9 +266,11 @@ const InstructorCourseDetailPage = () => {
                 <div><h2 className="text-2xl font-black text-slate-800">Course Curriculum</h2><p className="text-slate-500 text-sm font-medium">{lessonsList.length} Lessons • Total {totalDuration}</p></div>
               </div>
               {lessonsList.map(lesson => (
-                <LessonAccordion 
-                  key={lesson.id} lesson={lesson} lessonQna={qnaData.filter(q => q.lessonId === lesson.id)} 
-                  replyInputs={replyInputs} setReplyInputs={setReplyInputs} handleSendReply={handleSendReply} targetLessonId={targetLessonId} 
+                <LessonCard
+                  key={lesson.id}
+                  lesson={lesson}
+                  lessonQna={qnaData.filter(q => q.lesson_id === lesson.id)}
+                  onOpenVideo={(url, title) => setVideoModal({ isOpen: true, url, title })}
                 />
               ))}
             </div>
@@ -376,29 +279,82 @@ const InstructorCourseDetailPage = () => {
           {activeTab === "Q&A" && (
             <div className="animate-fade-slide-up bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden p-6 space-y-6">
                <h2 className="text-xl font-black text-slate-800">Course Q&A ({qnaData.length})</h2>
-               {qnaData.map(q => (
+               {qnaData.map(q => {
+                 const isAnswered = q.replies && q.replies.length > 0;
+                 return (
                  <div key={q.id} className="bg-slate-50 border border-slate-200 p-6 rounded-2xl relative transition-all hover:bg-white hover:shadow-lg">
                     <div className="flex items-center gap-4 mb-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">{q.avatar}</div>
+                      {q.user?.avatar && !q.user.avatar.includes("null") ? (
+                        <img src={q.user.avatar} className="w-12 h-12 rounded-full object-cover border border-slate-200" alt="avatar" />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+                          {q.user?.name ? q.user.name.charAt(0).toUpperCase() : "U"}
+                        </div>
+                      )}
+                      
                       <div>
-                        <h4 className="font-bold text-slate-900">{q.student}</h4>
-                        <p className="text-xs text-slate-500 flex items-center gap-1">Lesson: 
-                          <button onClick={() => setVideoModal({ isOpen: true, url: lessonsList.find(l => l.id === q.lessonId)?.videoUrl, title: q.lesson })} className="text-blue-600 hover:underline font-bold">{q.lesson}</button> • {q.time}
+                        <h4 className="font-bold text-slate-900">{q.user?.name || "Student"}</h4>
+                        <p className="text-xs text-slate-500 flex items-center gap-1">Lesson:
+                          {/* Click tên lesson → mở modal video bài học đó */}
+                          <button
+                            onClick={() => {
+                              const url = q.video_url || lessonsList.find(l => l.id === q.lesson_id)?.videoUrl;
+                              const title = q.lesson_title || getLessonTitle(q.lesson_id);
+                              if (url) setVideoModal({ isOpen: true, url, title });
+                            }}
+                            className="text-blue-600 hover:underline font-bold ml-1"
+                          >
+                            {q.lesson_title || getLessonTitle(q.lesson_id)}
+                          </button> • {formatDateTime(q.created_at)}
                         </p>
                       </div>
-                      <span className={`ml-auto text-[10px] font-black uppercase px-2.5 py-1 rounded-md ${q.status === 'unanswered' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>{q.status}</span>
+                      <span className={`ml-auto text-[10px] font-black uppercase px-2.5 py-1 rounded-md ${!isAnswered ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {!isAnswered ? "unanswered" : "answered"}
+                      </span>
                     </div>
-                    <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-4 rounded-xl border border-slate-100 mb-4">{q.text}</p>
-                    {q.status === 'answered' ? (
-                      <div className="ml-6 pl-4 border-l-2 border-blue-400 bg-blue-50/50 p-4 rounded-r-2xl"><p className="text-xs font-black text-slate-800 uppercase mb-1">Reply</p><p className="text-sm text-slate-700 font-medium">{q.reply}</p></div>
-                    ) : (
-                      <div className="flex flex-col gap-2">
-                        <textarea rows="2" placeholder="Write reply..." value={replyInputs[q.id] || ""} onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })} className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-medium bg-white" />
-                        <button onClick={() => handleSendReply(q.id)} disabled={!replyInputs[q.id]?.trim()} className="self-end px-6 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all">Send Reply</button>
+                    
+                    {/* CÂU HỎI */}
+                    <p className="text-sm text-slate-700 font-medium leading-relaxed bg-white p-4 rounded-xl border border-slate-100 mb-4">{q.content}</p>
+                    
+                    {/* DANH SÁCH REPLY */}
+                    {isAnswered && (
+                      <div className="space-y-3 mb-4">
+                        {q.replies.map(reply => (
+                          <div key={reply.id} className={`ml-6 pl-4 border-l-2 p-4 rounded-r-2xl ${reply.user?.role === 'instructor' ? 'border-blue-400 bg-blue-50/50' : 'border-slate-300 bg-slate-50'}`}>
+                            <div className="flex items-center justify-between mb-1">
+                              <p className={`text-xs font-black ${reply.user?.role === 'instructor' ? 'text-blue-800' : 'text-slate-600'}`}>
+                                {reply.user?.name} {reply.user?.role === 'instructor' && "(Instructor)"}
+                              </p>
+                              <span className="text-[10px] text-slate-400 font-medium">{formatDateTime(reply.created_at)}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 font-medium">{reply.content}</p>
+                          </div>
+                        ))}
                       </div>
                     )}
+
+                    {/* KHUNG GÕ REPLY CHO INSTRUCTOR (Luôn hiện để có thể chat tiếp) */}
+                    <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-200">
+                      <textarea 
+                        rows="2" 
+                        placeholder="Write reply..." 
+                        value={replyInputs[q.id] || ""} 
+                        onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })} 
+                        className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-medium bg-white resize-y" 
+                      />
+                      <button 
+                        onClick={() => handleSendReply(q.id)} 
+                        disabled={!replyInputs[q.id]?.trim() || isReplying} 
+                        className="self-end px-6 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl shadow-md active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50"
+                      >
+                        {isReplying ? <FontAwesomeIcon icon={faSpinner} spin /> : <FontAwesomeIcon icon={faPaperPlane} />} Send Reply
+                      </button>
+                    </div>
+
                  </div>
-               ))}
+                 )
+               })}
+               {qnaData.length === 0 && <div className="text-center py-10 text-slate-500 font-medium">No questions have been asked yet.</div>}
             </div>
           )}
         </div>

@@ -12,7 +12,7 @@ import {
   faCartShopping,
   faSpinner,
   faBoltLightning,
-  faGraduationCap // ✅ Icon mới cho trạng thái đã đăng ký
+  faGraduationCap 
 } from "@fortawesome/free-solid-svg-icons";
 import { getCourseDetailAPI, enrollFreeCourseAPI } from "../../services/learnerCourseAPI"; 
 
@@ -43,7 +43,7 @@ const CourseDetailPage = () => {
   const [error, setError] = useState("");
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   
-  // ✅ MỚI: State quản lý xem học viên đã đăng ký khóa này chưa
+  //State quản lý xem học viên đã đăng ký khóa này chưa
   const [isEnrolled, setIsEnrolled] = useState(false);
 
   useEffect(() => {
@@ -97,7 +97,7 @@ const CourseDetailPage = () => {
   };
 
   // =========================================================================
-  // ✅ XỬ LÝ NÚT BẤM CHÍNH (ĐĂNG KÝ / ĐI ĐẾN KHÓA HỌC / MUA HÀNG)
+  // XỬ LÝ NÚT BẤM CHÍNH (ĐĂNG KÝ / ĐI ĐẾN KHÓA HỌC / MUA HÀNG)
   // =========================================================================
   const handlePrimaryAction = async () => {
     // 1. Chưa đăng nhập -> Đuổi ra trang Login

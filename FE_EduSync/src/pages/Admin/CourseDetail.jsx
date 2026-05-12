@@ -25,7 +25,7 @@ import {
   faSave,
   faPenRuler,
   faSpinner,
-  faEdit, // ✅ Đã import thêm icon Edit
+  faEdit, 
 } from "@fortawesome/free-solid-svg-icons";
 
 const THUMB_FALLBACK =
@@ -38,7 +38,6 @@ function formatUpdatedDate(iso) {
   return d.toLocaleDateString("en-US");
 }
 
-// ✅ THUẬT TOÁN ĐỔI DUNG LƯỢNG (BYTES SANG MB, GB)
 const formatFileSize = (bytes) => {
   if (bytes === "—" || !bytes || bytes === 0) return "—";
   if (typeof bytes === "string" && bytes.includes("B")) return bytes;
@@ -58,6 +57,9 @@ const AdminCourseDetail = () => {
   const [loadState, setLoadState] = useState({ loading: true, error: "" });
   const [actionLoading, setActionLoading] = useState(false);
 
+  // ✅ BƯỚC 1: Thêm State để lưu trữ Link Video đang được chọn
+  const [currentVideoUrl, setCurrentVideoUrl] = useState("");
+
   const loadCourse = useCallback(async () => {
     const token = localStorage.getItem("access_token");
     if (!token || !id) {
@@ -68,14 +70,24 @@ const AdminCourseDetail = () => {
     setLoadState({ loading: true, error: "" });
     try {
       const data = await fetchAdminCourseDetailAPI(id, token);
+      
+      const fetchedLessons = Array.isArray(data?.lessons) ? data.lessons : [];
       setCourse({
         ...data,
-        lessons: Array.isArray(data?.lessons) ? data.lessons : [],
+        lessons: fetchedLessons,
         status: String(data?.status || "").toLowerCase(),
       });
+      
       setAdminPrice(
         data.price !== undefined && data.price !== null ? String(data.price) : "",
       );
+
+      // ✅ Tự động gán video của bài học đầu tiên vào State khi load xong
+      const firstValidLesson = fetchedLessons.find((l) => l.play_url || l.url);
+      if (firstValidLesson) {
+        setCurrentVideoUrl(firstValidLesson.play_url || firstValidLesson.url);
+      }
+
       setLoadState({ loading: false, error: "" });
     } catch (e) {
       setCourse(null);
@@ -114,10 +126,6 @@ const AdminCourseDetail = () => {
     );
   }
 
-  // =========================================================================
-  // ĐIỀU KIỆN HIỂN THỊ NÚT EDIT 
-  // (Không phải duyệt, không bị từ chối, không bị đình chỉ)
-  // =========================================================================
   const canEdit = !["pending", "rejected", "suspended"].includes(course.status);
 
   // =========================================================================
@@ -205,13 +213,9 @@ const AdminCourseDetail = () => {
   };
 
   const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
-  const firstLesson = lessons.find((l) => l.play_url || l.url) || null;
-  const firstVideoUrl = firstLesson
-    ? firstLesson.play_url || firstLesson.url || ""
-    : "";
 
   // =========================================================================
-  // HÀM RENDER CỘT PHẢI - 5 GIAO DIỆN TÁCH BIỆT RÕ RÀNG
+  // HÀM RENDER CỘT PHẢI
   // =========================================================================
   const renderAdminActions = () => {
     if (course.has_new_update) {
@@ -382,9 +386,6 @@ const AdminCourseDetail = () => {
     );
   };
 
-  // =========================================================================
-  // RENDER UI CHUNG
-  // =========================================================================
   const renderStatusBadge = (status) => {
     if (status === "published")
       return (
@@ -428,7 +429,6 @@ const AdminCourseDetail = () => {
           <FontAwesomeIcon icon={faArrowLeft} /> Back to list
         </button>
 
-        {/* THÔNG BÁO CẬP NHẬT TRÊN CÙNG */}
         {course.has_new_update && (
           <div className="mb-6 p-5 bg-amber-50 border border-amber-200 rounded-2xl flex items-center gap-4 shadow-sm animate-fade-slide-up">
             <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center shrink-0">
@@ -463,7 +463,6 @@ const AdminCourseDetail = () => {
             </p>
           </div>
 
-          {/* ✅ NÚT EDIT NẰM Ở ĐÂY (Chỉ hiện khi Published hoặc Draft) */}
           {canEdit && (
             <div className="shrink-0 mt-4 xl:mt-0 flex flex-col items-end">
               <button
@@ -481,10 +480,12 @@ const AdminCourseDetail = () => {
         {/* CỘT TRÁI: VIDEO & GIÁO TRÌNH */}
         <div className="w-full lg:w-2/3 space-y-8">
           <div className="bg-slate-900 rounded-3xl overflow-hidden shadow-xl border border-slate-800 aspect-video relative flex flex-col items-center justify-center group">
-            {firstVideoUrl ? (
+            {/* ✅ BƯỚC 2: Sử dụng State currentVideoUrl để phát video */}
+            {currentVideoUrl ? (
               <video
-                src={firstVideoUrl}
+                src={currentVideoUrl}
                 controls
+                autoPlay
                 className="absolute inset-0 w-full h-full object-contain bg-black"
                 playsInline
               />
@@ -520,33 +521,46 @@ const AdminCourseDetail = () => {
             <div className="space-y-3">
               {lessons.map((lesson) => {
                 const isNewLesson = !lesson.play_url && !lesson.url;
+                const videoUrl = lesson.play_url || lesson.url;
+                const isPlaying = currentVideoUrl === videoUrl && videoUrl !== "";
 
                 return (
                   <div
                     key={lesson.id}
-                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 bg-white hover:border-blue-200 hover:bg-slate-50 ${isNewLesson ? "border-amber-300 bg-amber-50/30" : ""}`}
+                    // ✅ BƯỚC 3: Thêm sự kiện onClick để đổi Video
+                    onClick={() => {
+                      if (videoUrl) setCurrentVideoUrl(videoUrl);
+                    }}
+                    className={`p-4 rounded-2xl border transition-all cursor-pointer flex items-center gap-4 hover:border-blue-200 
+                      ${isPlaying ? "bg-blue-50 border-blue-300 shadow-sm" : "bg-white hover:bg-slate-50"} 
+                      ${isNewLesson ? "border-amber-300 bg-amber-50/30" : ""}
+                    `}
                   >
+                    {/* ✅ BƯỚC 4: Ép cứng chỉ lấy ảnh của Khóa học (course.thumbnail) */}
                     <img
-                      src={lesson.thumbnail_url || course.thumbnail || THUMB_FALLBACK}
+                      src={course.thumbnail || THUMB_FALLBACK}
                       alt="Lesson Thumbnail"
-                      className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200"
+                      className="w-14 h-10 rounded-xl object-cover shrink-0 border border-slate-200 shadow-sm"
                       onError={(ev) => {
                         ev.currentTarget.src = THUMB_FALLBACK;
                       }}
                     />
 
                     <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm line-clamp-1 text-slate-700 flex items-center gap-2">
+                      <p className={`font-bold text-sm line-clamp-1 flex items-center gap-2 ${isPlaying ? "text-blue-700" : "text-slate-700"}`}>
                         {lesson.title}
                         {isNewLesson && (
                           <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-[9px] font-black rounded uppercase shadow-sm">
                             New
                           </span>
                         )}
+                        {isPlaying && (
+                           <span className="text-[10px] text-blue-600 font-bold flex items-center gap-1 animate-pulse">
+                             <FontAwesomeIcon icon={faPlayCircle} /> Playing
+                           </span>
+                        )}
                       </p>
-                      <p className="text-xs text-slate-500 font-medium mt-1">
-                        File size: <span className="font-bold">{formatFileSize(lesson.size)}</span>
-                      </p>
+                      
                     </div>
 
                     <div className="shrink-0 text-xs font-bold text-slate-400 flex items-center gap-1.5 bg-slate-100 px-2.5 py-1 rounded-lg">
@@ -565,11 +579,10 @@ const AdminCourseDetail = () => {
           </div>
         </div>
 
-        {/* CỘT PHẢI: GỌI HÀM RENDER 5 KỊCH BẢN Ở ĐÂY */}
+        {/* CỘT PHẢI */}
         <div className="w-full lg:w-1/3 space-y-6 sticky top-24">
           {renderAdminActions()}
 
-          {/* KHU VỰC THÔNG TIN CHUNG (Luôn hiện) */}
           <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6">
             <h3 className="text-base font-extrabold text-slate-800 mb-5 flex items-center gap-2 border-b border-slate-100 pb-3">
               <FontAwesomeIcon icon={faInfoCircle} className="text-blue-500" />{" "}
@@ -592,7 +605,6 @@ const AdminCourseDetail = () => {
                   {course.category}
                 </span>
               </li>
-              {/* Hiện giá tiền nếu KHÔNG PHẢI đang Pending và KHÔNG bị báo cập nhật và KHÔNG phải Bản nháp */}
               {course.status !== "pending" &&
                 !course.has_new_update &&
                 course.status !== "draft" && (
@@ -609,7 +621,6 @@ const AdminCourseDetail = () => {
             </ul>
           </div>
 
-          {/* NÚT XÓA (Luôn hiện dưới cùng) */}
           <button
             onClick={handleDeleteCourse}
             className="w-full py-3.5 px-4 bg-white text-red-500 font-bold rounded-2xl border border-red-200 hover:bg-red-50 flex items-center justify-center gap-2.5 transition-all active:scale-95 shadow-sm"

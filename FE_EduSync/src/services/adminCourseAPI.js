@@ -109,18 +109,17 @@ export async function rejectCourseAPI(courseId, reason, token) {
 
 export async function resolveUpdateAPI(courseId, newPrice, token) {
   try {
-    const params = {};
+    const bodyData = {}; 
     if (newPrice !== null && newPrice !== undefined) {
-      params.price = newPrice;
+      bodyData.price = newPrice;
     }
 
     const response = await axios.put(
       `${BASE_URL}/admin/courses/${courseId}/resolve-update`,
-      null,
+      bodyData, // Nhét data vào vị trí số 2 
       {
-        params,
-        headers: authHeaders(token),
-      },
+        headers: authHeaders(token), 
+      }
     );
     return response.data;
   } catch (error) {
