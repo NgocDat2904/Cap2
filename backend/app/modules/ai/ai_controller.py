@@ -123,11 +123,11 @@ async def ai_mindmap(
     user=Depends(require_role(["learner"]))
 ):
     try:
-        markdown = await gemini_service.generate_mindmap_markdown(
+        mermaid_code = await gemini_service.generate_mermaid_mindmap(
             body.context,
             body.language,
         )
-        return {"mindmap_markdown": markdown}
+        return {"mermaid_code": mermaid_code}
     except Exception as e:
         _handle_ai_error(e)
 
@@ -260,25 +260,48 @@ async def ai_mindmap_by_video(
     body: VideoMindmapRequest,
     user=Depends(require_role(["learner"]))
 ):
+    # 1. Check ai_mindmaps collection first
+    existing = db.ai_mindmaps.find_one({
+        "video_id": ObjectId(body.video_id) if ObjectId.is_valid(body.video_id) else body.video_id,
+        "language": body.language,
+    })
+    if existing and existing.get("mermaid_code"):
+        return {"mermaid_code": existing["mermaid_code"]}
+
+    # 2. Fallback: check ai_cache on video doc
     video = await _video_doc(body.video_id)
-
-    cache = _cache_get(video, "mindmap_markdown") or {}
-
+    cache = _cache_get(video, "mermaid_code") or {}
     if body.language in cache:
-        return {"mindmap_markdown": cache[body.language]}
+        return {"mermaid_code": cache[body.language]}
 
+    # 3. Generate + save to ai_mindmaps
     context = await _context_from_video(body.video_id)
 
     try:
-        markdown = await gemini_service.generate_mindmap_markdown(
+        mermaid_code = await gemini_service.generate_mermaid_mindmap(
             context,
             body.language,
         )
 
-        cache[body.language] = markdown
-        await _cache_set(body.video_id, "mindmap_markdown", cache)
+        # Save to ai_mindmaps collection
+        db.ai_mindmaps.update_one(
+            {
+                "video_id": ObjectId(body.video_id),
+                "language": body.language,
+            },
+            {
+                "$set": {
+                    "mermaid_code": mermaid_code,
+                    "updated_at": datetime.utcnow(),
+                },
+                "$setOnInsert": {
+                    "created_at": datetime.utcnow(),
+                },
+            },
+            upsert=True,
+        )
 
-        return {"mindmap_markdown": markdown}
+        return {"mermaid_code": mermaid_code}
 
     except Exception as e:
         _handle_ai_error(e)
