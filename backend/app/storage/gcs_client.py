@@ -7,12 +7,7 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        key_path = os.getenv("GCS_KEY_PATH", "")
-        
-        if not os.path.isabs(key_path):
-            backend_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-            key_path = os.path.join(backend_dir, key_path)
-
+        key_path = os.getenv("GCS_KEY_PATH", "key.json")
         self.client = None
         self.credentials = None
         try:

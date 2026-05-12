@@ -4,6 +4,8 @@ from fastapi import BackgroundTasks, HTTPException
 from datetime import datetime
 import json
 
+import asyncio
+
 from app.modules.video.video_repository import VideoRepository
 from app.modules.video.video_schema import VideoRequest
 from app.database.mongodb import db
@@ -185,6 +187,40 @@ class VideoService:
                 },
             )
             print(f"[STT] Transcript sẵn sàng cho video {video_id} ({len(transcript)} chars, {len(segments)} segments)")
+
+            # ===================== AUTO GENERATE MERMAID MINDMAP =====================
+            try:
+                from app.modules.ai.gemini_service import generate_mermaid_mindmap_sync
+                from app.modules.ai.ai_schema import LessonContext
+
+                video_doc = db.videos.find_one({"_id": ObjectId(video_id)})
+                ctx = LessonContext(
+                    title=video_doc.get("title", "Video lesson") if video_doc else "Video lesson",
+                    description=video_doc.get("description", "") if video_doc else "",
+                    transcript=transcript,
+                )
+
+                mermaid_code = generate_mermaid_mindmap_sync(ctx, "vi")
+
+                if mermaid_code and "Ý chính 1" not in mermaid_code:
+                    db.ai_mindmaps.update_one(
+                        {"video_id": ObjectId(video_id), "language": "vi"},
+                        {
+                            "$set": {
+                                "mermaid_code": mermaid_code,
+                                "updated_at": datetime.utcnow(),
+                            },
+                            "$setOnInsert": {
+                                "created_at": datetime.utcnow(),
+                            },
+                        },
+                        upsert=True,
+                    )
+                    print(f"[MINDMAP] ✅ Mermaid mindmap đã tạo thành công cho video {video_id}")
+                else:
+                    print(f"[MINDMAP] ⚠️ Gemini không khả dụng, mindmap chưa được tạo cho video {video_id} (thiếu GEMINI_API_KEY?)")
+            except Exception as mindmap_err:
+                print(f"[MINDMAP] ❌ Lỗi auto-generate mindmap cho video {video_id}: {mindmap_err}")
         except Exception as e:
             print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")
             db.videos.update_one(

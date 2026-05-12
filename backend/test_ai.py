@@ -43,9 +43,9 @@ async def test_ai():
         print("\n===== SUMMARY =====")
         print(summary)
 
-        print("\n✅ AI is working!")
+        print("\n[SUCCESS] AI is working!")
     except Exception as e:
-        print("\n❌ Error:", str(e))
+        print("\n[ERROR] Error:", str(e))
 
 
 if __name__ == "__main__":
