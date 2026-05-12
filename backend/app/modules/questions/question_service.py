@@ -7,6 +7,10 @@ from app.modules.questions.question_repository import (
     question_repository
 )
 
+from app.modules.notifications.notification_repository import (
+    notification_repository
+)
+
 
 class QuestionService:
 
@@ -34,6 +38,35 @@ class QuestionService:
         }
 
         question_id = question_repository.create(doc)
+
+        # =====================================
+        # 🔥 CREATE NOTIFICATION FOR INSTRUCTOR
+        # =====================================
+
+        course = db.courses.find_one({
+            "_id": ObjectId(data.course_id)
+        })
+
+        if course:
+
+            notification_repository.create({
+
+                "user_id": course["instructor_id"],
+
+                "title": "New question received",
+
+                "message": "A learner asked a new question.",
+
+                "type": "new_question",
+
+                "course_id": ObjectId(data.course_id),
+
+                "question_id": ObjectId(question_id),
+
+                "is_read": False,
+
+                "created_at": datetime.utcnow()
+            })
 
         return {
             "message": "Question created",
@@ -154,6 +187,29 @@ class QuestionService:
         }
 
         reply_id = question_repository.create(doc)
+
+        # =====================================
+        # 🔥 CREATE NOTIFICATION FOR LEARNER
+        # =====================================
+
+        notification_repository.create({
+
+            "user_id": question["user_id"],
+
+            "title": "Instructor replied to you",
+
+            "message": "Your question has a new reply.",
+
+            "type": "question_reply",
+
+            "course_id": question["course_id"],
+
+            "question_id": question["_id"],
+
+            "is_read": False,
+
+            "created_at": datetime.utcnow()
+        })
 
         return {
             "message": "Reply created",
