@@ -391,3 +391,52 @@ class CourseRepository:
             "new_lessons_count": new_lessons_count,
             "duration": duration_text
         }
+
+ # FEATURED COURSES
+    # =========================
+    def get_featured_courses(self):
+
+        pipeline = [
+
+            # chỉ lấy khóa published
+            {
+                "$match": {
+                    "status": "APPROVED"
+                }
+            },
+
+            # join enrollments
+            {
+                "$lookup": {
+                    "from": "enrollments",
+                    "localField": "_id",
+                    "foreignField": "course_id",
+                    "as": "enrollments"
+                }
+            },
+
+            # count students
+            {
+                "$addFields": {
+                    "students_count": {
+                        "$size": {
+                            "$ifNull": ["$enrollments", []]
+                        }
+                    }
+                }
+            },
+
+            # sort nhiều học sinh nhất
+            {
+                "$sort": {
+                    "students_count": -1
+                }
+            },
+
+            # lấy 4 khóa
+            {
+                "$limit": 4
+            }
+        ]
+
+        return list(db.courses.aggregate(pipeline))
