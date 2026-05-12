@@ -62,6 +62,18 @@ def get_all_users_api(
 
     return user_service.get_all_users(q, role, status, page, limit)
 
+@router.get("/admin/users/{user_id}")
+def get_user_detail(user_id: str, current_user=Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user_service.get_user_detail(user_id)
+
+@router.delete("/admin/users/{user_id}")
+def delete_user(user_id: str, current_user=Depends(get_current_user)):
+    if current_user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Access denied")
+    return user_service.delete_user(user_id)
+
 @router.post("/admin/users")
 def create_user_api(
 
