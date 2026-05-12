@@ -1,9 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException
 from bson import ObjectId
 
-from app.middleware.auth_middleware import require_role
+from app.middleware.auth_middleware import (
+    require_role
+)
+
 from app.database.mongodb import db
-from .learning_service import LearningService
+
+from .learning_service import (
+    LearningService
+)
 
 router = APIRouter(
     prefix="/learning",
@@ -60,15 +66,25 @@ async def get_my_courses(
 # ======================
 # COMPLETE LESSON
 # ======================
-@router.post("/lessons/{lesson_id}/complete")
+@router.post(
+    "/courses/{course_id}/lessons/{lesson_id}/complete"
+)
 async def complete_lesson(
+
+    course_id: str,
+
     lesson_id: str,
+
     user=Depends(require_role(["learner"]))
 ):
     try:
 
         return await service.complete_lesson(
+
+            course_id,
+
             lesson_id,
+
             user["id"]
         )
 
@@ -91,8 +107,14 @@ async def update_progress(
     """
     Body:
     {
+        "course_id": "...",
+
         "lesson_id": "...",
+
+        "video_id": "...",
+
         "progress_seconds": 45,
+
         "duration": 120
     }
     """
@@ -100,9 +122,17 @@ async def update_progress(
     try:
 
         return await service.update_progress(
+
+            data["course_id"],
+
             data["lesson_id"],
+
+            data["video_id"],
+
             user["id"],
+
             data["progress_seconds"],
+
             data["duration"]
         )
 
@@ -119,28 +149,65 @@ async def update_progress(
 # ======================
 @router.get("/progress/{lesson_id}")
 async def get_progress(
+
     lesson_id: str,
+
     user=Depends(require_role(["learner"]))
 ):
     try:
 
         progress = db.lesson_progress.find_one({
+
             "lesson_id": ObjectId(lesson_id),
-            "learner_id": ObjectId(user["id"])
+
+            "user_id": ObjectId(
+                user["id"]
+            )
         })
+
+        # ======================
+        # NOT FOUND
+        # ======================
 
         if not progress:
 
             return {
+
                 "progress_seconds": 0,
+
+                "duration": 0,
+
+                "progress_percent": 0,
+
                 "is_completed": False
             }
 
+        # ======================
+        # GET DATA
+        # ======================
+
+        seconds = progress.get(
+            "progress_seconds",
+            0
+        )
+
+        duration = progress.get(
+            "duration_seconds",
+            0
+        )
+
+        percent = progress.get(
+            "progress_percent",
+            0
+        )
+
         return {
-            "progress_seconds": progress.get(
-                "progress_seconds",
-                0
-            ),
+
+            "progress_seconds": seconds,
+
+            "duration": duration,
+
+            "progress_percent": percent,
 
             "is_completed": progress.get(
                 "is_completed",
