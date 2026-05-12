@@ -1,0 +1,17 @@
+import os
+from google import genai
+from dotenv import load_dotenv
+
+load_dotenv()
+key = os.getenv("GEMINI_API_KEY")
+client = genai.Client(api_key=key)
+
+print("Generating content with models/gemini-1.5-flash...")
+try:
+    response = client.models.generate_content(
+        model='models/gemini-1.5-flash',
+        contents='Hello, how are you?'
+    )
+    print(f"Response: {response.text}")
+except Exception as e:
+    print(f"Error: {e}")

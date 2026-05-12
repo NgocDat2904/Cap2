@@ -4,7 +4,7 @@ import re
 import asyncio
 from typing import List, Optional
 
-import google.generativeai as genai
+from google import genai
 from dotenv import load_dotenv
 
 from app.modules.ai.ai_schema import ChatMessage, LessonContext
@@ -18,18 +18,25 @@ load_dotenv()
 # =========================
 # CONFIG
 # =========================
-def _configure() -> bool:
+_client = None
+
+
+def _get_client():
+    global _client
+    if _client is not None:
+        return _client
+
     key = os.getenv("GEMINI_API_KEY", "").strip()
     if not key:
         print("⚠️ No GEMINI_API_KEY → dùng fallback")
-        return False
+        return None
 
     try:
-        genai.configure(api_key=key)
-        return True
+        _client = genai.Client(api_key=key)
+        return _client
     except Exception as e:
-        print("⚠️ Gemini config lỗi:", e)
-        return False
+        print("Gemini client init lỗi:", e)
+        return None
 
 
 def _model_name():
@@ -65,12 +72,13 @@ def _fallback_quiz(num_questions: int):
 
 
 def _fallback_mindmap(ctx: LessonContext):
-    return f"""# {ctx.title}
-
-- Ý chính 1
-  - Ý nhỏ 1.1
-- Ý chính 2
-  - Ý nhỏ 2.1
+    safe_title = (ctx.title or "Video").replace('"', "'").replace('(', '').replace(')', '')
+    return f"""mindmap
+  root(({safe_title}))
+    Ý chính 1
+      Ý nhỏ 1.1
+    Ý chính 2
+      Ý nhỏ 2.1
 """
 
 
@@ -119,17 +127,22 @@ def _extract_json(text: str) -> Optional[str]:
 
 async def _call_gemini(prompt: str) -> Optional[str]:
     """
-    Core call Gemini với retry + timeout
+    Core call Gemini với retry + timeout (ASYNC)
     """
-    if not _configure():
+    client = _get_client()
+    if not client:
         return None
 
-    model = genai.GenerativeModel(_model_name())
+    model_id = _model_name()
 
     for attempt in range(3):
         try:
+            # google-genai SDK uses client.aio for async
             resp = await asyncio.wait_for(
-                model.generate_content_async(prompt),
+                client.aio.models.generate_content(
+                    model=model_id,
+                    contents=prompt
+                ),
                 timeout=20
             )
 
@@ -144,6 +157,38 @@ async def _call_gemini(prompt: str) -> Optional[str]:
             print(f"⚠️ Gemini error (lần {attempt+1}):", e)
 
         await asyncio.sleep(1.5)
+
+    return None
+
+
+def _call_gemini_sync(prompt: str) -> Optional[str]:
+    """
+    Core call Gemini SYNC — dùng cho background task (không cần asyncio).
+    """
+    client = _get_client()
+    if not client:
+        print("⚠️ [SYNC] Gemini client chưa init, bỏ qua")
+        return None
+
+    import time
+    model_id = _model_name()
+
+    for attempt in range(3):
+        try:
+            resp = client.models.generate_content(
+                model=model_id,
+                contents=prompt
+            )
+
+            text = (resp.text or "").strip()
+
+            if text:
+                return text
+
+        except Exception as e:
+            print(f"⚠️ [SYNC] Gemini error (lần {attempt+1}):", e)
+
+        time.sleep(1.5)
 
     return None
 
@@ -254,31 +299,146 @@ Transcript:
         return _fallback_quiz(num_questions)
 
 
+def _extract_mermaid_code(text: str) -> Optional[str]:
+    """
+    Trích xuất Mermaid mindmap code từ output Gemini.
+    Loại bỏ ```mermaid, ``` và text thừa.
+    """
+    if not text:
+        return None
+
+    text = text.strip()
+
+    # Tìm block ```mermaid ... ```
+    match = re.search(r"```mermaid\s*\n(.*?)```", text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+
+    # Tìm block bắt đầu bằng "mindmap"
+    match = re.search(r"(mindmap\s*\n.*)", text, re.DOTALL)
+    if match:
+        # Loại bỏ ``` cuối nếu có
+        code = match.group(1).strip()
+        code = re.sub(r"```\s*$", "", code).strip()
+        return code
+
+    return None
 
 
-
-async def generate_mindmap_markdown(
+async def generate_mermaid_mindmap(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ):
     prompt = f"""
-Tạo mindmap dạng markdown bằng {language}.
+Bạn là một AI chuyên phân tích nội dung video và chuyển thành mindmap.
 
-YÊU CẦU:
-- Dạng cây
-- Dùng dấu "-"
+Nhiệm vụ:
+- Đọc transcript bên dưới
+- Tóm tắt lại thành các ý chính
+- Chuyển thành mindmap theo format Mermaid
 
-Ví dụ:
-- Chủ đề
-  - Ý 1
-  - Ý 2
+Yêu cầu:
+1. Node trung tâm = chủ đề chính của video
+2. Level 1 = các mục lớn
+3. Level 2 = ý chính trong từng mục
+4. Level 3 = chi tiết (nếu cần)
+5. Ngắn gọn, không dài dòng
+6. Không copy nguyên văn, phải tóm tắt
+7. Giữ cấu trúc rõ ràng, dễ đọc
+8. Sử dụng ngôn ngữ {language}
+9. KHÔNG dùng ký tự đặc biệt trong node labels (không dùng ngoặc tròn, ngoặc vuông, dấu ngoặc kép bên trong label)
 
-Nội dung:
+Output chỉ gồm code Mermaid, không giải thích.
+
+Format:
+mindmap
+  root((Main Topic))
+    Topic 1
+      Sub 1
+      Sub 2
+    Topic 2
+      Sub 1
+
+Transcript:
 {ctx.transcript}
 """
 
     result = await _call_gemini(prompt)
-    return result or _fallback_mindmap(ctx)
+
+    if not result:
+        return _fallback_mindmap(ctx)
+
+    mermaid_code = _extract_mermaid_code(result)
+
+    if not mermaid_code:
+        # Nếu không extract được, thử dùng nguyên text (có thể Gemini trả clean)
+        if result.strip().startswith("mindmap"):
+            return result.strip()
+        return _fallback_mindmap(ctx)
+
+    return mermaid_code
+
+
+def _build_mermaid_prompt(ctx: LessonContext, language: str = "Vietnamese") -> str:
+    """Prompt dùng chung cho cả async và sync."""
+    return f"""
+Bạn là một AI chuyên phân tích nội dung video và chuyển thành mindmap.
+
+Nhiệm vụ:
+- Đọc transcript bên dưới
+- Tóm tắt lại thành các ý chính
+- Chuyển thành mindmap theo format Mermaid
+
+Yêu cầu:
+1. Node trung tâm = chủ đề chính của video
+2. Level 1 = các mục lớn
+3. Level 2 = ý chính trong từng mục
+4. Level 3 = chi tiết (nếu cần)
+5. Ngắn gọn, không dài dòng
+6. Không copy nguyên văn, phải tóm tắt
+7. Giữ cấu trúc rõ ràng, dễ đọc
+8. Sử dụng ngôn ngữ {language}
+9. KHÔNG dùng ký tự đặc biệt trong node labels (không dùng ngoặc tròn, ngoặc vuông, dấu ngoặc kép bên trong label)
+
+Output chỉ gồm code Mermaid, không giải thích.
+
+Format:
+mindmap
+  root((Main Topic))
+    Topic 1
+      Sub 1
+      Sub 2
+    Topic 2
+      Sub 1
+
+Transcript:
+{ctx.transcript}
+"""
+
+
+def generate_mermaid_mindmap_sync(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+) -> Optional[str]:
+    """
+    SYNC version — dùng cho background task (video_service).
+    """
+    prompt = _build_mermaid_prompt(ctx, language)
+    result = _call_gemini_sync(prompt)
+
+    if not result:
+        print("[MINDMAP] Gemini trả về None → không tạo mindmap")
+        return None
+
+    mermaid_code = _extract_mermaid_code(result)
+
+    if not mermaid_code:
+        if result.strip().startswith("mindmap"):
+            return result.strip()
+        print("[MINDMAP] Không extract được Mermaid code từ Gemini output")
+        return None
+
+    return mermaid_code
 
 
 async def generate_timeline_json(

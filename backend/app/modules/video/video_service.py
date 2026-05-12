@@ -1,7 +1,10 @@
 
 from bson import ObjectId
-from fastapi import HTTPException
+from fastapi import BackgroundTasks, HTTPException
 from datetime import datetime
+import json
+
+import asyncio
 
 from app.modules.video.video_repository import VideoRepository
 from app.modules.video.video_schema import VideoRequest
@@ -38,7 +41,7 @@ class VideoService:
 
     # ===================== CREATE =====================
 
-    async def save_video(self, data: VideoRequest, instructor_id: str):
+    async def save_video(self, data: VideoRequest, instructor_id: str, background_tasks: BackgroundTasks = None):
 
     # ===================== VALIDATE LESSON =====================
         if not data.lesson_id:
@@ -112,22 +115,124 @@ class VideoService:
 
         video_id = video_repository.create(doc)
 
-        if not video_id:
-            raise HTTPException(500, "Save video failed")
+    # =====================  AUTO TRANSCRIPT (Background) =====================
+        video_url = (data.video_url or "").strip()
+        storage_path = (data.storage_path or "").strip()
+        has_transcript = data.transcript and data.transcript.strip()
 
-        # AUTO GENERATE TRANSCRIPT
-        try:
-            await self.generate_transcript(
-                video_id=video_id,
-                instructor_id=instructor_id,
-                language="vi",
-                force=False,
+        if video_id and (video_url or storage_path) and not has_transcript and background_tasks:
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {"$set": {"ai_status": "processing"}},
             )
-            
-        except Exception as e:
-                print("⚠️ Auto transcript failed:", e)
+            background_tasks.add_task(
+                self._background_generate_transcript,
+                video_id=video_id,
+                video_url=video_url,
+                storage_path=storage_path,
+                language="vi",
+            )
+            print(f"Background STT scheduled for video {video_id}")
 
-        return video_id
+        saved = db.videos.find_one({"_id": ObjectId(video_id)})
+
+        return json.loads(json.dumps(saved, default=str))
+
+    # ===================== BACKGROUND STT =====================
+
+    def _background_generate_transcript(
+        self,
+        video_id: str,
+        video_url: str,
+        storage_path: str = "",
+        language: str = "vi",
+    ):
+        print(f"[STT] Bắt đầu tạo transcript cho video {video_id}...")
+        try:
+            download_url = None
+
+            if storage_path:
+                try:
+                    download_url = gcs_client.generate_read_signed_url(storage_path)
+                    print(f" [STT] Dùng signed URL từ storage_path: {storage_path}")
+                except Exception as e:
+                    print(f" [STT] Không tạo được signed URL từ storage_path: {e}")
+
+            if not download_url and video_url:
+                object_name = gcs_client.object_name_from_public_url(video_url)
+                if object_name:
+                    try:
+                        download_url = gcs_client.generate_read_signed_url(object_name)
+                        print(f" [STT] Dùng signed URL từ video_url object: {object_name}")
+                    except Exception as e:
+                        print(f" [STT] Không tạo được signed URL từ video_url: {e}")
+
+            if not download_url:
+                download_url = video_url
+
+            if not download_url:
+                raise RuntimeError("Không có URL nào để tải video")
+
+            transcript, segments = transcribe_from_video_url(download_url, language=language)
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {
+                    "$set": {
+                        "transcript": transcript,
+                        "transcript_segments": segments,
+                        "ai_status": "ready",
+                        "ai_cache": {},
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
+            print(f"[STT] Transcript sẵn sàng cho video {video_id} ({len(transcript)} chars, {len(segments)} segments)")
+
+            # ===================== AUTO GENERATE MERMAID MINDMAP =====================
+            try:
+                from app.modules.ai.gemini_service import generate_mermaid_mindmap_sync
+                from app.modules.ai.ai_schema import LessonContext
+
+                video_doc = db.videos.find_one({"_id": ObjectId(video_id)})
+                ctx = LessonContext(
+                    title=video_doc.get("title", "Video lesson") if video_doc else "Video lesson",
+                    description=video_doc.get("description", "") if video_doc else "",
+                    transcript=transcript,
+                )
+
+                mermaid_code = generate_mermaid_mindmap_sync(ctx, "vi")
+
+                if mermaid_code and "Ý chính 1" not in mermaid_code:
+                    db.ai_mindmaps.update_one(
+                        {"video_id": ObjectId(video_id), "language": "vi"},
+                        {
+                            "$set": {
+                                "mermaid_code": mermaid_code,
+                                "updated_at": datetime.utcnow(),
+                            },
+                            "$setOnInsert": {
+                                "created_at": datetime.utcnow(),
+                            },
+                        },
+                        upsert=True,
+                    )
+                    print(f"[MINDMAP] ✅ Mermaid mindmap đã tạo thành công cho video {video_id}")
+                else:
+                    print(f"[MINDMAP] ⚠️ Gemini không khả dụng, mindmap chưa được tạo cho video {video_id} (thiếu GEMINI_API_KEY?)")
+            except Exception as mindmap_err:
+                print(f"[MINDMAP] ❌ Lỗi auto-generate mindmap cho video {video_id}: {mindmap_err}")
+        except Exception as e:
+            print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")
+            db.videos.update_one(
+                {"_id": ObjectId(video_id)},
+                {
+                    "$set": {
+                        "ai_status": "failed",
+                        "ai_error": str(e),
+                        "updated_at": datetime.utcnow(),
+                    }
+                },
+            )
 
     # ===================== TRANSCRIPT =====================
 

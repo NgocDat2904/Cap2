@@ -54,7 +54,7 @@ def _extract_audio(video_path: str, audio_path: str) -> None:
         "wav",
         audio_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
     if result.returncode != 0:
         err = (result.stderr or "").strip()
         raise RuntimeError(f"ffmpeg tách audio thất bại: {err[:300]}")

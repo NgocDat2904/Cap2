@@ -9,6 +9,7 @@ class GCSClient:
     def __init__(self):
         key_path = os.getenv("GCS_KEY_PATH", "key.json")
         self.client = None
+        self.credentials = None
         try:
             if os.path.exists(key_path):
                 self.client = storage.Client.from_service_account_json(key_path)
