@@ -188,9 +188,9 @@ class VideoService:
             )
             print(f"[STT] Transcript sẵn sàng cho video {video_id} ({len(transcript)} chars, {len(segments)} segments)")
 
-            # ===================== AUTO GENERATE MERMAID MINDMAP =====================
+            # ===================== AUTO GENERATE MARKMAP MINDMAP =====================
             try:
-                from app.modules.ai.gemini_service import generate_mermaid_mindmap_sync
+                from app.modules.ai.gemini_service import generate_markmap_mindmap_sync
                 from app.modules.ai.ai_schema import LessonContext
 
                 video_doc = db.videos.find_one({"_id": ObjectId(video_id)})
@@ -200,14 +200,14 @@ class VideoService:
                     transcript=transcript,
                 )
 
-                mermaid_code = generate_mermaid_mindmap_sync(ctx, "vi")
+                markmap_code = generate_markmap_mindmap_sync(ctx, "vi")
 
-                if mermaid_code and "Ý chính 1" not in mermaid_code:
+                if markmap_code and "Ý chính 1" not in markmap_code:
                     db.ai_mindmaps.update_one(
                         {"video_id": ObjectId(video_id), "language": "vi"},
                         {
                             "$set": {
-                                "mermaid_code": mermaid_code,
+                                "markmap_code": markmap_code,
                                 "updated_at": datetime.utcnow(),
                             },
                             "$setOnInsert": {
@@ -216,7 +216,7 @@ class VideoService:
                         },
                         upsert=True,
                     )
-                    print(f"[MINDMAP] ✅ Mermaid mindmap đã tạo thành công cho video {video_id}")
+                    print(f"[MINDMAP] ✅ Markmap mindmap đã tạo thành công cho video {video_id}")
                 else:
                     print(f"[MINDMAP] ⚠️ Gemini không khả dụng, mindmap chưa được tạo cho video {video_id} (thiếu GEMINI_API_KEY?)")
             except Exception as mindmap_err:

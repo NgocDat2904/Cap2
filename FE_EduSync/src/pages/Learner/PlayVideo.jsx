@@ -266,6 +266,7 @@ const CourseLearningWorkspace = () => {
                 controls
                 className="absolute inset-0 w-full h-full object-contain bg-black"
                 playsInline
+                crossOrigin="anonymous"
                 onTimeUpdate={handleProgress}
                 onEnded={handleEnded}
                 onLoadedMetadata={(e) => {
@@ -413,9 +414,9 @@ const CourseLearningWorkspace = () => {
                   </p>
                 )}
                 {!loadingTimeline &&
-                !timelineError &&
-                aiTimeline &&
-                aiTimeline.length > 0 ? (
+                  !timelineError &&
+                  aiTimeline &&
+                  aiTimeline.length > 0 ? (
                   <div className="relative border-l-2 border-slate-100 ml-3 space-y-6 mt-6">
                     {aiTimeline.map((point, index) => (
                       <div
