@@ -51,43 +51,47 @@ class LearningRepository:
     # ======================
     def count_lessons(self, course_id):
 
-        sections = list(db.sections.find({
-            "course_id": ObjectId(course_id)
-        }))
-
-        section_ids = [s["_id"] for s in sections]
-
         return db.lessons.count_documents({
-            "section_id": {"$in": section_ids}
+            "course_id": ObjectId(course_id)
         })
 
     # ======================
     # COMPLETED LESSONS
     # ======================
-    def count_completed_lessons(self, course_id, user_id):
+    def count_completed_lessons(
+        self,
+        course_id,
+        user_id
+    ):
 
-        sections = list(db.sections.find({
+        lessons = list(db.lessons.find({
             "course_id": ObjectId(course_id)
         }))
 
-        section_ids = [s["_id"] for s in sections]
-
-        lessons = list(db.lessons.find({
-            "section_id": {"$in": section_ids}
-        }))
-
-        lesson_ids = [l["_id"] for l in lessons]
+        lesson_ids = [
+            l["_id"]
+            for l in lessons
+        ]
 
         return db.lesson_progress.count_documents({
-            "lesson_id": {"$in": lesson_ids},
+
+            "lesson_id": {
+                "$in": lesson_ids
+            },
+
             "learner_id": ObjectId(user_id),
+
             "is_completed": True
         })
 
     # ======================
     # COMPLETE LESSON
     # ======================
-    def complete_lesson(self, lesson_id, user_id):
+    def complete_lesson(
+        self,
+        lesson_id,
+        user_id
+    ):
 
         db.lesson_progress.update_one(
             {
@@ -124,7 +128,9 @@ class LearningRepository:
                     "progress_seconds": seconds,
                     "duration": duration,
                     "updated_at": datetime.utcnow(),
-                    "is_completed": seconds >= duration * 0.9
+                    "is_completed": (
+                        seconds >= duration * 0.9
+                    )
                 }
             },
             upsert=True
@@ -133,12 +139,29 @@ class LearningRepository:
     # ======================
     # LAST ACCESS
     # ======================
-    def get_last_access(self, course_id, user_id):
+    def get_last_access(
+        self,
+        course_id,
+        user_id
+    ):
+
+        lessons = list(db.lessons.find({
+            "course_id": ObjectId(course_id)
+        }))
+
+        lesson_ids = [
+            l["_id"]
+            for l in lessons
+        ]
 
         return db.lesson_progress.find_one(
             {
-                "course_id": ObjectId(course_id),
+                "lesson_id": {
+                    "$in": lesson_ids
+                },
+
                 "learner_id": ObjectId(user_id)
             },
+
             sort=[("updated_at", -1)]
         )
