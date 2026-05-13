@@ -78,7 +78,8 @@ export async function enrollFreeCourseAPI(courseId) {
 }
 
 // Thanh toán và đăng ký khóa học có phí
-export async function createPaymentAPI(courseId, token) {
+export async function createPaymentAPI(courseId) {
+  const token = localStorage.getItem("access_token");
   const res = await axios.post(
     `${BASE_URL}/payments/create`,
     { course_id: courseId },
@@ -188,4 +189,4 @@ export const completeLessonAPI = async (courseId, lessonId) => {
   } catch (error) {
     throw new Error(await parseError(error, "Failed to mark lesson as completed"));
   }
-};
+};

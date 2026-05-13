@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, useLocation, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronLeft,
@@ -8,6 +8,7 @@ import {
   faShieldHalved,
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { getCourseDetailAPI, createPaymentAPI } from "../../services/learnerCourseAPI";
 
 const LearnerCheckoutPage = () => {
   const navigate = useNavigate();
@@ -15,14 +16,26 @@ const LearnerCheckoutPage = () => {
   const courseId = location.state?.courseId;
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [courseData, setCourseData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Mock course data - trong thực tế sẽ fetch từ API
-  const courseData = {
-    title: "Khóa học lập trình Web Toàn diện",
-    instructor: "Giảng viên EduSync",
-    price: 999000,
-    thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
-  };
+  useEffect(() => {
+    if (!courseId) {
+      navigate(-1);
+      return;
+    }
+    const loadCourse = async () => {
+      try {
+        const data = await getCourseDetailAPI(courseId);
+        setCourseData(data);
+      } catch (error) {
+        console.error("Failed to load course detail:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadCourse();
+  }, [courseId, navigate]);
 
   const handlePayment = async (e) => {
     e.preventDefault();
@@ -30,12 +43,21 @@ const LearnerCheckoutPage = () => {
     
     setIsProcessing(true);
 
-    // Giả lập xử lý thanh toán
-    setTimeout(() => {
+    try {
+      // Call backend to create VNPAY url
+      const res = await createPaymentAPI(courseId);
+      if (res.checkout_url) {
+        // Redirect to VNPAY portal
+        window.location.href = res.checkout_url;
+      } else {
+        alert("Có lỗi xảy ra khi tạo giao dịch thanh toán.");
+        setIsProcessing(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Hệ thống đang gặp gián đoạn. Vui lòng thử lại sau.");
       setIsProcessing(false);
-      alert("🎉 Thanh toán thành công! Bạn đã được đăng ký vào khóa học.");
-      navigate("/my-courses");
-    }, 2000);
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -44,6 +66,14 @@ const LearnerCheckoutPage = () => {
       currency: "VND",
     }).format(amount);
   };
+
+  if (loading || !courseData) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center text-slate-500">
+        <FontAwesomeIcon icon={faSpinner} spin className="mr-2 text-2xl" /> Đang tải dữ liệu...
+      </div>
+    );
+  }
 
   return (
     <main className="animate-fade-slide-up w-full min-h-screen bg-slate-50 py-8 pb-20">
@@ -58,75 +88,21 @@ const LearnerCheckoutPage = () => {
         </button>
 
         <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-8">
-          Thanh toán an toàn
+          Thanh toán an toàn với VNPAY
         </h1>
 
         <div className="flex flex-col lg:flex-row gap-8 items-start">
           
-          {/* CỘT TRÁI: FORM THANH TOÁN */}
+          {/* CỘT TRÁI: THÔNG BÁO VNPAY (Thay cho form nhập thẻ ảo) */}
           <div className="w-full lg:w-3/5 space-y-6">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-bold text-slate-900">Thông tin thẻ</h2>
-                <FontAwesomeIcon icon={faCreditCard} className="text-blue-600 text-2xl" />
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm text-center">
+              <div className="flex items-center justify-center mb-4">
+                <FontAwesomeIcon icon={faCreditCard} className="text-blue-600 text-4xl" />
               </div>
-
-              <form className="space-y-5" onSubmit={handlePayment}>
-                {/* Số thẻ */}
-                <div>
-                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Số thẻ tín dụng / Ghi nợ
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="1234 5678 9012 3456"
-                      required
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all tracking-widest placeholder:font-medium placeholder:tracking-normal"
-                    />
-                    <FontAwesomeIcon icon={faCreditCard} className="absolute left-4 top-4 text-slate-400" />
-                  </div>
-                </div>
-
-                {/* Tên chủ thẻ */}
-                <div>
-                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                    Tên in trên thẻ
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="NGUYEN VAN A"
-                    required
-                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase placeholder:normal-case placeholder:font-medium"
-                  />
-                </div>
-
-                {/* Ngày hết hạn & CVV */}
-                <div className="grid grid-cols-2 gap-5">
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Ngày hết hạn
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="MM/YY"
-                      required
-                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center placeholder:font-medium"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
-                      Mã bảo mật (CVV)
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      required
-                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center placeholder:font-medium"
-                    />
-                  </div>
-                </div>
-              </form>
+              <h2 className="text-xl font-bold text-slate-900 mb-4">Chuyển hướng đến cổng thanh toán</h2>
+              <p className="text-slate-600 mb-6">
+                Bạn sẽ được chuyển hướng an toàn đến <strong>cổng thanh toán VNPAY</strong> để hoàn tất giao dịch. Bạn có thể sử dụng thẻ ATM nội địa, thẻ tín dụng hoặc quét mã QR qua ứng dụng ngân hàng.
+              </p>
             </div>
 
             {/* Thông báo bảo mật */}
@@ -135,13 +111,13 @@ const LearnerCheckoutPage = () => {
               <div>
                 <h4 className="text-sm font-bold">Bảo mật tuyệt đối</h4>
                 <p className="text-xs mt-1.5 opacity-90 leading-relaxed font-medium">
-                  Hệ thống sử dụng mã hóa SSL 256-bit chuẩn quốc tế. Thông tin thẻ của bạn không bao giờ được lưu trữ trên máy chủ của EduSync.
+                  Hệ thống sử dụng cổng thanh toán VNPAY chuẩn quốc tế. Thông tin thẻ của bạn không bao giờ được lưu trữ trên máy chủ của EduSync.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG (ĐÃ DỌN SẠCH THUẾ/GIÁ GỐC) */}
+          {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG */}
           <div className="w-full lg:w-2/5">
             <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
               <h3 className="text-xl font-bold text-slate-900 mb-6">
@@ -151,7 +127,7 @@ const LearnerCheckoutPage = () => {
               {/* Box Khóa học */}
               <div className="flex gap-4 mb-8 pb-6 border-b border-slate-100">
                 <img
-                  src={courseData.thumbnail}
+                  src={courseData.thumbnail || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"}
                   alt={courseData.title}
                   className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-slate-100 shadow-sm"
                 />
@@ -160,7 +136,7 @@ const LearnerCheckoutPage = () => {
                     {courseData.title}
                   </h4>
                   <p className="text-xs font-medium text-slate-500">
-                    Bởi {courseData.instructor}
+                    Bởi {courseData.instructor?.name || "Giảng viên EduSync"}
                   </p>
                 </div>
               </div>
@@ -184,18 +160,18 @@ const LearnerCheckoutPage = () => {
                   {isProcessing ? (
                     <>
                       <FontAwesomeIcon icon={faSpinner} spin className="text-xl" /> 
-                      <span>Đang xử lý giao dịch...</span>
+                      <span>Đang kết nối VNPAY...</span>
                     </>
                   ) : (
                     <>
                       <FontAwesomeIcon icon={faLock} className="text-lg" /> 
-                      <span>Hoàn tất thanh toán</span>
+                      <span>Thanh toán qua VNPAY</span>
                     </>
                   )}
                 </button>
 
                 <p className="text-center text-[11px] font-medium text-slate-400 leading-relaxed px-2">
-                  Bằng cách nhấn Hoàn tất, bạn đồng ý với Điều khoản Dịch vụ và Chính sách Hoàn tiền của EduSync.
+                  Bằng cách nhấn thanh toán, bạn đồng ý với Điều khoản Dịch vụ và Chính sách Hoàn tiền của EduSync.
                 </p>
               </div>
             </div>
