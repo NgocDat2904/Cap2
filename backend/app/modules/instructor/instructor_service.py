@@ -468,16 +468,22 @@ class InstructorService:
             datetime.utcnow() - timedelta(days=30)
         )
 
-        active_students = set([
+        active_students = set()
 
-            str(e["user_id"])
+        recent_progress = list(
+            db.lesson_progress.find({
 
-            for e in enrollments
+                "updated_at": {
+                    "$gte": one_month_ago
+                }
+            })
+        )
 
-            if e.get("last_accessed_at")
-            and e["last_accessed_at"] >= one_month_ago
-        ])
+        for progress in recent_progress:
 
+            active_students.add(
+                str(progress["user_id"])
+            )
         active_learners = len(active_students)
 
         # =========================================
@@ -554,9 +560,9 @@ class InstructorService:
         # ====================================
         completed_lessons = db.lesson_progress.count_documents({
 
-            "course_id": course_id,
+            "course_id": ObjectId(course_id),
 
-            "user_id": user_id,
+            "user_id": ObjectId(user_id),
 
             "is_completed": True
         })
@@ -568,6 +574,8 @@ class InstructorService:
         progress = int(
             (completed_lessons / total_lessons) * 100
         )
+        if progress > 100:
+            progress = 100
 
         return progress
         
