@@ -47,9 +47,9 @@ const LearnerCoursesPage = () => {
   const priceRanges = [
     { id: "all", name: "Tất cả mức giá" },
     { id: "free", name: "Miễn phí" },
-    { id: "under_25", name: "Dưới $25" },
-    { id: "25_to_50", name: "$25 - $50" },
-    { id: "over_50", name: "Trên $50" },
+    { id: "under_500k", name: "Dưới 500.000₫" },
+    { id: "500k_to_1m", name: "500.000₫ - 1.000.000₫" },
+    { id: "over_1m", name: "Trên 1.000.000₫" },
   ];
 
   useEffect(() => {
@@ -93,19 +93,19 @@ const LearnerCoursesPage = () => {
     return courses.filter((c) => {
       const p = Number(c.price || 0);
       if (selectedPrice === "free") return p === 0;
-      if (selectedPrice === "under_25") return p > 0 && p < 25;
-      if (selectedPrice === "25_to_50") return p >= 25 && p <= 50;
-      if (selectedPrice === "over_50") return p > 50;
+      if (selectedPrice === "under_500k") return p > 0 && p < 500000;
+      if (selectedPrice === "500k_to_1m") return p >= 500000 && p <= 1000000;
+      if (selectedPrice === "over_1m") return p > 1000000;
       return true;
     });
   }, [courses, selectedPrice]);
 
-  // Hàm format tiền tệ USD
+  // Hàm format tiền tệ VND
   const formatCurrency = (amount) => {
     if (amount === 0) return "Miễn phí";
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 

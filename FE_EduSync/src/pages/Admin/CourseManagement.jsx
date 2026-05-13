@@ -297,7 +297,7 @@ const AdminCourseManagement = () => {
                       {course.status === "pending" || course.status === "draft" ? (
                         <span className="text-xs font-bold text-amber-600">Đang chờ định giá</span>
                       ) : (
-                        <span className="text-sm font-black text-slate-700">{course.price === 0 ? "Miễn phí" : `$${course.price}`}</span>
+                        <span className="text-sm font-black text-slate-700">{course.price === 0 ? "Miễn phí" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(course.price)}</span>
                       )}
                     </td>
                     <td className="p-5">{renderStatusBadge(course.status)}</td>

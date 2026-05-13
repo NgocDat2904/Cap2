@@ -15,20 +15,20 @@ import {
 // MOCK DATA MỚI: CHUẨN MÔ HÌNH TRUNG TÂM NỘI BỘ (100% DOANH THU CỦA ADMIN)
 // =========================================================================
 const revenueStats = {
-  totalRevenue: 125430.0, // Tổng doanh thu chảy vào túi Trung tâm
+  totalRevenue: 1254300000, // Tổng doanh thu chảy vào túi Trung tâm (VND)
   totalSales: 2450, // Tổng số lượt bán khóa học
   activeLearners: 1850, // Số học viên đang học trong tháng
   growth: 15.4, // % Tăng trưởng doanh thu
 };
 
-// Dữ liệu biểu đồ doanh thu 6 tháng gần nhất
+// Dữ liệu biểu đồ doanh thu 6 tháng gần nhất (VND)
 const chartData = [
-  { month: "Th10", revenue: 15000 },
-  { month: "Th11", revenue: 18500 },
-  { month: "Th12", revenue: 14200 },
-  { month: "Th01", revenue: 22000 },
-  { month: "Th02", revenue: 28400 },
-  { month: "Th03", revenue: 27330 },
+  { month: "Th10", revenue: 150000000 },
+  { month: "Th11", revenue: 185000000 },
+  { month: "Th12", revenue: 142000000 },
+  { month: "Th01", revenue: 220000000 },
+  { month: "Th02", revenue: 284000000 },
+  { month: "Th03", revenue: 273300000 },
 ];
 const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
 
@@ -38,36 +38,36 @@ const topCourses = [
     id: "CRS-101",
     title: "Thực chiến ReactJS – Dự án EduSync",
     instructor: "Tran Viet Anh",
-    price: 49.99,
+    price: 499000,
     sales: 845,
-    totalEarned: 42241.55,
+    totalEarned: 421650000,
     thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
   },
   {
     id: "CRS-089",
     title: "Khóa học IELTS 7.0 Cấp tốc",
     instructor: "Ms. Mai English",
-    price: 99.0,
+    price: 990000,
     sales: 512,
-    totalEarned: 50688.0,
+    totalEarned: 506880000,
     thumbnail: "https://images.unsplash.com/photo-1546410531-bea4edad81eb?w=800&q=80",
   },
   {
     id: "CRS-055",
     title: "Làm chủ Python cho Khoa học Dữ liệu",
     instructor: "David Pham",
-    price: 65.5,
+    price: 655000,
     sales: 320,
-    totalEarned: 20960.0,
+    totalEarned: 209600000,
     thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
   },
   {
     id: "CRS-112",
     title: "Thiết kế UI/UX với Figma 2026",
     instructor: "Huong Design",
-    price: 35.0,
+    price: 350000,
     sales: 215,
-    totalEarned: 7525.0,
+    totalEarned: 75250000,
     thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
   },
 ];
@@ -76,9 +76,9 @@ const AdminRevenueReport = () => {
   const [timeRange, setTimeRange] = useState("6months");
 
   const formatMoney = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 

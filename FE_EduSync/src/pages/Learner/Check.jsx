@@ -20,7 +20,7 @@ const LearnerCheckoutPage = () => {
   const courseData = {
     title: "Khóa học lập trình Web Toàn diện",
     instructor: "Giảng viên EduSync",
-    price: 99.99,
+    price: 999000,
     thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
   };
 
@@ -39,9 +39,9 @@ const LearnerCheckoutPage = () => {
   };
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 
