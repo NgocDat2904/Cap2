@@ -221,3 +221,48 @@ async def get_progress(
             status_code=500,
             detail=str(e)
         )
+
+
+# ======================
+# GET COURSE PROGRESS
+# ======================
+@router.get("/courses/{course_id}/progress")
+async def get_course_progress(
+    course_id: str,
+    user=Depends(require_role(["learner"]))
+):
+    """
+    Lấy danh sách lesson_ids đã hoàn thành cho 1 khóa học
+    Response: {
+        "completed_lesson_ids": ["lesson1", "lesson2", ...]
+    }
+    """
+    try:
+        if not ObjectId.is_valid(course_id):
+            raise HTTPException(400, "Invalid course_id")
+
+        # Tìm tất cả lesson_progress của user trong course này
+        progress_docs = list(db.lesson_progress.find({
+            "course_id": ObjectId(course_id),
+            "user_id": ObjectId(user["id"]),
+            "is_completed": True
+        }))
+
+        # Lấy danh sách lesson_id đã hoàn thành
+        completed_lesson_ids = [
+            str(doc["lesson_id"])
+            for doc in progress_docs
+            if doc.get("is_completed")
+        ]
+
+        return {
+            "completed_lesson_ids": completed_lesson_ids
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

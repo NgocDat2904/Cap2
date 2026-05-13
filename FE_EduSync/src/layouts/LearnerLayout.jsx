@@ -4,7 +4,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import myLogo from "../assets/logo.png";
 import Footer from "../components/LearnerFooter";
 import { logoutAPI } from "../services/authService";
-import NotificationDropdown from "../components/NotificationDropdown";
+import NotificationBell from "../components/common/NotificationBell";
 import { getProfileAPI } from "../services/userAPI";
 import {
   faSearch,
@@ -146,7 +146,7 @@ const LearnerLayout = () => {
           <div className="flex items-center gap-4 sm:gap-6 text-gray-600 shrink-0">
             {isLoggedIn ? (
               <>
-                <NotificationDropdown />
+                <NotificationBell notificationsPageUrl="/notifications" />
 
                 <div className="relative" ref={profileMenuRef}>
                   <button

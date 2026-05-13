@@ -16,24 +16,23 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
           {/* Cột 1: Thông tin thương hiệu */}
           <div className="md:col-span-1">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-4">
               <img src={myLogo} alt="EduSync Logo" className="w-12 h-12" />
               <span className="font-semibold text-2xl text-white tracking-widest font-irish">
                 EduSync
               </span>
             </div>
             <p className="text-sm text-gray-400 mb-5 leading-relaxed">
-              A next-generation online learning platform using AI to transform
-              videos into smart, interactive courses.
+              Nền tảng học trực tuyến thế hệ mới, ứng dụng AI để chuyển đổi video thành các khóa học tương tác thông minh.
             </p>
             <div className="flex gap-4 text-gray-400">
-              <a href="#" className="hover:text-blue-900 transition-colors">
+              <a href="#" className="hover:text-blue-400 transition-colors">
                 <FontAwesomeIcon icon={faFacebook} size="lg" />
               </a>
-              <a href="#" className="hover:text-blue-900 transition-colors">
+              <a href="#" className="hover:text-blue-400 transition-colors">
                 <FontAwesomeIcon icon={faTwitter} size="lg" />
               </a>
-              <a href="#" className="hover:text-blue-900 transition-colors">
+              <a href="#" className="hover:text-blue-400 transition-colors">
                 <FontAwesomeIcon icon={faLinkedin} size="lg" />
               </a>
             </div>
@@ -42,7 +41,7 @@ const Footer = () => {
           {/* Cột 2: Đường dẫn nhanh */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Explore
+              Khám phá
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li>
@@ -50,7 +49,7 @@ const Footer = () => {
                   to="/courses"
                   className="hover:text-white transition-colors"
                 >
-                  Course Catalog
+                  Danh mục khóa học
                 </Link>
               </li>
               <li>
@@ -58,7 +57,7 @@ const Footer = () => {
                   to="/instructors"
                   className="hover:text-white transition-colors"
                 >
-                  Featured Instructors
+                  Giảng viên tiêu biểu
                 </Link>
               </li>
               <li>
@@ -66,12 +65,12 @@ const Footer = () => {
                   to="/about"
                   className="hover:text-white transition-colors"
                 >
-                  About Us
+                  Về chúng tôi
                 </Link>
               </li>
               <li>
                 <Link to="/blog" className="hover:text-white transition-colors">
-                  Blog
+                  Tin tức & Blog
                 </Link>
               </li>
             </ul>
@@ -80,12 +79,12 @@ const Footer = () => {
           {/* Cột 3: Hỗ trợ */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Support
+              Hỗ trợ
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li>
                 <Link to="/faq" className="hover:text-white transition-colors">
-                  FAQ
+                  Câu hỏi thường gặp
                 </Link>
               </li>
               <li>
@@ -93,7 +92,7 @@ const Footer = () => {
                   to="/terms"
                   className="hover:text-white transition-colors"
                 >
-                  Terms of Service
+                  Điều khoản dịch vụ
                 </Link>
               </li>
               <li>
@@ -101,7 +100,7 @@ const Footer = () => {
                   to="/privacy"
                   className="hover:text-white transition-colors"
                 >
-                  Privacy Policy
+                  Chính sách bảo mật
                 </Link>
               </li>
               <li>
@@ -109,7 +108,7 @@ const Footer = () => {
                   to="/guide"
                   className="hover:text-white transition-colors"
                 >
-                  User Guide
+                  Hướng dẫn sử dụng
                 </Link>
               </li>
             </ul>
@@ -118,7 +117,7 @@ const Footer = () => {
           {/* Cột 4: Liên hệ */}
           <div>
             <h4 className="font-bold text-white mb-6 uppercase text-sm tracking-wider">
-              Contact
+              Liên hệ
             </h4>
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
@@ -140,8 +139,8 @@ const Footer = () => {
         </div>
 
         {/* Copyright */}
-        <div className="pt-8 border-t border-gray-200 text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} EduSync. All rights reserved.
+        <div className="pt-8 border-t border-gray-800 text-center text-sm text-gray-500">
+          © {new Date().getFullYear()} EduSync. Bản quyền thuộc về EduSync.
         </div>
       </div>
     </footer>

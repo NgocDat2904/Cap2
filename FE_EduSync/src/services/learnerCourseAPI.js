@@ -117,6 +117,22 @@ export const postReplyAPI = async (questionId, content, token) => {
   return res.data;
 };
 
+// XÓA CÂU HỎI (Question)
+export const deleteQuestionAPI = async (questionId, token) => {
+  const res = await axios.delete(`${BASE_URL}/questions/${questionId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// XÓA REPLY (Câu trả lời)
+export const deleteReplyAPI = async (questionId, replyId, token) => {
+  const res = await axios.delete(`${BASE_URL}/questions/${questionId}/reply/${replyId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
 // Lấy danh sách khóa học phổ biến
 export const getPopularCoursesAPI = async () => {
   const token = localStorage.getItem("access_token");
@@ -124,4 +140,42 @@ export const getPopularCoursesAPI = async () => {
     headers: { Authorization: `Bearer ${token}` }
   });
   return res.data;
+};
+
+// ==========================================
+// LEARNING PROGRESS APIs
+// ==========================================
+
+/**
+ * Lấy danh sách lesson IDs đã hoàn thành cho 1 khóa học
+ * Endpoint: GET /learning/courses/{course_id}/progress
+ */
+export const getCourseProgressAPI = async (courseId) => {
+  const token = localStorage.getItem("access_token");
+  try {
+    const res = await axios.get(`${BASE_URL}/learning/courses/${courseId}/progress`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return res.data; // { completed_lesson_ids: ["id1", "id2", ...] }
+  } catch (error) {
+    throw new Error(await parseError(error, "Failed to load course progress"));
+  }
+};
+
+/**
+ * Đánh dấu 1 bài học đã hoàn thành
+ * Endpoint: POST /learning/courses/{course_id}/lessons/{lesson_id}/complete
+ */
+export const completeLessonAPI = async (courseId, lessonId) => {
+  const token = localStorage.getItem("access_token");
+  try {
+    const res = await axios.post(
+      `${BASE_URL}/learning/courses/${courseId}/lessons/${lessonId}/complete`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return res.data; // { message: "Lesson completed" }
+  } catch (error) {
+    throw new Error(await parseError(error, "Failed to mark lesson as completed"));
+  }
 };

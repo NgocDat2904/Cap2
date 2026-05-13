@@ -9,7 +9,7 @@ import {
   faArrowRight,
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import myLogo from "../assets/logo.png"; // Nhớ trỏ đúng đường dẫn logo mẹ nhé
+import myLogo from "../assets/logo.png"; 
 
 const ForceChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");

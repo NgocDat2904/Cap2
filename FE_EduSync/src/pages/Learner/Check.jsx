@@ -1,334 +1,191 @@
-//trang thanh toán
-
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faLock,
-  faShieldHalved,
-  faCreditCard,
-  faWallet,
-  faTag,
+  faArrowLeft,
   faCheckCircle,
-  faChevronLeft,
+  faCreditCard,
+  faShieldAlt,
 } from "@fortawesome/free-solid-svg-icons";
 
 const LearnerCheckoutPage = () => {
-  const [paymentMethod, setPaymentMethod] = useState("credit-card");
-  const [coupon, setCoupon] = useState("");
-  const [isCouponApplied, setIsCouponApplied] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const courseId = location.state?.courseId;
 
-  // Mock dữ liệu đơn hàng
-  const orderData = {
-    courseTitle: "Python Programming: From Basics to Advanced for Beginners",
-    instructor: "John Smith",
-    thumbnail:
-      "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=300&q=80",
-    originalPrice: 59.99,
-    price: 49.99,
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // Mock course data - trong thực tế sẽ fetch từ API
+  const courseData = {
+    title: "Khóa học lập trình Web",
+    instructor: "Giảng viên EduSync",
+    price: 99.99,
+    thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
   };
 
-  const discountAmount = isCouponApplied ? 8.99 : 0;
-  const totalAmount = orderData.price - discountAmount;
+  const handlePayment = async () => {
+    setIsProcessing(true);
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-    }).format(amount);
-  };
-
-  const handleApplyCoupon = (e) => {
-    e.preventDefault();
-    if (coupon.trim().toUpperCase() === "EDUSYNC2026") {
-      setIsCouponApplied(true);
-    } else {
-      alert("Invalid or expired coupon code!");
-      setIsCouponApplied(false);
-    }
-  };
-
-  const handleCheckout = (e) => {
-    e.preventDefault();
-    // Giả lập loading và chuyển hướng sang trang Thành công
-    alert("Payment successful! Redirecting to your course...");
+    // Giả lập xử lý thanh toán
+    setTimeout(() => {
+      setIsProcessing(false);
+      alert("Thanh toán thành công! Bạn đã được đăng ký vào khóa học.");
+      navigate("/my-courses");
+    }, 2000);
   };
 
   return (
-    <main className="animate-fade-slide-up w-full min-h-screen bg-slate-50 py-8 pb-20">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Nút quay lại */}
-        <Link
-          to="/courses/1"
-          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors mb-6"
+    <div className="animate-fade-slide-up w-full min-h-screen bg-slate-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <button
+          onClick={() => navigate(-1)}
+          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-8 font-semibold"
         >
-          <FontAwesomeIcon icon={faChevronLeft} /> Back to course
-        </Link>
+          <FontAwesomeIcon icon={faArrowLeft} /> Quay lại
+        </button>
 
-        <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-8">
-          Secure Checkout
+        <h1 className="text-3xl font-extrabold text-slate-900 mb-8">
+          Thanh toán
         </h1>
 
-        <div className="flex flex-col lg:flex-row gap-8 items-start">
-          {/* CỘT TRÁI: PHƯƠNG THỨC THANH TOÁN */}
-          <div className="w-full lg:w-3/5 space-y-6">
-            {/* Box Chọn Phương thức */}
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">
-                Payment Method
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Payment Form */}
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
+              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
+                <FontAwesomeIcon icon={faCreditCard} className="text-blue-600" />
+                Thông tin thanh toán
               </h2>
 
               <div className="space-y-4">
-                {/* Lựa chọn Thẻ tín dụng */}
-                <label
-                  className={`flex items-start gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "credit-card" ? "border-blue-600 bg-blue-50/50" : "border-slate-100 hover:border-blue-200"}`}
-                >
-                  <div className="flex items-center h-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Số thẻ
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="1234 5678 9012 3456"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      Ngày hết hạn
+                    </label>
                     <input
-                      type="radio"
-                      name="payment_method"
-                      value="credit-card"
-                      checked={paymentMethod === "credit-card"}
-                      onChange={() => setPaymentMethod("credit-card")}
-                      className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      type="text"
+                      placeholder="MM/YY"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-slate-800">
-                        Credit / Debit Card
-                      </span>
-                      <div className="flex gap-2 text-slate-400 text-xl">
-                        <FontAwesomeIcon
-                          icon={faCreditCard}
-                          className="text-blue-600"
-                        />
-                      </div>
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      Supports Visa, Mastercard, JCB, Amex
-                    </p>
-
-                    {/* Form nhập thẻ (Chỉ hiện khi chọn Thẻ) */}
-                    {paymentMethod === "credit-card" && (
-                      <div className="mt-6 space-y-4 animate-fade-slide-up">
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                            Cardholder Name
-                          </label>
-                          <input
-                            type="text"
-                            placeholder="NGUYEN VAN A"
-                            className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors uppercase"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                            Card Number
-                          </label>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              placeholder="0000 0000 0000 0000"
-                              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors tracking-widest"
-                            />
-                            <FontAwesomeIcon
-                              icon={faCreditCard}
-                              className="absolute left-3.5 top-3 text-slate-400"
-                            />
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                              Expiry Date
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="MM/YY"
-                              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            />
-                          </div>
-                          <div>
-                            <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wider">
-                              Security Code (CVC)
-                            </label>
-                            <input
-                              type="text"
-                              placeholder="123"
-                              className="w-full px-4 py-2.5 bg-white border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </label>
-
-                {/* Lựa chọn Ví điện tử */}
-                <label
-                  className={`flex items-start gap-4 p-5 rounded-2xl border-2 cursor-pointer transition-all ${paymentMethod === "momo" ? "border-blue-600 bg-blue-50/50" : "border-slate-100 hover:border-blue-200"}`}
-                >
-                  <div className="flex items-center h-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                      CVV
+                    </label>
                     <input
-                      type="radio"
-                      name="payment_method"
-                      value="momo"
-                      checked={paymentMethod === "momo"}
-                      onChange={() => setPaymentMethod("momo")}
-                      className="w-5 h-5 text-blue-600 focus:ring-blue-500 border-gray-300"
+                      type="text"
+                      placeholder="123"
+                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     />
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-bold text-slate-800">
-                        Digital Wallet / PayPal
-                      </span>
-                      <FontAwesomeIcon
-                        icon={faWallet}
-                        className="text-pink-600 text-xl"
-                      />
-                    </div>
-                    <p className="text-xs text-slate-500">
-                      Fast payment via QR code
-                    </p>
+                </div>
 
-                    {paymentMethod === "momo" && (
-                      <div className="mt-4 p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-600 text-center animate-fade-slide-up">
-                        You will be redirected to a secure payment gateway to
-                        scan the QR code.
-                      </div>
-                    )}
-                  </div>
-                </label>
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Tên chủ thẻ
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="NGUYEN VAN A"
+                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
               </div>
-            </div>
 
-            {/* Thông điệp bảo mật */}
-            <div className="flex items-start gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100 text-emerald-800">
-              <FontAwesomeIcon
-                icon={faShieldHalved}
-                className="text-xl mt-0.5"
-              />
-              <div>
-                <h4 className="text-sm font-bold">100% Secure Payment</h4>
-                <p className="text-xs mt-1 leading-relaxed opacity-90">
-                  EduSync uses industry-standard 256-bit SSL encryption. Your
-                  card information is never stored on our servers.
+              <div className="mt-6 flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 mt-1" />
+                <p className="text-sm text-slate-700">
+                  <span className="font-bold">Thanh toán an toàn:</span> Thông tin của bạn được mã hóa và bảo mật tuyệt đối.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG */}
-          <div className="w-full lg:w-2/5">
-            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
-              <h2 className="text-xl font-bold text-slate-900 mb-6">
-                Order Summary
-              </h2>
+          {/* Order Summary */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-24">
+              <h3 className="text-lg font-bold text-slate-900 mb-6">
+                Tóm tắt đơn hàng
+              </h3>
 
-              {/* Card khóa học mini */}
-              <div className="flex gap-4 mb-6 pb-6 border-b border-slate-100">
+              <div className="flex items-start gap-4 mb-6 pb-6 border-b border-slate-100">
                 <img
-                  src={orderData.thumbnail}
-                  alt="Course Thumbnail"
-                  className="w-20 h-20 rounded-xl object-cover shrink-0 border border-slate-200"
+                  src={courseData.thumbnail}
+                  alt={courseData.title}
+                  className="w-20 h-20 rounded-lg object-cover"
                 />
-                <div>
-                  <h3 className="font-bold text-sm text-slate-800 leading-snug line-clamp-2 mb-1">
-                    {orderData.courseTitle}
-                  </h3>
+                <div className="flex-1 min-w-0">
+                  <h4 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1">
+                    {courseData.title}
+                  </h4>
                   <p className="text-xs text-slate-500">
-                    Instructor: {orderData.instructor}
+                    {courseData.instructor}
                   </p>
                 </div>
               </div>
 
-              {/* Chi tiết giá */}
               <div className="space-y-3 mb-6">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Original price:</span>
-                  <span className="text-slate-500 line-through">
-                    {formatCurrency(orderData.originalPrice)}
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Giá gốc:</span>
+                  <span className="font-semibold text-slate-900">
+                    ${courseData.price}
                   </span>
                 </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-700 font-bold">Sale price:</span>
-                  <span className="text-slate-800 font-bold">
-                    {formatCurrency(orderData.price)}
-                  </span>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Thuế:</span>
+                  <span className="font-semibold text-slate-900">$0.00</span>
                 </div>
-                {isCouponApplied && (
-                  <div className="flex justify-between items-center text-sm text-emerald-600 font-bold animate-fade-slide-up">
-                    <span className="flex items-center gap-1.5">
-                      <FontAwesomeIcon icon={faCheckCircle} /> Coupon discount:
-                    </span>
-                    <span>-{formatCurrency(discountAmount)}</span>
-                  </div>
-                )}
               </div>
 
-              {/* Nhập mã giảm giá */}
-              <form
-                onSubmit={handleApplyCoupon}
-                className="mb-6 pb-6 border-b border-slate-100"
+              <div className="flex justify-between items-center pt-4 border-t border-slate-200 mb-6">
+                <span className="text-lg font-bold text-slate-900">Tổng cộng:</span>
+                <span className="text-2xl font-black text-blue-600">
+                  ${courseData.price}
+                </span>
+              </div>
+
+              <button
+                onClick={handlePayment}
+                disabled={isProcessing}
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 active:scale-95 flex items-center justify-center gap-2"
               >
-                <label className="block text-xs font-bold text-slate-700 mb-2">
-                  Discount Code (Enter: EDUSYNC2026)
-                </label>
-                <div className="flex gap-2">
-                  <div className="relative flex-1">
-                    <FontAwesomeIcon
-                      icon={faTag}
-                      className="absolute left-3.5 top-3 text-slate-400 text-sm"
-                    />
-                    <input
-                      type="text"
-                      value={coupon}
-                      onChange={(e) => setCoupon(e.target.value)}
-                      placeholder="Enter code here..."
-                      className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors uppercase"
-                      disabled={isCouponApplied}
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    className={`px-4 py-2 font-bold text-sm rounded-xl transition-colors ${isCouponApplied ? "bg-slate-200 text-slate-400 cursor-not-allowed" : "bg-slate-800 text-white hover:bg-slate-900 active:scale-95"}`}
-                    disabled={isCouponApplied}
-                  >
-                    Apply
-                  </button>
-                </div>
-              </form>
+                {isProcessing ? (
+                  <>
+                    <FontAwesomeIcon icon={faCheckCircle} spin />
+                    Đang xử lý...
+                  </>
+                ) : (
+                  <>
+                    <FontAwesomeIcon icon={faCheckCircle} />
+                    Hoàn tất thanh toán
+                  </>
+                )}
+              </button>
 
-              {/* Tổng tiền & Nút chốt */}
-              <div>
-                <div className="flex justify-between items-end mb-6">
-                  <span className="text-base font-bold text-slate-700">
-                    Total:
-                  </span>
-                  <span className="text-3xl font-black text-blue-700">
-                    {formatCurrency(totalAmount)}
-                  </span>
-                </div>
-
-                <button
-                  onClick={handleCheckout}
-                  className="w-full py-4 bg-blue-600 text-white font-black text-lg rounded-2xl shadow-lg shadow-blue-600/30 hover:bg-blue-700 hover:shadow-blue-600/40 hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-3"
-                >
-                  <FontAwesomeIcon icon={faLock} /> Complete Payment
-                </button>
-
-                <p className="text-center text-[10px] text-slate-400 mt-4 px-4 leading-relaxed">
-                  By clicking Complete, you agree to EduSync's Terms of Service
-                  and Privacy Policy.
-                </p>
-              </div>
+              <p className="text-xs text-center text-slate-500 mt-4">
+                Bằng cách thanh toán, bạn đồng ý với{" "}
+                <a href="#" className="text-blue-600 hover:underline">
+                  Điều khoản dịch vụ
+                </a>
+              </p>
             </div>
           </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 };
 

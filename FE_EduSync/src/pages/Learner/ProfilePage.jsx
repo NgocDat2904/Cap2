@@ -22,7 +22,7 @@ const LearnerProfilePage = () => {
   const [profileData, setProfileData] = useState({
     fullName: "",
     email: "",
-    avatarUrl: "https://i.pravatar.cc/150?img=11",
+    avatarUrl: "",
     phone: "",
     dob: "",
     gender: "",
@@ -43,7 +43,7 @@ const LearnerProfilePage = () => {
         const data = await getProfileAPI(token);
         setProfileData((prev) => ({ ...prev, ...data }));
       } catch (error) {
-        console.error("Error fetching profile:", error);
+        console.error("Lỗi khi tải hồ sơ:", error);
       } finally {
         setIsLoading(false);
       }
@@ -57,10 +57,10 @@ const LearnerProfilePage = () => {
     try {
       const token = localStorage.getItem("access_token");
       await updateProfileAPI(profileData, token);
-      alert("Your profile has been updated successfully!");
+      alert("Cập nhật thông tin hồ sơ thành công.");
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Failed to save.");
+      console.error("Lỗi khi lưu hồ sơ:", error);
+      alert("Không thể lưu thông tin. Vui lòng kiểm tra lại.");
     } finally {
       setIsSaving(false);
     }
@@ -74,7 +74,7 @@ const LearnerProfilePage = () => {
   const handleAvatarClick = () => fileInputRef.current.click();
 
   // =========================================================================
-  //  HÀM UPLOAD AVATAR ĐÃ ĐƯỢC DÙNG SERVICE
+  //  HÀM UPLOAD AVATAR 
   // =========================================================================
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -88,17 +88,15 @@ const LearnerProfilePage = () => {
       setIsUploadingAvatar(true);
       const token = localStorage.getItem("access_token");
 
-      // Giao việc gọi API cho  Service xử lý
       const data = await uploadAvatarAPI(file, token);
 
-      // Nhận kết quả và cập nhật lại Avatar thật
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Avatar uploaded successfully!");
+        alert("Cập nhật ảnh đại diện thành công.");
       }
     } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload avatar! Please try again.");
+      console.error("Lỗi tải lên:", error);
+      alert("Tải ảnh đại diện thất bại. Vui lòng thử lại.");
     } finally {
       setIsUploadingAvatar(false);
     }
@@ -111,10 +109,10 @@ const LearnerProfilePage = () => {
         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-200 pb-8">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              My Profile
+              Hồ sơ Cá nhân
             </h1>
             <p className="text-slate-500 font-medium mt-1">
-              Manage your personal information and track your development progress.
+              Quản lý thông tin cá nhân và thiết lập tài khoản của bạn trên hệ thống.
             </p>
           </div>
           <button
@@ -127,19 +125,19 @@ const LearnerProfilePage = () => {
             ) : (
               <FontAwesomeIcon icon={faSave} />
             )}
-            {isSaving ? "Saving..." : "Save Changes"}
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
 
         {/* BỐ CỤC CHÍNH 2 CỘT */}
         <div className="flex flex-col lg:flex-row gap-8 items-start relative z-10">
-          {/* CỘT TRÁI: TỔNG QUAN HỒ SƠ & GAMIFICATION */}
+          {/* CỘT TRÁI: TỔNG QUAN HỒ SƠ */}
           <div className="w-full lg:w-1/3 space-y-8 sticky top-24 relative z-10">
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center relative overflow-visible">
               <div className="relative inline-block mb-6">
                 <img
                   src={profileData.avatarUrl}
-                  alt="Learner Avatar"
+                  alt="Ảnh đại diện học viên"
                   className={`w-32 h-32 rounded-3xl object-cover border-4 border-white shadow-xl ring-2 ring-blue-100 transition-opacity ${isUploadingAvatar ? "opacity-50" : "opacity-100"}`}
                 />
 
@@ -157,7 +155,7 @@ const LearnerProfilePage = () => {
                   onClick={handleAvatarClick}
                   disabled={isUploadingAvatar}
                   className={`absolute -bottom-2 -right-2 w-10 h-10 text-white rounded-xl flex items-center justify-center shadow-lg transition-colors border-2 border-white ${isUploadingAvatar ? "bg-slate-400 cursor-not-allowed" : "bg-blue-600 hover:bg-blue-700 active:scale-95"}`}
-                  title="Change avatar"
+                  title="Thay đổi ảnh đại diện"
                 >
                   <FontAwesomeIcon icon={faCamera} />
                 </button>
@@ -171,7 +169,7 @@ const LearnerProfilePage = () => {
               </div>
 
               <h2 className="text-2xl font-black text-slate-900">
-                {profileData.fullName || "EduSync Learner"}
+                {profileData.fullName || "Học viên EduSync"}
               </h2>
 
               <div className="border-t border-slate-100 my-8"></div>
@@ -183,7 +181,7 @@ const LearnerProfilePage = () => {
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Account Email
+                    Email tài khoản
                   </p>
                   <p className="text-sm font-semibold text-slate-800 mt-0.5">
                     {profileData.email}
@@ -201,10 +199,10 @@ const LearnerProfilePage = () => {
                 {[
                   {
                     id: "personal",
-                    label: "Personal Information",
+                    label: "Thông tin cá nhân",
                     icon: faUserCircle,
                   },
-                  { id: "security", label: "Account Settings", icon: faLock },
+                  { id: "security", label: "Bảo mật tài khoản", icon: faLock },
                 ].map((tab) => (
                   <button
                     key={tab.id}
@@ -227,30 +225,30 @@ const LearnerProfilePage = () => {
                           icon={faUserCircle}
                           className="text-slate-400"
                         />{" "}
-                        Full Name
+                        Họ và tên <span className="text-red-500">*</span>
                       </label>
                       <input
                         type="text"
                         name="fullName"
                         value={profileData.fullName}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors outline-none"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
                         <FontAwesomeIcon
-                          icon={faBirthdayCake}
+                          icon={faPhone}
                           className="text-slate-400"
                         />{" "}
-                        Date of Birth
+                        Số điện thoại
                       </label>
                       <input
-                        type="date"
-                        name="dob"
-                        value={profileData.dob}
+                        type="tel"
+                        name="phone"
+                        value={profileData.phone}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors outline-none"
                       />
                     </div>
                     <div>
@@ -259,35 +257,34 @@ const LearnerProfilePage = () => {
                           icon={faVenusMars}
                           className="text-slate-400"
                         />{" "}
-                        Gender
+                        Giới tính
                       </label>
                       <select
                         name="gender"
                         value={profileData.gender}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors appearance-none cursor-pointer"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors appearance-none cursor-pointer outline-none"
                       >
-                        <option value="">Select Gender</option>
-                        <option value="male">Male</option>
-                        <option value="female">Female</option>
-                        <option value="other">Other</option>
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="male">Nam</option>
+                        <option value="female">Nữ</option>
+                        <option value="other">Khác</option>
                       </select>
                     </div>
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider flex items-center gap-2">
                         <FontAwesomeIcon
-                          icon={faPhone}
+                          icon={faBirthdayCake}
                           className="text-slate-400"
                         />{" "}
-                        Phone Number
+                        Ngày sinh
                       </label>
                       <input
-                        type="tel"
-                        name="phone"
-                        value={profileData.phone}
+                        type="date"
+                        name="dob"
+                        value={profileData.dob}
                         onChange={handleInputChange}
-                        placeholder="+84 905 123 456"
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors outline-none"
                       />
                     </div>
                     <div className="sm:col-span-2">
@@ -296,14 +293,14 @@ const LearnerProfilePage = () => {
                           icon={faMapMarkerAlt}
                           className="text-slate-400"
                         />{" "}
-                        Address
+                        Địa chỉ lưu trú
                       </label>
                       <input
                         type="text"
                         name="address"
                         value={profileData.address}
                         onChange={handleInputChange}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors"
+                        className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 transition-colors outline-none"
                       />
                     </div>
                   </form>
@@ -317,37 +314,37 @@ const LearnerProfilePage = () => {
                           icon={faLock}
                           className="text-amber-500"
                         />{" "}
-                        Change Password
+                        Thay đổi mật khẩu
                       </h3>
                       <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                         <div className="sm:col-span-2 relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Current Password
+                            Mật khẩu hiện tại
                           </label>
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
                           />
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            New Password
+                            Mật khẩu mới
                           </label>
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
                           />
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Confirm Password
+                            Xác nhận mật khẩu mới
                           </label>
                           <input
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors"
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
                           />
                         </div>
                         <div className="sm:col-span-2 flex justify-end">
@@ -355,7 +352,7 @@ const LearnerProfilePage = () => {
                             type="button"
                             className="px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 transition-all active:scale-95 flex items-center gap-2.5"
                           >
-                            Update Secure Password
+                            Cập nhật mật khẩu
                           </button>
                         </div>
                       </form>

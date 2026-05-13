@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBell,
@@ -10,122 +11,161 @@ import {
   faCircle,
   faTrashCan,
   faFilter,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import { getNotificationsAPI, markNotificationReadAPI } from "../../services/notificationAPI";
 
 // =========================================================================
-// MOCK DATA: DANH SÁCH THÔNG BÁO ĐẦY ĐỦ
+// HELPER: Format thời gian thông báo
 // =========================================================================
-const initialNotifications = [
-  {
-    id: 1,
-    type: "qa",
-    title: "Giảng viên đã trả lời bình luận của bạn",
-    content:
-      "Thầy Trần Việt Anh đã trả lời câu hỏi của bạn trong bài 'React Hooks cơ bản'. Hãy vào xem ngay!",
-    time: "10 phút trước",
-    date: "27/03/2026",
-    isRead: false,
-    link: "/course/reactjs/lesson-5",
-  },
-  {
-    id: 2,
-    type: "system",
-    title: "New course access granted successfully",
-    content:
-      "Admin Trung tâm vừa cấp cho bạn quyền truy cập khóa 'Kỹ năng mềm 101'. Chúc bạn học tập thật tốt!",
-    time: "2 giờ trước",
-    date: "27/03/2026",
-    isRead: false,
-    link: "/course/soft-skills",
-  },
-  {
-    id: 3,
-    type: "course_update",
-    title: "Bài giảng mới vừa được thêm vào",
-    content:
-      "Khóa học 'Java Backend' vừa cập nhật thêm 2 video thực hành API. Tiến độ của bạn đã bị lùi lại, hãy vào học bù nhé.",
-    time: "Hôm qua lúc 15:30",
-    date: "26/03/2026",
-    isRead: true,
-    link: "/course/java-backend",
-  },
-  {
-    id: 4,
-    type: "gamification",
-    title: "Đừng bỏ cuộc nhé! Hào quang đang chờ đón",
-    content:
-      "Đã 3 ngày bạn chưa vào hệ thống học tập. Tiếp tục bài học đang dang dở ngay thôi nào!",
-    time: "3 ngày trước",
-    date: "24/03/2026",
-    isRead: true,
-    link: "/dashboard",
-  },
-  {
-    id: 5,
-    type: "system",
-    title: "Thông báo bảo trì hệ thống định kỳ",
-    content:
-      "The EduSync system will perform maintenance and server upgrades from 23:00 on 28/03 to 02:00 on 29/03. Please arrange your study time accordingly.",
-    time: "1 tuần trước",
-    date: "20/03/2026",
-    isRead: true,
-    link: "#",
-  },
-];
+const formatNotificationTime = (isoDateString) => {
+  if (!isoDateString) return "Vừa xong";
+  try {
+    const date = new Date(isoDateString);
+    if (isNaN(date)) return "Vừa xong";
+
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMin = Math.floor(diffMs / 60000);
+    const diffH = Math.floor(diffMs / 3600000);
+    const diffD = Math.floor(diffMs / 86400000);
+
+    if (diffMin < 1) return "Vừa xong";
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    if (diffH < 24) return `${diffH} giờ trước`;
+    if (diffD === 1) return "Hôm qua";
+    if (diffD < 7) return `${diffD} ngày trước`;
+    if (diffD < 30) return `${Math.floor(diffD / 7)} tuần trước`;
+    return `${Math.floor(diffD / 30)} tháng trước`;
+  } catch {
+    return "Vừa xong";
+  }
+};
+
+// Helper format date
+const formatDate = (isoDateString) => {
+  if (!isoDateString) return "";
+  try {
+    const date = new Date(isoDateString);
+    return date.toLocaleDateString('vi-VN');
+  } catch {
+    return "";
+  }
+};
 
 const LearnerNotifications = () => {
-  const [notifications, setNotifications] = useState(initialNotifications);
-  const [filterType, setFilterType] = useState("all"); // all, unread, qa, system, course_update
+  const navigate = useNavigate();
+  const [notifications, setNotifications] = useState([]);
+  const [filterType, setFilterType] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // =========================================================================
+  // FETCH NOTIFICATIONS FROM API
+  // =========================================================================
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const token = localStorage.getItem("access_token");
+        if (!token) {
+          navigate("/login");
+          return;
+        }
+
+        const data = await getNotificationsAPI(token);
+        setNotifications(data || []);
+      } catch (err) {
+        console.error("Failed to fetch notifications:", err);
+        setError(err.message || "Không thể tải danh sách thông báo");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, [navigate]);
 
   // =========================================================================
   // LOGIC XỬ LÝ
   // =========================================================================
-  const unreadCount = notifications.filter((n) => !n.isRead).length;
+  const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const filteredNotifications = notifications.filter((n) => {
     if (filterType === "all") return true;
-    if (filterType === "unread") return !n.isRead;
+    if (filterType === "unread") return !n.is_read;
     return n.type === filterType;
   });
 
-  const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
-    );
+  const markAsRead = async (id) => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (token) {
+        await markNotificationReadAPI(id, token);
+        // Cập nhật local state
+        setNotifications(
+          notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map((n) => ({ ...n, isRead: true })));
+  const markAllAsRead = async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) return;
+
+      // Gọi API đánh dấu đọc từng thông báo chưa đọc
+      const unreadNotifs = notifications.filter((n) => !n.is_read);
+      for (const notif of unreadNotifs) {
+        await markNotificationReadAPI(notif.id, token);
+      }
+
+      // Cập nhật local state
+      setNotifications(notifications.map((n) => ({ ...n, is_read: true })));
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+    }
   };
 
   const deleteNotification = (e, id) => {
-    e.stopPropagation(); // Ngăn sự kiện click lan ra thẻ div ngoài (tránh bị nhảy link)
-    if (window.confirm("Bạn có chắc chắn muốn xóa thông báo này?")) {
+    e.stopPropagation();
+    if (window.confirm("Xác nhận: Bạn có chắc chắn muốn xóa thông báo này khỏi hộp thư?")) {
+      // TODO: Gọi API xóa thông báo nếu backend hỗ trợ
       setNotifications(notifications.filter((n) => n.id !== id));
     }
   };
 
-  // Render Icon tùy theo loại thông báo
   const renderNotificationIcon = (type) => {
     switch (type) {
+      case "question_reply":
+      case "qna_reply":
       case "qa":
         return (
           <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faCommentDots} />
           </div>
         );
+      case "course_approved":
+      case "course_rejected":
       case "system":
         return (
           <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faBullhorn} />
           </div>
         );
+      case "new_course":
+      case "new_enroll":
       case "course_update":
         return (
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faBookOpen} />
           </div>
         );
+      case "achievement":
       case "gamification":
         return (
           <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xl">
@@ -148,10 +188,10 @@ const LearnerNotifications = () => {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
             <FontAwesomeIcon icon={faBell} className="text-blue-600" />
-            Tất cả thông báo
+            Hộp thư thông báo
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Cập nhật những tin tức mới nhất từ giảng viên và hệ thống EduSync.
+            Cập nhật những tin tức mới nhất từ giảng viên và nền tảng EduSync.
           </p>
         </div>
 
@@ -168,7 +208,7 @@ const LearnerNotifications = () => {
 
       {/* BỐ CỤC CHÍNH */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm overflow-hidden flex flex-col md:flex-row">
-        {/* CỘT TRÁI: BỘ LỌC (SIDEBAR) */}
+        {/* CỘT TRÁI: BỘ LỌC */}
         <div className="w-full md:w-64 bg-slate-50/50 border-b md:border-b-0 md:border-r border-slate-100 p-6 shrink-0">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
             <FontAwesomeIcon icon={faFilter} /> Lọc thông báo
@@ -182,8 +222,8 @@ const LearnerNotifications = () => {
                 count: unreadCount,
                 isRed: true,
               },
-              { id: "qa", label: "Hỏi & Đáp (Q&A)" },
-              { id: "course_update", label: "Cập nhật khóa học" },
+              { id: "qa", label: "Hỏi đáp (Q&A)" },
+              { id: "course_update", label: "Cập nhật nội dung" },
               { id: "system", label: "Hệ thống" },
             ].map((filter) => (
               <button
@@ -210,29 +250,48 @@ const LearnerNotifications = () => {
 
         {/* CỘT PHẢI: DANH SÁCH THÔNG BÁO */}
         <div className="flex-1 min-h-[500px]">
-          {filteredNotifications.length > 0 ? (
+          {loading ? (
+            <div className="flex flex-col items-center justify-center h-full py-20">
+              <FontAwesomeIcon icon={faSpinner} spin className="text-4xl text-blue-500 mb-4" />
+              <p className="text-slate-500 font-semibold">Đang tải thông báo...</p>
+            </div>
+          ) : error ? (
+            <div className="flex flex-col items-center justify-center h-full py-20 px-4">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mb-4 text-red-500 text-2xl">
+                <FontAwesomeIcon icon={faBell} />
+              </div>
+              <p className="text-red-600 font-bold mb-2">Không thể tải thông báo</p>
+              <p className="text-slate-500 text-sm">{error}</p>
+            </div>
+          ) : filteredNotifications.length > 0 ? (
             <div className="divide-y divide-slate-100">
               {filteredNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  onClick={() => markAsRead(notif.id)}
+                  onClick={() => {
+                    markAsRead(notif.id);
+                    // Điều hướng nếu có course_id hoặc question_id
+                    if (notif.type === "question_reply" && notif.course_id) {
+                      navigate(`/courses/${notif.course_id}`, { state: { activeLeftTab: "q&a" } });
+                    } else if ((notif.type === "new_course" || notif.type === "course_approved") && notif.course_id) {
+                      navigate(`/courses/${notif.course_id}`);
+                    }
+                  }}
                   className={`p-5 sm:p-6 flex gap-4 sm:gap-5 cursor-pointer transition-all group ${
-                    !notif.isRead
+                    !notif.is_read
                       ? "bg-blue-50/40 hover:bg-blue-50/80"
                       : "bg-white hover:bg-slate-50"
                   }`}
                 >
-                  {/* Icon loại thông báo */}
                   {renderNotificationIcon(notif.type)}
 
-                  {/* Nội dung */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-4">
                       <h4
-                        className={`text-base sm:text-lg mb-1 pr-6 relative ${!notif.isRead ? "font-black text-slate-900" : "font-bold text-slate-700"}`}
+                        className={`text-base sm:text-lg mb-1 pr-6 relative ${!notif.is_read ? "font-black text-slate-900" : "font-bold text-slate-700"}`}
                       >
                         {notif.title}
-                        {!notif.isRead && (
+                        {!notif.is_read && (
                           <FontAwesomeIcon
                             icon={faCircle}
                             className="absolute -right-1 top-2 text-[8px] text-blue-600"
@@ -240,20 +299,19 @@ const LearnerNotifications = () => {
                         )}
                       </h4>
                       <p className="text-xs font-bold text-slate-400 shrink-0 hidden sm:block whitespace-nowrap">
-                        {notif.date}
+                        {formatDate(notif.created_at)}
                       </p>
                     </div>
 
                     <p className="text-sm text-slate-600 leading-relaxed mb-3">
-                      {notif.content}
+                      {notif.message}
                     </p>
 
                     <div className="flex items-center justify-between mt-2">
                       <p className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg inline-block">
-                        {notif.time}
+                        {formatNotificationTime(notif.created_at)}
                       </p>
 
-                      {/* Nút thao tác (Chỉ hiện khi Hover) */}
                       <div className="flex items-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => deleteNotification(e, notif.id)}
@@ -272,22 +330,21 @@ const LearnerNotifications = () => {
               ))}
             </div>
           ) : (
-            // Trạng thái trống
+            // TRẠNG THÁI TRỐNG (EMPTY STATE)
             <div className="flex flex-col items-center justify-center h-full py-20 px-4 text-center">
               <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-6 shadow-inner text-slate-300 text-4xl">
                 <FontAwesomeIcon icon={faBell} />
               </div>
               <h3 className="text-xl font-extrabold text-slate-800 mb-2">
-                No notifications
+                Không có thông báo nào
               </h3>
               <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">
-                It's quiet here! You don't have any notifications in
-                này. Khi có cập nhật mới, chúng sẽ xuất hiện ở đây.
+                Hộp thư của bạn hiện đang trống. Các thông báo cập nhật từ hệ thống hoặc giảng viên sẽ xuất hiện tại đây.
               </p>
             </div>
           )}
 
-          {/* Phân trang (Giả lập) */}
+          {/* PHÂN TRANG */}
           {filteredNotifications.length > 0 && (
             <div className="p-6 border-t border-slate-100 text-center bg-slate-50/50">
               <button className="px-6 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold text-sm rounded-xl hover:bg-slate-50 transition shadow-sm">

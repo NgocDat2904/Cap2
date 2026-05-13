@@ -8,7 +8,7 @@ import {
   faPlay,
   faHeart,
 } from "@fortawesome/free-solid-svg-icons";
-import { getCourseDetailAPI } from "../../services/learnerCourseAPI";
+import { getCourseDetailAPI, getCourseProgressAPI, completeLessonAPI } from "../../services/learnerCourseAPI";
 
 import CourseMindmap from "../../components/CourseMindmap";
 import CourseSummary from "../../components/CourseSummary";
@@ -31,6 +31,7 @@ const CourseLearningWorkspace = () => {
   const [activeLesson, setActiveLesson] = useState(null);
   const [videoDuration, setVideoDuration] = useState("00:00");
   const playerRef = React.useRef(null);
+  const [completedLessonIds, setCompletedLessonIds] = useState([]);
 
   const [aiTimeline, setAiTimeline] = useState([]);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
@@ -43,7 +44,7 @@ const CourseLearningWorkspace = () => {
 
     const loadCourseDetail = async () => {
       if (!courseId) {
-        setCourseError("Thiếu courseId.");
+        setCourseError("Không tìm thấy khóa học.");
         setLoadingCourse(false);
         return;
       }
@@ -52,9 +53,20 @@ const CourseLearningWorkspace = () => {
       try {
         const data = await getCourseDetailAPI(courseId);
         if (!cancelled) setCourseDetail(data);
+
+        // Load learning progress (completed lessons)
+        try {
+          const progressData = await getCourseProgressAPI(courseId);
+          if (!cancelled) {
+            setCompletedLessonIds(progressData.completed_lesson_ids || []);
+          }
+        } catch (err) {
+          console.warn("Failed to load progress:", err);
+          // Không báo lỗi cho user, chỉ log
+        }
       } catch (error) {
         if (!cancelled)
-          setCourseError(error.message || "Failed to load course data");
+          setCourseError(error.message || "Không thể tải dữ liệu khóa học");
       } finally {
         if (!cancelled) setLoadingCourse(false);
       }
@@ -80,7 +92,7 @@ const CourseLearningWorkspace = () => {
       title: lesson.title || "Untitled lesson",
       duration: lesson.duration || "00:00",
       description: lesson.description || "",
-      transcript: lesson.transcript || 
+      transcript: lesson.transcript ||
       lesson.videos?.[0]?.transcript ||
       "",
       image: lesson.image || courseDetail?.thumbnail || "",
@@ -93,11 +105,12 @@ const CourseLearningWorkspace = () => {
         (lesson.videos && lesson.videos[0]?.video_url) ||
         "",
 
-      completed: false,
+      // Kiểm tra lesson đã hoàn thành chưa dựa trên completedLessonIds
+      completed: completedLessonIds.includes(String(lesson.id)),
       timeline: [],
       views: lesson.views || 0,
     }));
-  }, [courseDetail]);
+  }, [courseDetail, completedLessonIds]);
 
   useEffect(() => {
     if (playlist.length === 0) {
@@ -195,8 +208,26 @@ const CourseLearningWorkspace = () => {
   const handleEnded = async () => {
     try {
       await trackViewAPI(activeVideoId, videoRef.current.duration, true);
-
       console.log("✅ Full video counted");
+
+      // Đánh dấu lesson hiện tại đã hoàn thành
+      if (activeLesson?.id && courseId) {
+        try {
+          await completeLessonAPI(courseId, activeLesson.id);
+          console.log("✅ Lesson marked as completed");
+
+          // Cập nhật local state ngay lập tức
+          setCompletedLessonIds((prev) => {
+            const lessonIdStr = String(activeLesson.id);
+            if (!prev.includes(lessonIdStr)) {
+              return [...prev, lessonIdStr];
+            }
+            return prev;
+          });
+        } catch (err) {
+          console.error("Failed to mark lesson completed:", err);
+        }
+      }
     } catch (err) {
       console.error(err);
     }
@@ -220,7 +251,7 @@ const CourseLearningWorkspace = () => {
     return (
       <div className="w-full py-24 text-center text-slate-500">
         <FontAwesomeIcon icon={faClockRotateLeft} className="mr-2" />
-        Loading course content...
+        Đang tải nội dung khóa học...
       </div>
     );
   }
@@ -234,7 +265,7 @@ const CourseLearningWorkspace = () => {
   if (!activeLesson) {
     return (
       <div className="w-full py-24 text-center text-slate-500">
-        Khóa học chưa có bài giảng để phát.
+        Khóa học này chưa có bài giảng.
       </div>
     );
   }
@@ -293,7 +324,7 @@ const CourseLearningWorkspace = () => {
                   icon={faPlayCircle}
                   className="text-5xl opacity-30"
                 />
-                <p>Bài giảng này chưa có URL phát video hợp lệ.</p>
+                <p>Bài giảng này chưa có video.</p>
               </div>
             )}
           </div>
@@ -321,7 +352,7 @@ const CourseLearningWorkspace = () => {
                   </p>
                 </div>
                 <button className="ml-4 px-4 py-1.5 border-[1.5px] border-slate-800 text-slate-800 font-bold text-xs rounded-full hover:bg-slate-800 hover:text-white transition-all active:scale-95">
-                  Follow
+                  Theo dõi
                 </button>
               </div>
             </div>
@@ -329,13 +360,19 @@ const CourseLearningWorkspace = () => {
 
           <div className="w-full mt-2">
             <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
-              {["Summary", "Mindmap", "Quiz", "Chatbot", "Q&A"].map((tab) => (
+              {[
+                { id: "summary", label: "Tóm tắt" },
+                { id: "mindmap", label: "Sơ đồ tư duy" },
+                { id: "quiz", label: "Trắc nghiệm" },
+                { id: "chatbot", label: "Trò chuyện AI" },
+                { id: "q&a", label: "Hỏi đáp" }
+              ].map((tab) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveLeftTab(tab.toLowerCase())}
-                  className={`px-6 py-3.5 text-sm font-bold capitalize transition-all border-b-2 whitespace-nowrap ${activeLeftTab === tab.toLowerCase() ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
+                  key={tab.id}
+                  onClick={() => setActiveLeftTab(tab.id)}
+                  className={`px-6 py-3.5 text-sm font-bold capitalize transition-all border-b-2 whitespace-nowrap ${activeLeftTab === tab.id ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
                 >
-                  {tab}
+                  {tab.label}
                 </button>
               ))}
             </div>
@@ -389,13 +426,13 @@ const CourseLearningWorkspace = () => {
                 onClick={() => setActiveRightTab("timeline")}
                 className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeRightTab === "timeline" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
-                Timeline
+                Mốc thời gian
               </button>
               <button
                 onClick={() => setActiveRightTab("videos")}
                 className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeRightTab === "videos" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
-                Videos
+                Danh sách Video
               </button>
             </div>
 
@@ -406,11 +443,11 @@ const CourseLearningWorkspace = () => {
                     icon={faClockRotateLeft}
                     className="text-blue-600"
                   />{" "}
-                  Key Moments (AI)
+                  Các mốc quan trọng (AI)
                 </h4>
                 {loadingTimeline && (
                   <p className="text-sm text-slate-500 italic text-center mt-6">
-                    Generating key moments...
+                    Đang tạo các mốc quan trọng...
                   </p>
                 )}
                 {timelineError && (
@@ -445,7 +482,7 @@ const CourseLearningWorkspace = () => {
                   !loadingTimeline &&
                   !timelineError && (
                     <p className="text-sm text-slate-500 text-center mt-10 italic">
-                      Chưa có dữ liệu timeline AI cho video này.
+                      Chưa có dữ liệu mốc thời gian cho video này.
                     </p>
                   )
                 )}
@@ -507,7 +544,7 @@ const CourseLearningWorkspace = () => {
                           </span>
                         </div>
                       </button>
-                      <div
+                      {/* <div
                         onClick={(e) => handleToggleLike(e, lesson.id)}
                         className="absolute right-3 p-2 rounded-full hover:bg-slate-200 transition-colors cursor-pointer z-10"
                         title={isLiked ? "Bỏ yêu thích" : "Yêu thích"}
@@ -516,7 +553,7 @@ const CourseLearningWorkspace = () => {
                           icon={faHeart}
                           className={`text-[15px] transition-all duration-300 ${isLiked ? "text-red-500 scale-110 drop-shadow-sm" : "text-slate-300 hover:text-red-400"}`}
                         />
-                      </div>
+                      </div> */}
                     </div>
                   );
                 })}
