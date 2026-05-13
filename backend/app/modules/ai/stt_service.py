@@ -1,4 +1,8 @@
 import os
+
+# Disable symlinks in huggingface_hub to prevent WinError 1314 on Windows
+os.environ["HF_HUB_DISABLE_SYMLINKS"] = "1"
+
 import shutil
 import subprocess
 import tempfile
