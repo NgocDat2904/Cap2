@@ -12,6 +12,7 @@ import LearnerCheckoutPage from "../pages/Learner/Check";
 import LearnerProfilePage from "../pages/Learner/ProfilePage";
 import LearnerNotifications from "../pages/Learner/Notifications";
 import InstructorPublicProfile from "../pages/Learner/InstructorProfile";
+import PaymentResult from "../pages/Learner/PaymentResult";
 
 const LearnerRoutes = () => {
   return (
@@ -28,6 +29,8 @@ const LearnerRoutes = () => {
           path="instructors/:instructorId"
           element={<InstructorPublicProfile />}
         />
+        {/* Payment result can be accessed freely (it uses query params to display status) */}
+        <Route path="payment-result" element={<PaymentResult />} />
       </Route>
 
       {/* Đã đăng nhập: học bài, giỏ hàng, profile, yêu thích, thông báo, khóa của tôi */}
