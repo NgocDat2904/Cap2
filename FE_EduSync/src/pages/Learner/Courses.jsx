@@ -33,23 +33,23 @@ const LearnerCoursesPage = () => {
   // MOCK DATA: Dữ liệu giả lập
   // =========================================================================
   const categories = [
-    { id: "all", name: "All" },
-    { id: "frontend", name: "Frontend Web Development" },
-    { id: "backend", name: "Backend Web Development" },
-    { id: "mobile", name: "Mobile Programming" },
-    { id: "ai", name: "AI & Machine Learning" },
-    { id: "data_analysis", name: "Data Analysis" },
-    { id: "data_engineer", name: "Data Engineering" },
-    { id: "uiux", name: "UI/UX Design" },
-    { id: "ba", name: "Business Analysis " },
+    { id: "all", name: "Tất cả" },
+    { id: "frontend", name: "Lập trình Frontend" },
+    { id: "backend", name: "Lập trình Backend" },
+    { id: "mobile", name: "Lập trình Mobile" },
+    { id: "ai", name: "AI & Học máy" },
+    { id: "data_analysis", name: "Phân tích dữ liệu" },
+    { id: "data_engineer", name: "Kỹ sư dữ liệu" },
+    { id: "uiux", name: "Thiết kế UI/UX" },
+    { id: "ba", name: "Phân tích kinh doanh" },
   ];
 
   const priceRanges = [
-    { id: "all", name: "All prices" },
-    { id: "free", name: "Free" },
-    { id: "under_25", name: "Under $25" },
+    { id: "all", name: "Tất cả mức giá" },
+    { id: "free", name: "Miễn phí" },
+    { id: "under_25", name: "Dưới $25" },
     { id: "25_to_50", name: "$25 - $50" },
-    { id: "over_50", name: "Over $50" },
+    { id: "over_50", name: "Trên $50" },
   ];
 
   useEffect(() => {
@@ -74,7 +74,7 @@ const LearnerCoursesPage = () => {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e.message || "Failed to load courses");
+          setError(e.message || "Không thể tải danh sách khóa học");
           setCourses([]);
           setTotal(0);
         }
@@ -102,7 +102,7 @@ const LearnerCoursesPage = () => {
 
   // Hàm format tiền tệ USD
   const formatCurrency = (amount) => {
-    if (amount === 0) return "Free";
+    if (amount === 0) return "Miễn phí";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -113,13 +113,13 @@ const LearnerCoursesPage = () => {
     <div className="animate-fade-slide-up w-full">
       {/* Nút bật tắt Filter trên Mobile */}
       <div className="lg:hidden mb-4 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-slate-800">All Courses</h1>
+        <h1 className="text-2xl font-bold text-slate-800">Tất cả khóa học</h1>
         <button
           onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
           className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 rounded-lg text-slate-700 font-semibold shadow-sm hover:bg-slate-50 transition-all"
         >
           <FontAwesomeIcon icon={faFilter} />
-          {isMobileFilterOpen ? "Close filters" : "Filter results"}
+          {isMobileFilterOpen ? "Đóng bộ lọc" : "Bộ lọc"}
         </button>
       </div>
 
@@ -138,17 +138,17 @@ const LearnerCoursesPage = () => {
                   icon={faFilter}
                   className="text-blue-600 text-sm"
                 />
-                Filters
+                Bộ lọc
               </h2>
               <button className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors">
-                Clear filters
+                Xóa bộ lọc
               </button>
             </div>
 
             {/* Lọc theo Danh mục */}
             <div className="mb-8">
               <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-wider">
-                Category
+                Danh mục
               </h3>
               <div className="space-y-3">
                 {categories.map((cat) => (
@@ -181,7 +181,7 @@ const LearnerCoursesPage = () => {
             {/* Lọc theo Mức giá */}
             <div>
               <h3 className="font-bold text-slate-800 mb-4 uppercase text-sm tracking-wider">
-                Price Range
+                Mức giá
               </h3>
               <div className="space-y-3">
                 {priceRanges.map((price) => (
@@ -221,10 +221,10 @@ const LearnerCoursesPage = () => {
           <div className="hidden lg:flex justify-between items-end mb-6">
             <div>
               <h1 className="text-2xl font-extrabold text-slate-800">
-                {total.toLocaleString()} courses found
+                Tìm thấy {total.toLocaleString()} khóa học
               </h1>
               <p className="text-slate-500 text-sm mt-1 font-medium">
-                Discover new skills with our expert instructors
+                Khám phá kỹ năng mới với giảng viên chuyên gia của chúng tôi
               </p>
             </div>
             <div className="relative w-[360px]">
@@ -238,7 +238,7 @@ const LearnerCoursesPage = () => {
                   setPage(1);
                   setSearchKeyword(e.target.value);
                 }}
-                placeholder="Search courses..."
+                placeholder="Tìm kiếm khóa học..."
                 className="w-full pl-9 pr-3 py-2.5 border border-slate-200 rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               />
             </div>
@@ -249,7 +249,7 @@ const LearnerCoursesPage = () => {
             {loading && (
               <div className="col-span-full text-center text-slate-500 py-12">
                 <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-                Loading courses...
+                Đang tải khóa học...
               </div>
             )}
             {!loading && error && (
@@ -272,7 +272,7 @@ const LearnerCoursesPage = () => {
                     />
                   ) : (
                     <div className="w-full h-full bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
-                      <span className="text-slate-600 font-semibold">No image</span>
+                      <span className="text-slate-600 font-semibold">Không có ảnh</span>
                     </div>
                   )}
                   {/* Lớp overlay đen mờ hiện ra khi hover */}
@@ -354,7 +354,7 @@ const LearnerCoursesPage = () => {
                       to={`/courses/${course.id}`}
                       className="text-sm font-bold text-blue-900 bg-blue-50 hover:bg-blue-900 hover:text-white px-4 py-2 rounded-lg transition-colors"
                     >
-                      View details
+                      Chi tiết
                     </Link>
                   </div>
                 </div>

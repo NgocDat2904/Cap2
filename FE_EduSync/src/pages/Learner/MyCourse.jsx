@@ -5,38 +5,36 @@ import {
   faPlayCircle,
   faCheckCircle,
   faSearch,
-  faCertificate,
-  faStar,
   faFolderOpen,
   faClock,
   faSpinner,
   faExclamationCircle,
   faGraduationCap,
 } from "@fortawesome/free-solid-svg-icons";
-import { getMyCoursesAPI } from "../../services/learnerCourseAPI";
+import { getMyCoursesAPI, getCourseDetailAPI } from "../../services/learnerCourseAPI";
 
 // =========================================================================
 // HELPER: Format ngày giờ lastAccessed
 // =========================================================================
 const formatLastAccessed = (isoStr) => {
-  if (!isoStr) return "Not started yet";
+  if (!isoStr) return "Chưa bắt đầu";
   try {
     const d = new Date(isoStr);
-    if (isNaN(d)) return "Not started yet";
+    if (isNaN(d)) return "Chưa bắt đầu";
     const now = new Date();
     const diffMs = now - d;
     const diffMin = Math.floor(diffMs / 60000);
     const diffH = Math.floor(diffMs / 3600000);
     const diffD = Math.floor(diffMs / 86400000);
-    if (diffMin < 1) return "Just now";
-    if (diffMin < 60) return `${diffMin} mins ago`;
-    if (diffH < 24) return `${diffH} hours ago`;
-    if (diffD === 1) return "Yesterday";
-    if (diffD < 7) return `${diffD} days ago`;
-    if (diffD < 30) return `${Math.floor(diffD / 7)} weeks ago`;
-    return `${Math.floor(diffD / 30)} months ago`;
+    if (diffMin < 1) return "Vừa xong";
+    if (diffMin < 60) return `${diffMin} phút trước`;
+    if (diffH < 24) return `${diffH} giờ trước`;
+    if (diffD === 1) return "Hôm qua";
+    if (diffD < 7) return `${diffD} ngày trước`;
+    if (diffD < 30) return `${Math.floor(diffD / 7)} tuần trước`;
+    return `${Math.floor(diffD / 30)} tháng trước`;
   } catch {
-    return "Not started yet";
+    return "Chưa bắt đầu";
   }
 };
 
@@ -68,9 +66,10 @@ const LearnerMyCoursesPage = () => {
     setError(null);
     try {
       const data = await getMyCoursesAPI();
+      console.log("API My Courses Response:", data); // Log để kiểm tra data structure
       setAllCourses(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err.message || "Cannot load course.");
+      setError(err.message || "Không thể tải danh sách khóa học.");
     } finally {
       setLoading(false);
     }
@@ -79,6 +78,30 @@ const LearnerMyCoursesPage = () => {
   useEffect(() => {
     fetchMyCourses();
   }, []);
+
+  // =========================================================================
+  // HANDLE CONTINUE LEARNING - Navigate thẳng vào video lesson
+  // =========================================================================
+  const handleContinueLearning = async (courseId) => {
+    try {
+      // Fetch course detail để lấy lesson đầu tiên
+      const courseDetail = await getCourseDetailAPI(courseId);
+      const firstLesson = courseDetail?.lessons?.[0];
+
+      if (firstLesson?.id) {
+        // Navigate thẳng vào video
+        navigate(`/courses/${courseId}/lessons/${firstLesson.id}`);
+      } else {
+        // Fallback nếu không có lesson
+        console.warn("No lessons found for this course");
+        navigate(`/courses/${courseId}`);
+      }
+    } catch (err) {
+      console.error("Failed to load course detail:", err);
+      // Fallback về course detail page
+      navigate(`/courses/${courseId}`);
+    }
+  };
 
   // =========================================================================
   // LỌC CLIENT-SIDE
@@ -102,7 +125,7 @@ const LearnerMyCoursesPage = () => {
   // =========================================================================
   const totalCourses = allCourses.length;
   const completedCount = allCourses.filter((c) => c.status === "completed").length;
-  const inProgressCount = allCourses.filter((c) => c.status !== "completed").length;
+  const inProgressCount = allCourses.filter((c) => c.status === "in_progress").length;
 
   // =========================================================================
   // RENDER
@@ -114,10 +137,10 @@ const LearnerMyCoursesPage = () => {
         {/* TIÊU ĐỀ TRANG */}
         <div className="mb-6 border-b border-slate-200/80 pb-6">
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            My Courses
+            Khóa học của tôi
           </h1>
           <p className="text-slate-500 font-medium mt-2">
-            Continue your learning journey and track your progress.
+            Tiếp tục hành trình học tập và theo dõi tiến độ của bạn.
           </p>
         </div>
 
@@ -125,9 +148,9 @@ const LearnerMyCoursesPage = () => {
         {!loading && !error && totalCourses > 0 && (
           <div className="grid grid-cols-3 gap-4 mb-6">
             {[
-              { label: "Total Courses", value: totalCourses, color: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
-              { label: "In Progress", value: inProgressCount, color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
-              { label: "Completed", value: completedCount, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
+              { label: "Tổng số khóa", value: totalCourses, color: "text-blue-600", bg: "bg-blue-50 border-blue-200" },
+              { label: "Đang học", value: inProgressCount, color: "text-amber-600", bg: "bg-amber-50 border-amber-200" },
+              { label: "Hoàn thành", value: completedCount, color: "text-emerald-600", bg: "bg-emerald-50 border-emerald-200" },
             ].map((s) => (
               <div key={s.label} className={`rounded-2xl border p-4 flex items-center gap-3 ${s.bg}`}>
                 <div>
@@ -144,9 +167,9 @@ const LearnerMyCoursesPage = () => {
           <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 mb-6">
             <div className="flex p-1 bg-white border border-slate-200/60 rounded-xl shadow-sm w-full md:w-fit overflow-x-auto scrollbar-hide">
               {[
-                { id: "all", label: "All" },
-                { id: "learning", label: "In Progress" },
-                { id: "completed", label: "Completed" },
+                { id: "all", label: "Tất cả" },
+                { id: "in_progress", label: "Đang học" },
+                { id: "completed", label: "Hoàn thành" },
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -169,7 +192,7 @@ const LearnerMyCoursesPage = () => {
               />
               <input
                 type="text"
-                placeholder="Search your courses..."
+                placeholder="Tìm kiếm khóa học..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-11 pr-4 py-3 bg-white border border-slate-200/60 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all shadow-sm"
@@ -184,7 +207,7 @@ const LearnerMyCoursesPage = () => {
                 icon={faSpinner}
                 className="text-4xl text-blue-500 animate-spin"
               />
-              <p className="text-slate-500 font-semibold">Loading courses...</p>
+              <p className="text-slate-500 font-semibold">Đang tải khóa học...</p>
             </div>
           )}
 
@@ -195,14 +218,14 @@ const LearnerMyCoursesPage = () => {
                 <FontAwesomeIcon icon={faExclamationCircle} />
               </div>
               <h2 className="text-xl font-extrabold text-slate-800 mb-2">
-                Failed to load data
+                Không thể tải dữ liệu
               </h2>
               <p className="text-slate-500 font-medium max-w-sm mb-6">{error}</p>
               <button
                 onClick={fetchMyCourses}
                 className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm active:scale-95"
               >
-                Try again
+                Thử lại
               </button>
             </div>
           )}
@@ -213,12 +236,13 @@ const LearnerMyCoursesPage = () => {
               {filteredCourses.map((course) => (
                 <div
                   key={course.id}
+                  onClick={() => handleContinueLearning(course.id)}
                   className="bg-white rounded-3xl border border-slate-200/60 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer"
                 >
-                  {/* Thumbnail */}
+                  {/* Thumbnail - FIXED: Dùng đúng field từ API */}
                   <div className="relative aspect-video overflow-hidden bg-slate-200">
                     <img
-                      src={course.image || DEFAULT_THUMB}
+                      src={course.thumbnail || course.image || DEFAULT_THUMB}
                       alt={course.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       onError={(e) => { e.target.src = DEFAULT_THUMB; }}
@@ -230,7 +254,7 @@ const LearnerMyCoursesPage = () => {
                     </div>
                     {course.status === "completed" && (
                       <span className="absolute top-3 left-3 px-3 py-1.5 bg-emerald-500 text-white text-[10px] font-black tracking-widest uppercase rounded-lg shadow-sm flex items-center gap-1.5">
-                        <FontAwesomeIcon icon={faCheckCircle} /> Completed
+                        <FontAwesomeIcon icon={faCheckCircle} /> Hoàn thành
                       </span>
                     )}
                   </div>
@@ -238,26 +262,26 @@ const LearnerMyCoursesPage = () => {
                   {/* Card Body */}
                   <div className="p-6 flex-1 flex flex-col">
                     <h3 className="font-extrabold text-[17px] text-slate-900 leading-snug line-clamp-2 group-hover:text-blue-600 transition-colors mb-2">
-                      {course.title || "No title"}
+                      {course.title || "Chưa có tiêu đề"}
                     </h3>
                     <p className="text-xs font-semibold text-slate-500 mb-6">
-                      Instructor:{" "}
+                      Giảng viên:{" "}
                       <span className="text-slate-700">
                         {course.instructor || "EduSync"}
                       </span>
                     </p>
 
-                    {/* Progress */}
+                    {/* Progress - FIXED: Map đúng data từ API */}
                     <div className="mt-auto">
                       <div className="flex justify-between items-end mb-2">
                         <span className="text-sm font-black text-slate-800">
-                          {course.progress ?? 0}%{" "}
+                          {course.progress_percent ?? 0}%{" "}
                           <span className="font-medium text-slate-500 text-xs ml-1">
-                            completed
+                            hoàn thành
                           </span>
                         </span>
                         <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                          {course.completedLessons ?? 0}/{course.totalLessons ?? 0} lessons
+                          {course.completed_lessons ?? 0}/{course.total_lessons ?? 0} bài
                         </span>
                       </div>
                       <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
@@ -267,37 +291,35 @@ const LearnerMyCoursesPage = () => {
                               ? "bg-emerald-500"
                               : "bg-blue-600"
                           }`}
-                          style={{ width: `${course.progress ?? 0}%` }}
+                          style={{ width: `${course.progress_percent ?? 0}%` }}
                         />
                       </div>
                     </div>
                   </div>
 
-                  {/* Footer Actions */}
+                  {/* Footer Actions - FIXED: UI khi completed */}
                   <div className="p-5 border-t border-slate-100 bg-slate-50/50">
                     {course.status === "completed" ? (
-                      <div className="flex gap-3">
-                        <button className="flex-1 py-2.5 bg-emerald-50 text-emerald-700 font-bold text-sm rounded-xl hover:bg-emerald-100 transition-colors border border-emerald-200 flex items-center justify-center gap-2">
-                          <FontAwesomeIcon icon={faCertificate} /> View Certificate
-                        </button>
-                        <button
-                          className="px-4 py-2.5 bg-white text-amber-500 font-bold text-sm rounded-xl hover:bg-amber-50 transition-colors border border-slate-200 shadow-sm"
-                          title="Rate course"
-                        >
-                          <FontAwesomeIcon icon={faStar} />
-                        </button>
+                      // Yêu cầu 4: Thay đổi UI khi 100%
+                      <div className="flex items-center justify-center py-1">
+                        <span className="text-emerald-600 font-bold text-sm flex items-center gap-2">
+                          <FontAwesomeIcon icon={faCheckCircle} /> Đã hoàn thành
+                        </span>
                       </div>
                     ) : (
                       <div className="flex items-center justify-between">
                         <span className="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
                           <FontAwesomeIcon icon={faClock} />
-                          {formatLastAccessed(course.lastAccessed)}
+                          {formatLastAccessed(course.last_accessed)}
                         </span>
                         <button
-                          onClick={() => navigate(`/courses/${course.id}`)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleContinueLearning(course.id);
+                          }}
                           className="px-5 py-2.5 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 active:scale-95"
                         >
-                          Continue Learning
+                          Tiếp tục học
                         </button>
                       </div>
                     )}
@@ -315,20 +337,20 @@ const LearnerMyCoursesPage = () => {
               </div>
               <h2 className="text-2xl font-extrabold text-slate-800 mb-2">
                 {searchTerm || activeTab !== "all"
-                  ? "No courses found"
-                  : "You haven't enrolled in any courses yet"}
+                  ? "Không tìm thấy khóa học"
+                  : "Bạn chưa đăng ký khóa học nào"}
               </h2>
               <p className="text-slate-500 font-medium max-w-md mb-8">
                 {searchTerm || activeTab !== "all"
-                  ? "Try removing filters or changing your search terms."
-                  : "Discover interesting courses on EduSync and start your learning journey today!"}
+                  ? "Thử xóa bộ lọc hoặc thay đổi từ khóa tìm kiếm."
+                  : "Khám phá các khóa học thú vị trên EduSync và bắt đầu hành trình học tập ngay hôm nay!"}
               </p>
               {searchTerm || activeTab !== "all" ? (
                 <button
                   onClick={clearFilters}
                   className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm active:scale-95"
                 >
-                  Clear filters
+                  Xóa bộ lọc
                 </button>
               ) : (
                 <button
@@ -336,7 +358,7 @@ const LearnerMyCoursesPage = () => {
                   className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition duration-300 shadow-sm active:scale-95 flex items-center gap-2"
                 >
                   <FontAwesomeIcon icon={faGraduationCap} />
-                  Explore courses
+                  Khám phá khóa học
                 </button>
               )}
             </div>

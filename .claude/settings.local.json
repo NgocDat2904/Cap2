@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -i \"\\\\.jsx$\")",
+      "Bash(grep -E \"\\\\.\\(jsx|js\\)$\")",
+      "Bash(xargs grep -l \"Q&A\\\\|QnA\\\\|Question\\\\|Discussion\")"
+    ]
+  }
+}

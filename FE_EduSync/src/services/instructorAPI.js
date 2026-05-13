@@ -115,3 +115,19 @@ export const postReplyAPI = async (questionId, content, token) => {
   );
   return res.data;
 };
+
+// XÓA CÂU HỎI (Question) - Instructor
+export const deleteQuestionAPI = async (questionId, token) => {
+  const res = await axios.delete(`${BASE_URL}/questions/${questionId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};
+
+// XÓA REPLY (Câu trả lời) - Instructor
+export const deleteReplyAPI = async (questionId, replyId, token) => {
+  const res = await axios.delete(`${BASE_URL}/questions/${questionId}/reply/${replyId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};

@@ -14,22 +14,22 @@ import {
   faBoltLightning,
   faGraduationCap 
 } from "@fortawesome/free-solid-svg-icons";
-import { getCourseDetailAPI, enrollFreeCourseAPI, getMyCoursesAPI } from "../../services/learnerCourseAPI"; 
+import { getCourseDetailAPI, enrollFreeCourseAPI, getMyCoursesAPI, getCourseProgressAPI } from "../../services/learnerCourseAPI"; 
 
 const formatTimeAgo = (date) => {
-  if (!date) return "Recently";
+  if (!date) return "Gần đây";
   const seconds = Math.floor((new Date() - new Date(date)) / 1000);
   let interval = Math.floor(seconds / 31536000);
-  if (interval >= 1) return `${interval} year ago`;
+  if (interval >= 1) return `${interval} năm trước`;
   interval = Math.floor(seconds / 2592000);
-  if (interval >= 1) return `${interval} month ago`;
+  if (interval >= 1) return `${interval} tháng trước`;
   interval = Math.floor(seconds / 86400);
-  if (interval >= 1) return `${interval} day ago`;
+  if (interval >= 1) return `${interval} ngày trước`;
   interval = Math.floor(seconds / 3600);
-  if (interval >= 1) return `${interval} hour ago`;
+  if (interval >= 1) return `${interval} giờ trước`;
   interval = Math.floor(seconds / 60);
-  if (interval >= 1) return `${interval} minute ago`;
-  return "Just now";
+  if (interval >= 1) return `${interval} phút trước`;
+  return "Vừa xong";
 };
 
 const CourseDetailPage = () => {
@@ -45,6 +45,7 @@ const CourseDetailPage = () => {
   
   //State quản lý xem học viên đã đăng ký khóa này chưa
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [completedLessonIds, setCompletedLessonIds] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,6 +62,18 @@ const CourseDetailPage = () => {
               const myCourses = await getMyCoursesAPI();
               const isEnrolledNow = myCourses.some(c => String(c.id) === String(courseId));
               setIsEnrolled(isEnrolledNow);
+
+              // Nếu đã đăng ký, load tiến độ học tập
+              if (isEnrolledNow) {
+                try {
+                  const progressData = await getCourseProgressAPI(courseId);
+                  if (!cancelled) {
+                    setCompletedLessonIds(progressData.completed_lesson_ids || []);
+                  }
+                } catch (err) {
+                  console.warn("Failed to load progress:", err);
+                }
+              }
             } catch (err) {
               console.error("Failed to fetch my courses:", err);
             }
@@ -69,7 +82,7 @@ const CourseDetailPage = () => {
           }
         }
       } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to load course details");
+        if (!cancelled) setError(e.message || "Không thể tải thông tin khóa học");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -93,16 +106,37 @@ const CourseDetailPage = () => {
         timeAgo: formatTimeAgo(lesson.updated_at),
         image: lesson.image || lesson.thumbnail_url || courseDetail.thumbnail,
         videoUrl: lesson.videoUrl || lesson.video_url || lesson.play_url || "",
+        completed: completedLessonIds.includes(String(lesson.id)),
       };
     });
-  }, [courseDetail]);
+  }, [courseDetail, completedLessonIds]);
 
   const formatCurrency = (amount) => {
-    if (amount === 0) return "Free";
+    if (amount === 0) return "Miễn phí";
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
     }).format(amount);
+  };
+
+  // =========================================================================
+  // XỬ LÝ CLICK VÀO BÀI HỌC
+  // =========================================================================
+  const handleLessonClick = (lessonId) => {
+    // Bước 1: Chưa đăng nhập -> Chuyển đến trang login
+    if (!isLoggedIn) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    // Bước 2: Đã đăng nhập nhưng chưa enroll -> Chặn và thông báo
+    if (!isEnrolled) {
+      alert("Vui lòng đăng ký khóa học để xem bài giảng này!");
+      return;
+    }
+
+    // Bước 3: Đã đăng nhập VÀ đã enroll -> Cho phép vào xem
+    navigate(`/courses/${courseId}/lessons/${lessonId}`);
   };
 
   // =========================================================================
@@ -121,7 +155,7 @@ const CourseDetailPage = () => {
       if (firstLessonId) {
         navigate(`/courses/${courseId || "1"}/lessons/${firstLessonId}`);
       } else {
-        alert("This course currently has no lessons.");
+        alert("Khóa học này hiện đang được cập nhật bài giảng. Vui lòng quay lại sau nhé!");
       }
       return;
     }
@@ -142,11 +176,11 @@ const CourseDetailPage = () => {
         setIsEnrolled(true);
         
         // Optional: Hiện thông báo cho User biết
-        alert("Registration successful!");
+        alert("Chúc mừng bạn đã đăng ký khóa học thành công!");
         
       } catch (err) {
         console.error("Enrollment failed:", err);
-        alert("The system is experiencing an issue. Please try again later.");
+        alert("Hệ thống đang gặp gián đoạn nhỏ, vui lòng thử lại sau ít phút.");
       } finally {
         setIsProcessingAction(false);
       }
@@ -160,7 +194,7 @@ const CourseDetailPage = () => {
     return (
       <div className="w-full py-24 text-center text-slate-500">
         <FontAwesomeIcon icon={faSpinner} spin className="mr-2" />
-        Loading course details...
+        Đang tải thông tin khóa học...
       </div>
     );
   }
@@ -168,7 +202,7 @@ const CourseDetailPage = () => {
   if (error || !courseDetail) {
     return (
       <div className="w-full py-24 text-center text-red-600">
-        {error || "No data available"}
+        {error || "Không có dữ liệu"}
       </div>
     );
   }
@@ -189,7 +223,7 @@ const CourseDetailPage = () => {
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
             >
-              <FontAwesomeIcon icon={faArrowLeft} /> Back
+              <FontAwesomeIcon icon={faArrowLeft} /> Quay lại
             </button>
 
             <span className="inline-block px-3 py-1 bg-blue-600/20 border border-blue-500/30 text-blue-300 rounded-full text-xs font-bold tracking-wider uppercase mb-5">
@@ -201,7 +235,7 @@ const CourseDetailPage = () => {
             </h1>
 
             <p className="text-white/80 text-sm sm:text-base leading-relaxed max-w-3xl line-clamp-3 mb-8">
-              {courseDetail.description || "No description available for this course."}
+              {courseDetail.description || "Chưa có mô tả cho khóa học này."}
             </p>
 
             <Link
@@ -214,7 +248,7 @@ const CourseDetailPage = () => {
                 className="w-12 h-12 rounded-full border-2 border-slate-700 object-cover group-hover:border-blue-400 transition-colors shadow-sm"
               />
               <div>
-                <p className="text-slate-300 text-xs font-semibold mb-0.5">Instructor</p>
+                <p className="text-slate-300 text-xs font-semibold mb-0.5">Giảng viên</p>
                 <div className="flex items-center gap-1.5">
                   <p className="text-white font-bold group-hover:text-blue-400 transition-colors">
                     {courseDetail.instructor?.name || "EduSync Instructor"}
@@ -222,7 +256,7 @@ const CourseDetailPage = () => {
                   <FontAwesomeIcon icon={faCheckCircle} className="text-blue-400 text-xs" />
                 </div>
                 <p className="text-slate-400 text-xs mt-0.5">
-                  {courseDetail.instructor?.title || "Instructor"}
+                  {courseDetail.instructor?.title || "Giảng viên"}
                 </p>
               </div>
             </Link>
@@ -232,21 +266,21 @@ const CourseDetailPage = () => {
                 <FontAwesomeIcon icon={faUsers} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
                   {courseDetail.students?.toLocaleString() || 0}{" "}
-                  <span className="text-slate-400 font-medium text-sm">Students</span>
+                  <span className="text-slate-400 font-medium text-sm">Học viên</span>
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
                 <FontAwesomeIcon icon={faClock} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
                   {courseDetail.duration}{" "}
-                  <span className="text-slate-400 font-medium text-sm">Duration</span>
+                  <span className="text-slate-400 font-medium text-sm">Thời lượng</span>
                 </p>
               </div>
               <div className="flex flex-col gap-1.5">
                 <FontAwesomeIcon icon={faBookOpen} className="text-slate-400 text-lg" />
                 <p className="text-white font-bold">
                   {courseDetail.lessonCount || lessons.length}{" "}
-                  <span className="text-slate-400 font-medium text-sm">Lessons</span>
+                  <span className="text-slate-400 font-medium text-sm">Bài giảng</span>
                 </p>
               </div>
             </div>
@@ -271,7 +305,7 @@ const CourseDetailPage = () => {
               </div>
             </div>
             <span className="absolute bottom-2 right-2 bg-slate-900/80 text-white text-[11px] font-bold px-2.5 py-1 rounded-md">
-              Preview
+              Xem trước
             </span>
           </div>
 
@@ -307,20 +341,20 @@ const CourseDetailPage = () => {
               <FontAwesomeIcon icon={faCartShopping} />
             )}
             
-            {isProcessingAction 
-              ? "Processing..." 
-              : !isLoggedIn 
-                ? "Sign in to enroll" 
+            {isProcessingAction
+              ? "Đang xử lý..."
+              : !isLoggedIn
+                ? "Đăng nhập để đăng ký"
                 : isEnrolled
-                  ? "Go to Course" // Đã đăng ký thì hiện chữ này
-                  : isFree 
-                    ? "Enroll Now" 
-                    : "Proceed to Checkout"
+                  ? "Vào học ngay" // Đã đăng ký thì hiện chữ này
+                  : isFree
+                    ? "Đăng ký ngay"
+                    : "Thanh toán"
             }
           </button>
 
           <p className="text-center text-xs text-slate-500 mt-3 font-medium">
-            {isEnrolled ? "You are enrolled in this course" : isFree ? "Full lifetime access" : "30-day money-back guarantee"}
+            {isEnrolled ? "Bạn đã đăng ký khóa học này" : isFree ? "Truy cập trọn đời" : "Hoàn tiền trong 30 ngày"}
           </p>
         </div>
       </div>
@@ -331,20 +365,19 @@ const CourseDetailPage = () => {
       <section className="mt-12 lg:mt-16 lg:w-2/3 px-4 lg:px-0">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-extrabold text-slate-900">
-            Course Content
+            Nội dung khóa học
           </h2>
           <span className="text-slate-500 font-medium text-sm">
-            {lessons.length} video lessons
+            {lessons.length} bài giảng video
           </span>
         </div>
 
         <div className="space-y-4">
           {lessons.map((lesson, index) => (
-            <Link
+            <div
               key={lesson.id}
-              to={isLoggedIn ? `/courses/${courseId || "1"}/lessons/${lesson.id}` : "/login"}
-              state={!isLoggedIn ? { from: location.pathname } : undefined}
-              className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer block"
+              onClick={() => handleLessonClick(lesson.id)}
+              className="group flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all cursor-pointer relative"
             >
               <div className="relative w-full sm:w-40 aspect-video rounded-xl overflow-hidden shrink-0 bg-slate-200">
                 <img
@@ -362,28 +395,48 @@ const CourseDetailPage = () => {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-blue-900 uppercase tracking-wider mb-1">
-                  Lesson {index + 1}
-                </p>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="text-xs font-bold text-blue-900 uppercase tracking-wider">
+                    Bài {index + 1}
+                  </p>
+                  {/* {lesson.completed && (
+                    <FontAwesomeIcon
+                      icon={faCheckCircle}
+                      className="text-green-500 text-sm"
+                      title="Đã hoàn thành"
+                    />
+                  )} */}
+                </div>
                 <h3 className="text-base font-bold text-slate-800 leading-snug group-hover:text-blue-900 transition-colors line-clamp-2">
                   {lesson.title}
                 </h3>
                 <div className="flex items-center gap-4 mt-2 text-xs font-medium text-slate-500">
-                  <span>{lesson.views.toLocaleString()} views</span>
+                  <span>{lesson.views.toLocaleString()} lượt xem</span>
                   <span className="w-1 h-1 rounded-full bg-slate-300"></span>
                   <span>{lesson.timeAgo}</span>
                 </div>
               </div>
 
+              {/* Icon completed ở góc phải (trước icon 3 chấm) */}
+              {lesson.completed && (
+                <div className="absolute top-4 right-14 sm:relative sm:top-0 sm:right-0">
+                  <FontAwesomeIcon
+                    icon={faCheckCircle}
+                    className="text-green-500 text-lg"
+                    title="Đã hoàn thành"
+                  />
+                </div>
+              )}
+
               <button
                 onClick={(e) => {
-                  e.preventDefault();
+                  e.stopPropagation();
                 }}
                 className="text-slate-400 hover:text-slate-700 px-3 py-2 shrink-0 self-start sm:self-center"
               >
                 <FontAwesomeIcon icon={faEllipsisVertical} />
               </button>
-            </Link>
+            </div>
           ))}
         </div>
       </section>

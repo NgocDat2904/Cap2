@@ -15,7 +15,6 @@ const toErrorMessage = (error, fallback) => {
   const detail = error?.response?.data?.detail;
   if (typeof detail === "string" && detail.trim()) return detail;
 
-  // FastAPI 422 thường có dạng: { detail: [{ loc, msg, type, ...}, ...] }
   if (Array.isArray(detail)) {
     const msgs = detail
       .map((x) => (typeof x?.msg === "string" ? x.msg : null))
@@ -84,10 +83,9 @@ const LearnerAuthPage = () => {
     setLoginError("");
 
     try {
-      // 2. GỌI HÀM API TỪ SERVICE
       const data = await loginAPI(loginEmail, loginPassword);
 
-      console.log("Login Success:", data);
+      console.log("Đăng nhập thành công:", data);
       localStorage.setItem("access_token", data.access_token);
       navigate("/home");
     } catch (error) {
@@ -97,12 +95,12 @@ const LearnerAuthPage = () => {
           String(
             toErrorMessage(
               error,
-              "Login failed. Please check your credentials!",
+              "Hệ thống: Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin xác thực!",
             ),
           ),
         );
       } else {
-        setLoginError("Cannot connect to server. Please check your network!");
+        setLoginError("Lỗi hệ thống: Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền mạng!");
       }
     } finally {
       setIsLoading(false);
@@ -110,21 +108,20 @@ const LearnerAuthPage = () => {
   };
 
   // ==========================================
-  // HÀM ĐĂNG KÝ (ĐÃ GỌN GÀNG HƠN)
+  // HÀM ĐĂNG KÝ
   // ==========================================
   const handleRegister = async (e) => {
     e.preventDefault();
     setRegError("");
 
     if (regPassword !== regConfirmPassword) {
-      setRegError("Passwords do not match!");
+      setRegError("Hệ thống: Mật khẩu xác nhận không khớp!");
       return;
     }
 
     setIsRegLoading(true);
 
     try {
-      // GỌI HÀM API TỪ SERVICE
       const data = await registerAPI(
         regName,
         regEmail,
@@ -133,7 +130,7 @@ const LearnerAuthPage = () => {
         "learner",
       );
 
-      console.log("Register Success:", data);
+      console.log("Đăng ký thành công:", data);
       setRegName("");
       setRegEmail("");
       setRegPassword("");
@@ -141,8 +138,7 @@ const LearnerAuthPage = () => {
 
       localStorage.setItem(
         "register_success",
-        "Registration successful! Please sign in to get started.",
-        // alert("Đăng ký thành công! Vui lòng đăng nhập để bắt đầu."),
+        "Đăng ký tài khoản thành công! Vui lòng đăng nhập để bắt đầu.",
       );
 
       navigate("/login");
@@ -153,12 +149,12 @@ const LearnerAuthPage = () => {
           String(
             toErrorMessage(
               error,
-              "Registration failed. Please check your data.",
+              "Hệ thống: Đăng ký thất bại. Vui lòng kiểm tra lại thông tin cung cấp.",
             ),
           ),
         );
       } else {
-        setRegError("Cannot connect to server.");
+        setRegError("Lỗi hệ thống: Không thể kết nối tới máy chủ.");
       }
     } finally {
       setIsRegLoading(false);
@@ -175,19 +171,19 @@ const LearnerAuthPage = () => {
           icon={faArrowLeft}
           className="transform group-hover:-translate-x-1 transition-transform"
         />
-        <span>Back</span>
+        <span>Quay lại</span>
       </button>
 
       <div className="relative w-full max-w-5xl h-[750px] bg-white rounded-2xl shadow-2xl overflow-hidden flex">
         {/* ========================================================= */}
-        {/* FORM 1: SIGN IN */}
+        {/* FORM 1: ĐĂNG NHẬP */}
         {/* ========================================================= */}
         <div
           className={`absolute top-0 left-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 ${isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[-20%]"}`}
         >
           <div className="max-w-md w-full mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign In</h2>
-            <p className="text-gray-500 mb-8">Welcome back to EduSync!</p>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng Nhập</h2>
+            <p className="text-gray-500 mb-8">Chào mừng bạn quay lại với EduSync!</p>
 
             {loginError && (
               <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg">
@@ -205,12 +201,12 @@ const LearnerAuthPage = () => {
             <form className="space-y-5" onSubmit={handleLogin}>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1.5">
-                  Email
+                  Địa chỉ Email
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="Enter your registered email"
+                  placeholder="Nhập email đã đăng ký của bạn"
                   value={loginEmail}
                   onChange={(e) => {
                     setLoginEmail(e.target.value);
@@ -223,13 +219,13 @@ const LearnerAuthPage = () => {
               <div>
                 <div className="flex justify-between mb-1.5">
                   <label className="block text-sm font-semibold text-gray-700">
-                    Password
+                    Mật khẩu
                   </label>
                   <a
                     href="#"
                     className="text-sm font-medium text-blue-700 hover:underline"
                   >
-                    Forgot password?
+                    Quên mật khẩu?
                   </a>
                 </div>
                 <div className="relative">
@@ -259,7 +255,7 @@ const LearnerAuthPage = () => {
                 disabled={isLoading}
                 className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-6 ${isLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                {isLoading ? "Đang xác thực..." : "Đăng nhập hệ thống"}
               </button>
 
               <div className="mt-6 relative">
@@ -270,7 +266,7 @@ const LearnerAuthPage = () => {
             </form>
 
             <p className="mt-8 text-center text-sm text-gray-600">
-              Don't have an account?
+              Chưa có tài khoản?
               <button
                 type="button"
                 onClick={() => {
@@ -280,23 +276,22 @@ const LearnerAuthPage = () => {
                 }}
                 className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >
-                Sign Up
+                Đăng ký ngay
               </button>
             </p>
           </div>
         </div>
 
         {/* ========================================================= */}
-        {/* FORM 2: SIGN UP */}
+        {/* FORM 2: ĐĂNG KÝ */}
         {/* ========================================================= */}
         <div
           className={`absolute top-0 right-0 w-1/2 h-full bg-white p-12 flex flex-col justify-center transition-all duration-700 ease-in-out z-10 ${!isLogin ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none translate-x-[20%]"}`}
         >
           <div className="max-w-md w-full mx-auto">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Sign Up</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Đăng Ký</h2>
             <p className="text-gray-500 mb-6">
-              Create your account to learn with an AI-driven personalized
-              curriculum.
+              Tạo tài khoản để trải nghiệm lộ trình học tập cá nhân hóa cùng AI.
             </p>
 
             {regError && (
@@ -310,12 +305,12 @@ const LearnerAuthPage = () => {
             <form className="space-y-4" onSubmit={handleRegister}>
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Full Name
+                  Họ và tên
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Enter your full name"
+                  placeholder="Nhập đầy đủ họ tên"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
@@ -324,12 +319,12 @@ const LearnerAuthPage = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Email
+                  Địa chỉ Email
                 </label>
                 <input
                   type="email"
                   required
-                  placeholder="Enter your email"
+                  placeholder="Nhập email của bạn"
                   value={regEmail}
                   onChange={(e) => setRegEmail(e.target.value)}
                   className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-700 outline-none transition-colors"
@@ -338,7 +333,7 @@ const LearnerAuthPage = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Password
+                  Mật khẩu
                 </label>
                 <div className="relative">
                   <input
@@ -361,7 +356,7 @@ const LearnerAuthPage = () => {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">
-                  Confirm Password
+                  Xác nhận mật khẩu
                 </label>
                 <div className="relative">
                   <input
@@ -389,7 +384,7 @@ const LearnerAuthPage = () => {
                 disabled={isRegLoading}
                 className={`w-full py-3 px-4 rounded-lg shadow-sm text-sm font-bold text-white transition-colors mt-4 ${isRegLoading ? "bg-blue-400 cursor-not-allowed" : "bg-blue-800 hover:bg-blue-900"}`}
               >
-                {isRegLoading ? "Processing..." : "Sign Up"}
+                {isRegLoading ? "Đang xử lý..." : "Khởi tạo tài khoản"}
               </button>
 
               <div className="mt-4 relative">
@@ -400,7 +395,7 @@ const LearnerAuthPage = () => {
             </form>
 
             <p className="mt-6 text-center text-sm text-gray-600">
-              Already have an account?
+              Đã có tài khoản?
               <button
                 type="button"
                 onClick={() => {
@@ -410,7 +405,7 @@ const LearnerAuthPage = () => {
                 }}
                 className="font-bold text-blue-800 hover:underline transition-colors ml-1"
               >
-                Sign In
+                Đăng nhập
               </button>
             </p>
           </div>
@@ -441,13 +436,13 @@ const LearnerAuthPage = () => {
             <div>
               <h1 className="text-4xl lg:text-[42px] font-bold leading-tight mb-6">
                 {isLogin
-                  ? "Welcome back to EduSync!"
-                  : "Unlock Your Intellectual Potential."}
+                  ? "Chào mừng trở lại với EduSync!"
+                  : "Khai mở tiềm năng tri thức của bạn."}
               </h1>
               <p className="text-blue-100 text-base mb-10 leading-relaxed max-w-sm">
                 {isLogin
-                  ? "Sign in to continue your personalized learning journey and track your progress."
-                  : "Join a community of 50,000+ learners mastering complex fields with our AI-powered knowledge mapping."}
+                  ? "Đăng nhập để tiếp tục hành trình học tập cá nhân hóa và theo dõi tiến độ của bạn."
+                  : "Gia nhập cộng đồng hơn 50.000 học viên đang chinh phục các lĩnh vực phức tạp cùng hệ thống sơ đồ tri thức AI."}
               </p>
 
               <div
@@ -458,7 +453,7 @@ const LearnerAuthPage = () => {
                     <FontAwesomeIcon icon={faWandMagicSparkles} />
                   </div>
                   <span className="font-medium text-blue-50 text-sm">
-                    AI-personalized learning roadmap
+                    Lộ trình học tập cá nhân hóa bằng AI
                   </span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -466,7 +461,7 @@ const LearnerAuthPage = () => {
                     <FontAwesomeIcon icon={faNetworkWired} />
                   </div>
                   <span className="font-medium text-blue-50 text-sm">
-                    Connected knowledge network
+                    Mạng lưới tri thức liên kết chuyên sâu
                   </span>
                 </div>
               </div>

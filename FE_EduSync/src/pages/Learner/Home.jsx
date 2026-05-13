@@ -95,13 +95,13 @@ const EduSyncHome = () => {
               }
               className="w-full sm:w-auto px-8 py-3.5 bg-slate-900 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors duration-300 shadow-md hover:shadow-xl hover:shadow-blue-600/20 active:scale-95"
             >
-              {isLoggedIn ? "Start learning now" : "Sign in to start learning"}
+              {isLoggedIn ? "Bắt đầu học ngay" : "Đăng nhập để bắt đầu"}
             </button>
             <Link
               to="/courses"
               className="w-full sm:w-auto px-8 py-3.5 bg-white text-slate-700 font-bold rounded-xl hover:bg-slate-50 border border-slate-200 transition-colors active:scale-95 text-center"
             >
-              Explore courses
+              Khám phá khóa học
             </Link>
           </div>
         </div>
@@ -168,9 +168,9 @@ const EduSyncHome = () => {
         <div className="flex justify-between items-end mb-8">
           <div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Explore Categories
+              Khám phá danh mục
             </h2>
-            <p className="text-slate-500 mt-2 font-medium">Master the most in-demand tech skills</p>
+            <p className="text-slate-500 mt-2 font-medium">Thành thạo các kỹ năng công nghệ được săn đón nhất</p>
           </div>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -200,17 +200,17 @@ const EduSyncHome = () => {
         <div className="flex justify-between items-end mb-8">
           <div>
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Featured Courses
+              Khóa học nổi bật
             </h2>
             <p className="text-slate-500 mt-2 font-medium">
-              Top-rated programs to accelerate your career
+              Các chương trình được đánh giá cao để thúc đẩy sự nghiệp của bạn
             </p>
           </div>
           <Link
             to="/courses"
             className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline transition-colors hidden sm:flex items-center gap-2"
           >
-            Explore all <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
+            Xem tất cả <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path></svg>
           </Link>
         </div>
 
@@ -235,7 +235,7 @@ const EduSyncHome = () => {
                   </div>
                   {/* Glassmorphism Lesson Tag */}
                   <div className="absolute bottom-3 right-3 px-2.5 py-1.5 bg-slate-900/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
-                    <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.lesson_count || 0} Lessons
+                    <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.lesson_count || 0} Bài giảng
                   </div>
                 </div>
 
@@ -262,32 +262,32 @@ const EduSyncHome = () => {
                       {course.instructor ? course.instructor.charAt(0).toUpperCase() : "U"}
                     </div>
                     <span className="text-xs font-semibold text-slate-600 line-clamp-1">
-                      {course.instructor || "Unknown"}
+                      {course.instructor || "Chưa rõ"}
                     </span>
                     <FontAwesomeIcon
                       icon={faCheckCircle}
                       className="text-blue-500 text-[11px]"
-                      title="Verified Instructor"
+                      title="Giảng viên đã xác minh"
                     />
                   </div>
 
                   {/* Footer: Price & CTA */}
                   <div className="flex items-center justify-between border-t border-slate-100 pt-4">
                     <span className={`font-extrabold text-xl tracking-tight ${!course.price || course.price === 0 ? "text-green-600" : "text-slate-900"}`}>
-                      {!course.price || course.price === 0 ? "Free" : formatCurrency(course.price)}
+                      {!course.price || course.price === 0 ? "Miễn phí" : formatCurrency(course.price)}
                     </span>
                     <Link
                       to={`/courses/${course.id}`}
                       className="text-sm font-bold text-blue-600 bg-blue-50/50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl transition-all duration-300"
                     >
-                      Details
+                      Chi tiết
                     </Link>
                   </div>
                 </div>
               </div>
             ))
           ) : (
-             <p className="col-span-full text-center text-slate-500 py-10 font-medium">No featured courses available at the moment.</p>
+             <p className="col-span-full text-center text-slate-500 py-10 font-medium">Hiện chưa có khóa học nổi bật nào.</p>
           )}
         </div>
       </section>
