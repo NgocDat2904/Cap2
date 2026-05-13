@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from bson.errors import InvalidId
 
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
+import asyncio
 
 
 
@@ -732,28 +733,32 @@ class CourseService:
 
     async def get_instructor_courses(self, instructor_id: str):
         courses = await course_repository.find_by_instructor(instructor_id)
-        result = []
-        for c in courses:
-            course_id = str(c.get("_id")) if c.get("_id") else c.get("id")
 
-            # Đếm độ dài của mảng lessons nhúng trong course
-            lessons_array = c.get("lessons") or []
-            lesson_count = len(lessons_array)
-            if lesson_count == 0:
-                lesson_count = max(self._count_lessons(course_id), self._video_count(course_id))
+        async def build_course(c):
+            course_id = str(c["_id"])
 
-            result.append({
+            students_task = self._count_students(course_id)
+
+            lessons = c.get("lesson_count")
+            if lessons is None:
+                lessons = len(c.get("lessons", []))
+
+            students = await students_task
+
+            return {
                 "id": course_id,
                 "title": c.get("title", ""),
                 "category": self._category_display(c.get("category", "")),
                 "status": self.map_status(c.get("status")),
-                "students": await self._count_students(course_id), 
-                "lessons": lesson_count, 
+                "students": students,
+                "lessons": lessons,
                 "price": c.get("price", 0),
                 "image": c.get("image", "")
-            })
+            }
 
-        return result
+        return await asyncio.gather(
+            *(build_course(c) for c in courses)
+        )
     
     async def _count_students(self, course_id: str):
         try:
