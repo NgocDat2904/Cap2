@@ -100,7 +100,7 @@ const InstructorMyCourses = () => {
 
   // ==================== THÀNH PHẦN HỖ TRỢ (HELPER COMPONENTS) ====================
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
+    return new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount || 0);
   };
 
   const StatusBadge = ({ status }) => {

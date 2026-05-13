@@ -452,15 +452,15 @@ const AdminEditCourse = () => {
               
               <div>
                 <label className="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                  Giá niêm yết (USD)
+                  Giá niêm yết (VND)
                 </label>
                 <div className="relative">
-                  <span className="absolute left-5 top-4 text-emerald-600 font-black text-lg">$</span>
+                  <span className="absolute left-5 top-4 text-emerald-600 font-black text-lg">₫</span>
                   <input
                     type="number"
                     name="price"
                     min="0"
-                    step="0.01"
+                    step="1000"
                     value={courseData.price}
                     onChange={handleInputChange}
                     className="w-full pl-10 pr-5 py-4 bg-emerald-50/30 border border-emerald-200 rounded-2xl text-emerald-900 font-black text-2xl focus:outline-none focus:border-emerald-500 transition-all"

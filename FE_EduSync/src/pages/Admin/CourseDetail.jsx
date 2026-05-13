@@ -128,7 +128,7 @@ const AdminCourseDetail = () => {
       return; 
     }
     
-    if (!window.confirm(`Xác nhận phê duyệt và xuất bản khóa học với mức giá: ${p === 0 ? "Miễn phí" : p + " USD"}?`)) return;
+    if (!window.confirm(`Xác nhận phê duyệt và xuất bản khóa học với mức giá: ${p === 0 ? "Miễn phí" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(p)}?`)) return;
     
     setActionLoading(true);
     try {
@@ -162,7 +162,7 @@ const AdminCourseDetail = () => {
 
   const handleResolveUpdate = async (isPriceChanged) => {
     const confirmMsg = isPriceChanged
-      ? `Xác nhận lưu mức giá mới (${adminPrice} USD) và cập nhật nội dung khóa học?`
+      ? `Xác nhận lưu mức giá mới (${new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(adminPrice)}) và cập nhật nội dung khóa học?`
       : "Xác nhận giữ nguyên mức giá cũ và cập nhật nội dung mới?";
 
     if (window.confirm(confirmMsg)) {
@@ -216,12 +216,13 @@ const AdminCourseDetail = () => {
 
           <div className="mb-6">
             <label className="block text-xs font-bold text-amber-800 mb-2 uppercase tracking-wider">
-              Giá mới (USD)
+              Giá mới (VND)
             </label>
             <div className="relative">
               <FontAwesomeIcon icon={faDollarSign} className="absolute left-4 top-3.5 text-slate-400" />
               <input
                 type="number"
+                step="1000"
                 min="0"
                 step="0.01"
                 value={adminPrice}
@@ -258,8 +259,8 @@ const AdminCourseDetail = () => {
               <input
                 type="number"
                 min="0"
-                step="0.01"
-                placeholder="Ví dụ: 49.99 (0 là miễn phí)"
+                step="1000"
+                placeholder="Ví dụ: 500000 (0 là miễn phí)"
                 value={adminPrice}
                 onChange={(e) => setAdminPrice(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border-0 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-emerald-500/30 outline-none"
