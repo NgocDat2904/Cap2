@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { aiSummaryAPI, aiSummaryByVideoAPI, getSummaryByVideoAPI } from "../services/aiAPI";
+import ReactMarkdown from "react-markdown";
+
 
 const CourseSummary = ({ lessonContext, videoId }) => {
   const [summary, setSummary] = useState("");
@@ -71,7 +73,7 @@ const CourseSummary = ({ lessonContext, videoId }) => {
     return (
       <div className="animate-fade-slide-up text-slate-600">
         <h3 className="text-lg font-bold text-slate-800 mb-3">
-          Lesson Summary (AI)
+          Lesson Summary 
         </h3>
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <p className="text-sm font-bold text-slate-600">
@@ -94,7 +96,7 @@ const CourseSummary = ({ lessonContext, videoId }) => {
   return (
     <div className="animate-fade-slide-up text-slate-600">
       <h3 className="text-lg font-bold text-slate-800 mb-3">
-        Lesson Summary (AI)
+        Lesson Summary
       </h3>
       {loading && (
         <p className="text-sm text-slate-500 italic">Đang tải summary...</p>
@@ -105,8 +107,8 @@ const CourseSummary = ({ lessonContext, videoId }) => {
         </p>
       )}
       {!loading && !error && summary && (
-        <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
-          {summary}
+        <div className="prose prose-sm max-w-none text-slate-700">
+          <ReactMarkdown>{summary}</ReactMarkdown>
         </div>
       )}
       {!lessonContext?.transcript && !loading && !error && summary && (
