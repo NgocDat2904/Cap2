@@ -7,7 +7,7 @@ from google.cloud import storage
 
 class GCSClient:
     def __init__(self):
-        key_path = os.getenv("GCS_KEY_PATH", "key.json")
+        key_path = os.getenv("GCS_KEY_PATH", "E:\\Downloads\\edusync-491910-7020ac086713.json")
         self.client = None
         self.credentials = None
         try:

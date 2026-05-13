@@ -78,6 +78,10 @@ class AdminService:
                 "active"
             ),
 
+            # ======================
+            # JOIN DATE
+            # ======================
+
             "joined_date": user.get(
                 "created_at"
             ),
@@ -102,17 +106,21 @@ class AdminService:
 
             enrollments = list(
                 db.enrollments.find({
-                    "learner_id": user["_id"]
+
+                    "user_id": user["_id"]
                 })
             )
 
             course_ids = [
+
                 e["course_id"]
+
                 for e in enrollments
             ]
 
             courses = list(
                 db.courses.find({
+
                     "_id": {
                         "$in": course_ids
                     }
@@ -125,13 +133,74 @@ class AdminService:
 
             for c in courses:
 
+                # ======================
+                # TOTAL LESSONS
+                # ======================
+
+                total_lessons = (
+                    db.lessons.count_documents({
+
+                        "course_id": c["_id"]
+                    })
+                )
+
+                # ======================
+                # COMPLETED LESSONS
+                # ======================
+
+                completed_lessons = (
+                    db.lesson_progress.count_documents({
+
+                        "course_id": c["_id"],
+
+                        "user_id": user["_id"],
+
+                        "is_completed": True
+                    })
+                )
+
+                # ======================
+                # PROGRESS
+                # ======================
+
+                progress_percent = 0
+
+                if total_lessons > 0:
+
+                    progress_percent = int(
+
+                        (
+                            completed_lessons
+                            / total_lessons
+                        ) * 100
+                    )
+
+                # ======================
+                # COMPLETED COURSE
+                # ======================
+
+                if (
+                    progress_percent == 100
+                ):
+
+                    completed_courses += 1
+
                 course_items.append({
 
                     "id": str(c["_id"]),
 
                     "title": c.get("title"),
 
-                    "thumbnail": c.get("image")
+                    "thumbnail": c.get("image"),
+
+                    "progress_percent":
+                        progress_percent,
+
+                    "completed_lessons":
+                        completed_lessons,
+
+                    "total_lessons":
+                        total_lessons
                 })
 
             result.update({
@@ -154,7 +223,9 @@ class AdminService:
 
             courses = list(
                 db.courses.find({
-                    "instructor_id": user["_id"]
+
+                    "instructor_id":
+                        user["_id"]
                 })
             )
 
@@ -167,11 +238,21 @@ class AdminService:
                 students = (
                     db.enrollments
                     .count_documents({
-                        "course_id": c["_id"]
+
+                        "course_id":
+                            c["_id"]
                     })
                 )
 
                 total_students += students
+
+                total_lessons = (
+                    db.lessons.count_documents({
+
+                        "course_id":
+                            c["_id"]
+                    })
+                )
 
                 course_items.append({
 
@@ -181,7 +262,18 @@ class AdminService:
 
                     "thumbnail": c.get("image"),
 
-                    "students": students
+                    "students": students,
+
+                    "lessons": total_lessons,
+
+                    "price": c.get(
+                        "price",
+                        0
+                    ),
+
+                    "status": c.get(
+                        "status"
+                    )
                 })
 
             result.update({
@@ -202,11 +294,35 @@ class AdminService:
 
         elif role == "admin":
 
+            total_users = (
+                db.users.count_documents({})
+            )
+
+            total_courses = (
+                db.courses.count_documents({})
+            )
+
+            total_enrollments = (
+                db.enrollments.count_documents({})
+            )
+
             result.update({
 
                 "permissions": [
                     "all"
-                ]
+                ],
+
+                "system_overview": {
+
+                    "total_users":
+                        total_users,
+
+                    "total_courses":
+                        total_courses,
+
+                    "total_enrollments":
+                        total_enrollments
+                }
             })
 
         return result

@@ -973,7 +973,7 @@ class CourseService:
 
             "course_id": ObjectId(course_id),
 
-            "learner_id": ObjectId(user_id)
+            "user_id": ObjectId(user_id)
         })
 
         if exists:
@@ -990,7 +990,7 @@ class CourseService:
 
             "course_id": ObjectId(course_id),
 
-            "learner_id": ObjectId(user_id),
+            "user_id": ObjectId(user_id),
 
             # ngày enroll
             "created_at": datetime.utcnow(),
@@ -1022,7 +1022,7 @@ class CourseService:
         "course_id": ObjectId(course_id)
     }))
 
-        user_ids = [e["learner_id"] for e in enrollments]
+        user_ids = [e["user_id"] for e in enrollments]
 
         users = list(db.users.find({
         "_id": {"$in": user_ids}
@@ -1043,7 +1043,7 @@ class CourseService:
 
         result = db.enrollments.delete_one({
         "course_id": ObjectId(course_id),
-        "learner_id": ObjectId(user_id)
+        "user_id": ObjectId(user_id)
     })
 
         if result.deleted_count == 0:
@@ -1055,7 +1055,7 @@ class CourseService:
     async def get_my_courses(self, user_id: str):   
 
         enrollments = list(db.enrollments.find({
-        "learner_id": ObjectId(user_id)
+        "user_id": ObjectId(user_id)
     }))
 
         course_ids = [e["course_id"] for e in enrollments]
