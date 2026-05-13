@@ -27,29 +27,26 @@ const InstructorLoginPage = () => {
     setIsLoading(true);
 
     try {
-      // gọi API đăng nhập giảng viên
       const response = await loginInstructorAPI(email, password);
-      // Backend trả access_token; ProtectedRoute và layout đọc access_token + user_role
       if (response?.access_token) {
         localStorage.setItem("access_token", response.access_token);
         localStorage.setItem("user_role", "instructor");
-        // ✅ Lưu user_id để layout và các trang có thể dùng
         if (response.user_id) {
           localStorage.setItem("user_id", response.user_id);
         }
       }
       navigate("/instructor/dashboard");
     } catch (err) {
-      console.error("Lỗi đăng nhập Instructor:", err);
-      // Xử lý thông báo lỗi rõ ràng nếu thất bại
+      console.error("Lỗi đăng nhập hệ thống giảng viên:", err);
+      // Xử lý thông báo lỗi chuẩn nghiệp vụ
       if (err.response && err.response.status === 401) {
-        setError("Incorrect email or password!");
+        setError("Email hoặc mật khẩu không chính xác.");
       } else if (err.response && err.response.status === 403) {
-        setError("This account is not an instructor account.");
+        setError("Tài khoản này không có quyền truy cập dành cho Giảng viên.");
       } else if (err.response && err.response.status === 404) {
-        setError("This instructor account does not exist on the system!");
+        setError("Tài khoản giảng viên không tồn tại trên hệ thống.");
       } else {
-        setError("Login failed. Please check your credentials!");
+        setError("Lỗi kết nối: Không thể thực hiện đăng nhập vào lúc này.");
       }
     } finally {
       setIsLoading(false);
@@ -74,7 +71,7 @@ const InstructorLoginPage = () => {
               EduSync
             </h1>
             <p className="text-[11px] font-bold text-blue-600 uppercase tracking-widest mt-0.5">
-              Instructor Portal
+              Cổng Giảng Viên
             </p>
           </div>
         </div>
@@ -82,14 +79,14 @@ const InstructorLoginPage = () => {
         {/* TIÊU ĐỀ */}
         <div className="w-full text-center mb-8">
           <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
-            Welcome back!
+            Chào mừng trở lại!
           </h2>
           <p className="text-slate-500 font-medium">
-            Sign in to manage your courses and connect with learners
+            Đăng nhập để quản lý nội dung và kết nối với học viên
           </p>
         </div>
 
-        {/* MAIN FORM CARD (Glassmorphism tinh tế) */}
+        {/* MAIN FORM CARD */}
         <div className="w-full bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl shadow-blue-900/10 p-8 sm:p-10 border border-white">
           {error && (
             <div className="mb-6 p-4 bg-red-50 border border-red-100 text-red-600 text-sm font-semibold rounded-2xl text-center flex items-center justify-center gap-2 animate-fade-slide-up">
@@ -113,7 +110,7 @@ const InstructorLoginPage = () => {
                 <input
                   type="email"
                   required
-                  placeholder="instructor@edusync.com"
+                  placeholder="giangvien@edusync.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="block w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-slate-800 font-medium placeholder-slate-400"
@@ -125,13 +122,13 @@ const InstructorLoginPage = () => {
             <div>
               <div className="flex justify-between items-center mb-2.5">
                 <label className="block text-sm font-bold text-slate-700">
-                  Password
+                  Mật khẩu
                 </label>
                 <a
                   href="#"
                   className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
                 >
-                  Forgot password?
+                  Quên mật khẩu?
                 </a>
               </div>
               <div className="relative group">
@@ -172,7 +169,7 @@ const InstructorLoginPage = () => {
                 htmlFor="remember"
                 className="text-sm font-semibold text-slate-600 cursor-pointer select-none"
               >
-                Remember this device
+                Ghi nhớ phiên đăng nhập
               </label>
             </div>
 
@@ -180,7 +177,7 @@ const InstructorLoginPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-4 rounded-xl text-white font-bold transition-all duration-300 flex justify-center items-center gap-2
+              className={`w-full mt-2 py-4 rounded-xl text-white font-bold transition-all duration-300 flex justify-center items-center gap-2
                 ${
                   isLoading
                     ? "bg-blue-400 cursor-not-allowed shadow-none"
@@ -193,45 +190,45 @@ const InstructorLoginPage = () => {
                     icon={faCircleNotch}
                     className="animate-spin text-lg"
                   />
-                  Signing in...
+                  Đang xác thực...
                 </>
               ) : (
-                <>Sign in</>
+                <>Đăng nhập hệ thống</>
               )}
             </button>
           </form>
 
           {/* Đăng ký Link */}
           <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm font-medium text-slate-500">
-            Don't have an instructor account?{" "}
+            Chưa có tài khoản giảng viên?{" "}
             <Link
               to="/instructor/register"
               className="text-blue-600 font-bold hover:text-blue-800 hover:underline transition-all"
             >
-              Register now
+              Đăng ký tham gia
             </Link>
           </div>
         </div>
 
-        {/* THỐNG KÊ (STATS) - Được bọc trong một khối nền mờ sang trọng */}
+        {/* THỐNG KÊ (STATS) */}
         <div className="w-full mt-10 p-6 bg-white/50 backdrop-blur-sm border border-white/60 rounded-3xl shadow-sm">
           <div className="grid grid-cols-3 gap-4 text-center divide-x divide-slate-200/60">
             <div>
               <h3 className="text-2xl font-black text-slate-900">500+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Instructors
+                Giảng viên
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-900">10K+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Learners
+                Học viên
               </p>
             </div>
             <div>
               <h3 className="text-2xl font-black text-slate-900">1K+</h3>
               <p className="text-xs text-slate-500 font-bold uppercase tracking-wider mt-1">
-                Courses
+                Khóa học
               </p>
             </div>
           </div>

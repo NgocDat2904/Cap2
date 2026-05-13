@@ -74,3 +74,56 @@ async def create_reply(
         data.content,
         user["id"]
     )
+
+
+# =====================================
+# DELETE QUESTION
+# =====================================
+
+@router.delete("/questions/{question_id}")
+async def delete_question(
+    question_id: str,
+    user=Depends(
+        require_role([
+            "learner",
+            "instructor"
+        ])
+    )
+):
+    """
+    Xóa câu hỏi (question).
+    - Learner: Chỉ xóa được question của chính mình
+    - Instructor: Xóa được tất cả question trong khóa học của mình
+    """
+    return await question_service.delete_question(
+        question_id,
+        user["id"],
+        user["role"]
+    )
+
+
+# =====================================
+# DELETE REPLY
+# =====================================
+
+@router.delete("/questions/{question_id}/reply/{reply_id}")
+async def delete_reply(
+    question_id: str,
+    reply_id: str,
+    user=Depends(
+        require_role([
+            "learner",
+            "instructor"
+        ])
+    )
+):
+    """
+    Xóa reply (câu trả lời).
+    - Learner: Chỉ xóa được reply của chính mình
+    - Instructor: Xóa được tất cả reply trong khóa học của mình
+    """
+    return await question_service.delete_reply(
+        reply_id,
+        user["id"],
+        user["role"]
+    )

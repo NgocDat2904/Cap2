@@ -9,16 +9,11 @@ import {
   faUserGraduate,
   faCircleCheck,
   faChevronDown,
-  faEllipsisV,
-  faChartPie,
-  faBullhorn,
-  faEdit,
-  faUsers,
 } from "@fortawesome/free-solid-svg-icons";
 import { Link, useNavigate } from "react-router-dom";
 import { getInstructorDashboardAPI } from "../../services/instructorAPI";
 
-// Component con cho Thẻ KPI
+// Component Thẻ thống kê (KPI Card)
 const KpiCard = ({
   icon,
   title,
@@ -51,12 +46,12 @@ const KpiCard = ({
   </div>
 );
 
-// Mock data replaced by API state. Month map for labels:
-const monthMap = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+// Map dữ liệu tháng sang tiếng Việt
+const monthMap = ["Th1", "Th2", "Th3", "Th4", "Th5", "Th6", "Th7", "Th8", "Th9", "Th10", "Th11", "Th12"];
 
-// Component Dropdown Thời gian
+// Component Bộ lọc thời gian (Dropdown)
 const TimeFilterDropdown = ({ currentFilter, onFilterChange }) => {
-  const options = ["Year 2026", "Year 2025", "Year 2024"];
+  const options = ["Năm 2026", "Năm 2025", "Năm 2024"];
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef(null);
 
@@ -110,11 +105,10 @@ const TimeFilterDropdown = ({ currentFilter, onFilterChange }) => {
 
 const InstructorDashboardPage = () => {
   const navigate = useNavigate();
-  const [timeFilter, setTimeFilter] = useState("Year 2026");
+  const [timeFilter, setTimeFilter] = useState("Năm 2026");
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Quản lý Action Dropdown của bảng Khóa học
   const [openActionId, setOpenActionId] = useState(null);
   const actionDropdownRef = useRef(null);
 
@@ -137,11 +131,11 @@ const InstructorDashboardPage = () => {
         const token = localStorage.getItem("access_token");
         if (!token) return;
         const data = await getInstructorDashboardAPI(token);
-        // 🔥 DEBUG Ở ĐÂY: Mở F12 -> Console để xem định dạng mảng chart
-        console.log("🔥 DỮ LIỆU CHART TỪ BACKEND:", JSON.stringify(data.student_chart, null, 2));
+        
+        console.log("Dữ liệu biểu đồ từ máy chủ:", JSON.stringify(data.student_chart, null, 2));
         setDashboardData(data);
       } catch (err) {
-        console.error("Failed to load dashboard data", err);
+        console.error("Lỗi truy xuất dữ liệu tổng quan:", err);
       } finally {
         setLoading(false);
       }
@@ -152,7 +146,7 @@ const InstructorDashboardPage = () => {
   if (loading) {
     return (
       <div className="flex-1 p-6 lg:p-8 bg-slate-50 min-h-screen flex items-center justify-center">
-        <p className="text-slate-500 font-bold">Loading dashboard...</p>
+        <p className="text-slate-500 font-bold">Đang tải dữ liệu tổng quan...</p>
       </div>
     );
   }
@@ -160,20 +154,20 @@ const InstructorDashboardPage = () => {
   const data = dashboardData || {};
 
   const currentKpiData = [
-    { icon: faChalkboardTeacher,  title: "Active Courses",      value: data.active_courses || 0,   change: "Up to date",   changeType: "increase",    bgColor: "bg-amber-100",   iconColor: "text-amber-600" },
-    { icon: faPlayCircle,      title: "Total Lessons",       value: data.total_lessons || 0,  change: "Up to date",  changeType: "increase",   bgColor: "bg-emerald-100", iconColor: "text-emerald-600" },
-    { icon: faUserGraduate,       title: "Enrolled Students",   value: data.enrolled_students || 0,  change: "Up to date",  changeType: "increase",   bgColor: "bg-blue-100",    iconColor: "text-blue-600" },
-    { icon: faQuestionCircle,     title: "Total Q&A Questions", value: data.total_questions || 0, change: "Up to date", changeType: "increase",  bgColor: "bg-purple-100",  iconColor: "text-purple-600" },
+    { icon: faChalkboardTeacher, title: "Khóa học hiện hành", value: data.active_courses || 0, change: "Đã cập nhật", changeType: "increase", bgColor: "bg-amber-100", iconColor: "text-amber-600" },
+    { icon: faPlayCircle, title: "Tổng số bài học", value: data.total_lessons || 0, change: "Đã cập nhật", changeType: "increase", bgColor: "bg-emerald-100", iconColor: "text-emerald-600" },
+    { icon: faUserGraduate, title: "Học viên đăng ký", value: data.enrolled_students || 0, change: "Đã cập nhật", changeType: "increase", bgColor: "bg-blue-100", iconColor: "text-blue-600" },
+    { icon: faQuestionCircle, title: "Tổng số câu hỏi Q&A", value: data.total_questions || 0, change: "Đã cập nhật", changeType: "increase", bgColor: "bg-purple-100", iconColor: "text-purple-600" },
   ];
 
-  // Tính toán dữ liệu trục tung cho biểu đồ học viên
+  // Tính toán dữ liệu trục tung cho biểu đồ
   const chartDataApi = data.student_chart || [];
   const chartLabelsYear = chartDataApi.map((item) => monthMap[item.month - 1] || item.month);
   const chartValuesYear = chartDataApi.map((item) => item.students);
   const maxChartValue = 100; 
-  const chartStep = 20; // Chia làm 5 khoảng (0, 20, 40, 60, 80, 100)
+  const chartStep = 20;
 
- const yAxisLabelsYear = [];
+  const yAxisLabelsYear = [];
   for (let i = 0; i <= maxChartValue; i += chartStep) {
     yAxisLabelsYear.push(i.toString());
   }
@@ -188,10 +182,10 @@ const InstructorDashboardPage = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-slate-200 pb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            Dashboard
+            Bảng điều khiển
           </h1>
           <p className="text-slate-500 font-medium mt-1">
-            Overview and quick actions.
+            Tổng quan dữ liệu giảng dạy và thao tác nhanh.
           </p>
         </div>
         <TimeFilterDropdown
@@ -209,25 +203,22 @@ const InstructorDashboardPage = () => {
 
       {/* DÒNG 2: BIỂU ĐỒ VÀ Q&A TÓM TẮT */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8 overflow-visible">
-        {/* Biểu đồ số lượng học viên hàng tháng */}
+        {/* Biểu đồ số lượng học viên */}
         <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up overflow-visible relative z-10">
           <div className="flex items-center justify-between mb-8 overflow-visible">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Students Chart
+              Biểu đồ tăng trưởng học viên
             </h2>
           </div>
 
-          {/* Biểu đồ Bar Chart */}
           <div className="relative w-full h-[320px] flex gap-4 overflow-visible">
-            {/* Trục Y labels */}
             <div className="flex flex-col justify-between items-end text-xs text-slate-400 h-[280px] w-12 shrink-0 font-medium relative -top-2">
               {yAxisLabelsYear.map((label) => (
                 <span key={label}>{label}</span>
               ))}
             </div>
-            {/* Khu vực vẽ biểu đồ */}
             <div className="flex-1 flex flex-col justify-between overflow-visible relative">
-              {/* Lưới nền (Grid lines) */}
+              {/* Lưới nền */}
               <div className="absolute inset-0 flex flex-col justify-between h-[280px] pointer-events-none">
                 {yAxisLabelsYear.map((_, i) => (
                   <div
@@ -237,7 +228,7 @@ const InstructorDashboardPage = () => {
                 ))}
               </div>
 
-              {/* Cột dữ liệu (Bars) */}
+              {/* Cột dữ liệu */}
               <div className="absolute left-0 right-0 top-0 h-[280px] flex justify-between items-end px-2 z-10">
                 {chartValuesYear.map((value, index) => {
                   const heightPercent = (value / maxChartValue) * 100;
@@ -246,21 +237,19 @@ const InstructorDashboardPage = () => {
                       key={index}
                       className="w-[6%] h-full flex flex-col justify-end group relative cursor-pointer"
                     >
-                      {/* Cột */}
                       <div
                         className="w-full rounded-t-sm transition-all duration-500 bg-emerald-400 group-hover:bg-emerald-500"
                         style={{ height: `${heightPercent}%` }}
                       ></div>
-                      {/* Tooltip khi hover */}
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-[11px] font-bold py-1.5 px-3 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-40 pointer-events-none">
-                        {value.toLocaleString()} students
+                        {value.toLocaleString()} học viên
                       </div>
                     </div>
                   );
                 })}
               </div>
 
-              {/* Trục X labels (Tháng) */}
+              {/* Trục X */}
               <div className="absolute bottom-0 translate-y-full left-0 right-0 flex justify-between text-[11px] text-slate-400 pt-3 font-bold px-2">
                 {chartLabelsYear.map((label) => (
                   <span key={label} className="w-[6%] text-center">
@@ -276,13 +265,13 @@ const InstructorDashboardPage = () => {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
           <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-6">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Latest Q&A
+              Hỏi đáp (Q&A) mới nhất
             </h2>
             <Link
               to="/instructor/qna"
               className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline transition-all"
             >
-              View all
+              Xem tất cả
             </Link>
           </div>
           <div className="space-y-4">
@@ -295,44 +284,43 @@ const InstructorDashboardPage = () => {
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 border border-slate-300 bg-emerald-600`}
                   >
-                    {qna.name ? qna.name.charAt(0).toUpperCase() : "U"}
+                    {qna.name ? qna.name.charAt(0).toUpperCase() : "H"}
                   </div>
                   <div className="flex-1 min-w-0">
                     <h4 className="font-bold text-slate-800 text-sm truncate group-hover:text-blue-800">
-                      {qna.name || "Learner"}
+                      {qna.name || "Học viên ẩn danh"}
                     </h4>
                     <p className="text-xs text-slate-500 truncate mt-0.5">
-                      Course: {qna.course}
+                      Khóa học: {qna.course}
                     </p>
                     <p className="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">
                       {qna.question}
                     </p>
                     <p className="text-[10px] font-medium text-slate-400 mt-2">
-                      {qna.date || new Date().toLocaleDateString()}
+                      {qna.date || new Date().toLocaleDateString("vi-VN")}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500 text-center py-4">No recent Q&A.</p>
+              <p className="text-sm text-slate-500 text-center py-4">Không có dữ liệu Q&A gần đây.</p>
             )}
           </div>
         </div>
       </div>
 
-      {/* DÒNG 3: KHÓA HỌC PHỔ BIẾN VÀ HÀNH ĐỘNG NHANH */}
+      {/* DÒNG 3: KHÓA HỌC TIÊU BIỂU VÀ THAO TÁC NHANH */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-        {/* Bảng khóa học */}
         <div className="xl:col-span-2 bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Most Popular Courses
+              Khóa học tiêu biểu
             </h2>
             <Link
               to="/instructor/courses"
               className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline"
             >
-              View all
+              Xem tất cả
             </Link>
           </div>
 
@@ -340,10 +328,9 @@ const InstructorDashboardPage = () => {
             <table className="w-full text-left text-sm border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
-                  <th className="p-4 w-1/2">Course</th>
-                  <th className="p-4">Students</th>
-                  <th className="p-4">Revenue</th>
-                  {/* <th className="p-4 text-center">Actions</th> */}
+                  <th className="p-4 w-1/2">Khóa học</th>
+                  <th className="p-4">Học viên</th>
+                  <th className="p-4">Doanh thu</th>
                 </tr>
               </thead>
               <tbody
@@ -372,92 +359,24 @@ const InstructorDashboardPage = () => {
                       <td className="p-4 font-semibold text-slate-700">
                         ${course.revenue ? course.revenue.toLocaleString() : "0.00"}
                       </td>
-
-                    {/* CỘT HÀNH ĐỘNG */}
-                    {/* <td className="p-4 text-center">
-                      <div className="flex justify-center items-center gap-1.5 relative">
-                        <button
-                          className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-600 hover:text-white transition-colors flex items-center justify-center"
-                          title="Gửi thông báo lớp học"
-                        >
-                          <FontAwesomeIcon
-                            icon={faBullhorn}
-                            className="text-sm"
-                          />
-                        </button>
-                        <button
-                          className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center"
-                          title="Thống kê khóa học"
-                        >
-                          <FontAwesomeIcon
-                            icon={faChartPie}
-                            className="text-sm"
-                          />
-                        </button>
-
-                        <div className="relative inline-block text-left">
-                          <button
-                            onClick={() =>
-                              setOpenActionId(
-                                openActionId === course.id ? null : course.id,
-                              )
-                            }
-                            className={`w-8 h-8 rounded-lg transition-colors flex items-center justify-center ${openActionId === course.id ? "bg-slate-200 text-slate-800" : "text-slate-400 hover:bg-slate-100 hover:text-slate-700"}`}
-                          >
-                            <FontAwesomeIcon
-                              icon={faEllipsisV}
-                              className="text-sm"
-                            />
-                          </button>
-
-                   
-                          {openActionId === course.id && (
-                            <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-[100] py-2 animate-fade-slide-up origin-top-right">
-                              <button
-                                onClick={() =>
-                                  navigate("/instructor/courses/" + course.id)
-                                }
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 font-medium"
-                              >
-                                <FontAwesomeIcon
-                                  icon={faEdit}
-                                  className="text-slate-400 w-4"
-                                />{" "}
-                                Chỉnh sửa khóa học
-                              </button>
-                              <button
-                                onClick={() => navigate("/instructor/students")}
-                                className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors flex items-center gap-3 font-medium"
-                              >
-                                <FontAwesomeIcon
-                                  icon={faUsers}
-                                  className="text-slate-400 w-4"
-                                />{" "}
-                                Quản lý học viên
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </td> */}
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="3" className="text-center p-4 text-slate-500">
+                      Chưa có dữ liệu thống kê khóa học.
+                    </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="4" className="text-center p-4 text-slate-500">
-                    No popular courses yet.
-                  </td>
-                </tr>
-              )}
+                )}
               </tbody>
             </table>
           </div>
         </div>
 
-        {/* Hành động nhanh */}
+        {/* Thao tác nhanh */}
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up h-fit">
           <h2 className="text-2xl font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-6">
-            Quick Actions
+            Thao tác nhanh
           </h2>
           <div className="grid grid-cols-2 gap-4">
             <Link
@@ -469,7 +388,7 @@ const InstructorDashboardPage = () => {
                 className="text-blue-600 text-2xl mb-4 group-hover:text-white transition-colors"
               />
               <p className="text-sm font-bold text-slate-800 group-hover:text-white transition-colors leading-relaxed">
-                Create new course
+                Tạo khóa học mới
               </p>
             </Link>
             <Link
@@ -481,7 +400,7 @@ const InstructorDashboardPage = () => {
                 className="text-blue-600 text-2xl mb-4 group-hover:text-white transition-colors"
               />
               <p className="text-sm font-bold text-slate-800 group-hover:text-white transition-colors leading-relaxed">
-                Answer Q&A
+                Phản hồi Q&A
               </p>
             </Link>
           </div>

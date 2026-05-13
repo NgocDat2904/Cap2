@@ -9,9 +9,11 @@ import {
   faBookOpen,
   faTrophy,
   faCircle,
+  faCheckCircle,
+  faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { getNotificationsAPI, markNotificationReadAPI } from "../services/notificationAPI";
+import { getNotificationsAPI, markNotificationReadAPI } from "../../services/notificationAPI";
 
 // =========================================================================
 // HELPER: Format thời gian thông báo
@@ -40,9 +42,13 @@ const formatNotificationTime = (isoDateString) => {
   }
 };
 
-const NotificationDropdown = () => {
+/**
+ * NotificationBell Component - Shared notification dropdown for all roles
+ * @param {string} notificationsPageUrl - URL to full notifications page (e.g., "/notifications", "/admin/notifications")
+ */
+const NotificationBell = ({ notificationsPageUrl = "/notifications" }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("all"); // 'all' hoặc 'unread'
+  const [activeTab, setActiveTab] = useState("all");
   const [notifications, setNotifications] = useState([]);
 
   const dropdownRef = useRef(null);
@@ -81,19 +87,21 @@ const NotificationDropdown = () => {
         console.error("Lỗi truy xuất danh sách thông báo:", error);
       }
     };
-    if (isOpen) fetchNotifs(); 
+    if (isOpen) fetchNotifs();
   }, [isOpen]);
 
   // Xử lý Đánh dấu đã đọc 1 thông báo
   const markAsRead = async (id) => {
     try {
       const token = localStorage.getItem("access_token");
-      if (token) await markNotificationReadAPI(id, token);
+      if (token) {
+        await markNotificationReadAPI(id, token);
 
-      // Cập nhật local state (API trả về is_read)
-      setNotifications(
-        notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n))
-      );
+        // Cập nhật local state (API trả về is_read)
+        setNotifications(
+          notifications.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        );
+      }
     } catch (e) {
       console.error("Lỗi hệ thống: Không thể cập nhật trạng thái thông báo.");
     }
@@ -123,16 +131,29 @@ const NotificationDropdown = () => {
       case "question_reply":
       case "qna_reply":
       case "qa":
+      case "qna":
         return (
           <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0">
             <FontAwesomeIcon icon={faCommentDots} />
           </div>
         );
       case "course_approved":
+      case "approval":
+        return (
+          <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon icon={faCheckCircle} />
+          </div>
+        );
       case "course_rejected":
-      case "system":
+      case "rejection":
         return (
           <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon icon={faTimesCircle} />
+          </div>
+        );
+      case "system":
+        return (
+          <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
             <FontAwesomeIcon icon={faBullhorn} />
           </div>
         );
@@ -232,7 +253,7 @@ const NotificationDropdown = () => {
                   onClick={() => {
                     markAsRead(notif.id);
                     setIsOpen(false);
-                    // Điều hướng dựa trên type (API trả về: question_reply, course_approved, etc.)
+                    // Điều hướng theo type (API trả về: question_reply, course_approved, etc.)
                     if (notif.type === "question_reply" || notif.type === "qna_reply") {
                       // Nếu có question_id, điều hướng đến trang Q&A của lesson
                       if (notif.course_id && notif.question_id) {
@@ -301,7 +322,7 @@ const NotificationDropdown = () => {
             <button
               onClick={() => {
                 setIsOpen(false);
-                navigate("/notifications");
+                navigate(notificationsPageUrl);
               }}
               className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors w-full"
             >
@@ -314,4 +335,4 @@ const NotificationDropdown = () => {
   );
 };
 
-export default NotificationDropdown;
+export default NotificationBell;

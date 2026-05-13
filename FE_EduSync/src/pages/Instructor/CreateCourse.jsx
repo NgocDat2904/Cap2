@@ -18,14 +18,14 @@ import {
 } from "../../services/courseAPI";
 
 const categories = [
-  { id: "frontend", name: "Phát triển Web Frontend" },
-  { id: "backend", name: "Phát triển Web Backend" },
-  { id: "mobile", name: "Lập trình Di động" },
-  { id: "ai", name: "AI & Học máy" },
-  { id: "data_analysis", name: "Phân tích Dữ liệu" },
-  { id: "data_engineer", name: "Kỹ thuật Dữ liệu" },
-  { id: "uiux", name: "Thiết kế UI/UX" },
-  { id: "ba", name: "Phân tích Nghiệp vụ" },
+  { id: "frontend", name: "Frontend Web Development" },
+  { id: "backend", name: "Backend Web Development" },
+  { id: "mobile", name: "Mobile App Development" },
+  { id: "ai", name: "AI & Machine Learning" },
+  { id: "data_analysis", name: "Data Analysis" },
+  { id: "data_engineer", name: "Data Engineering" },
+  { id: "uiux", name: "UI/UX Design" },
+  { id: "ba", name: "Business Analysis" },
 ];
 
 const InstructorCreateCourse = () => {
