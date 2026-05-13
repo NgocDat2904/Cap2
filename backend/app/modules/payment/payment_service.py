@@ -8,6 +8,9 @@ from app.database.mongodb import db
 
 class PaymentService:
 
+    # ====================================
+    # CREATE PAYMENT
+    # ====================================
     async def create_payment(
         self,
         course_id: str,
@@ -37,7 +40,7 @@ class PaymentService:
 
             "course_id": ObjectId(course_id),
 
-            "learner_id": ObjectId(user_id)
+            "user_id": ObjectId(user_id)
         })
 
         if enrolled:
@@ -52,7 +55,7 @@ class PaymentService:
         # ====================================
 
         transaction_id = (
-            f"MOCK_{random.randint(100000,999999)}"
+            f"MOCK_{random.randint(100000, 999999)}"
         )
 
         payment = {
@@ -88,7 +91,7 @@ class PaymentService:
 
             "course_id": ObjectId(course_id),
 
-            "learner_id": ObjectId(user_id),
+            "user_id": ObjectId(user_id),
 
             "created_at": datetime.utcnow(),
 
@@ -109,5 +112,6 @@ class PaymentService:
 
             "transaction_id": transaction_id
         }
+
 
 payment_service = PaymentService()
