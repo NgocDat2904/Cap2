@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
-  faCheckCircle,
+  faChevronLeft,
+  faLock,
   faCreditCard,
-  faShieldAlt,
+  faShieldHalved,
+  faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 
 const LearnerCheckoutPage = () => {
@@ -17,175 +18,192 @@ const LearnerCheckoutPage = () => {
 
   // Mock course data - trong thực tế sẽ fetch từ API
   const courseData = {
-    title: "Khóa học lập trình Web",
+    title: "Khóa học lập trình Web Toàn diện",
     instructor: "Giảng viên EduSync",
     price: 99.99,
     thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80",
   };
 
-  const handlePayment = async () => {
+  const handlePayment = async (e) => {
+    e.preventDefault();
+    if (isProcessing) return;
+    
     setIsProcessing(true);
 
     // Giả lập xử lý thanh toán
     setTimeout(() => {
       setIsProcessing(false);
-      alert("Thanh toán thành công! Bạn đã được đăng ký vào khóa học.");
+      alert("🎉 Thanh toán thành công! Bạn đã được đăng ký vào khóa học.");
       navigate("/my-courses");
     }, 2000);
   };
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(amount);
+  };
+
   return (
-    <div className="animate-fade-slide-up w-full min-h-screen bg-slate-50 py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
+    <main className="animate-fade-slide-up w-full min-h-screen bg-slate-50 py-8 pb-20">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Nút quay lại */}
         <button
           onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors mb-8 font-semibold"
+          className="inline-flex items-center gap-2 text-sm font-bold text-slate-500 hover:text-blue-600 transition-colors mb-6"
         >
-          <FontAwesomeIcon icon={faArrowLeft} /> Quay lại
+          <FontAwesomeIcon icon={faChevronLeft} /> Quay lại
         </button>
 
-        <h1 className="text-3xl font-extrabold text-slate-900 mb-8">
-          Thanh toán
+        <h1 className="text-3xl font-black text-slate-900 tracking-tight mb-8">
+          Thanh toán an toàn
         </h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Payment Form */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 mb-6">
-              <h2 className="text-xl font-bold text-slate-900 mb-6 flex items-center gap-2">
-                <FontAwesomeIcon icon={faCreditCard} className="text-blue-600" />
-                Thông tin thanh toán
-              </h2>
+        <div className="flex flex-col lg:flex-row gap-8 items-start">
+          
+          {/* CỘT TRÁI: FORM THANH TOÁN */}
+          <div className="w-full lg:w-3/5 space-y-6">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-slate-900">Thông tin thẻ</h2>
+                <FontAwesomeIcon icon={faCreditCard} className="text-blue-600 text-2xl" />
+              </div>
 
-              <div className="space-y-4">
+              <form className="space-y-5" onSubmit={handlePayment}>
+                {/* Số thẻ */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Số thẻ
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                    Số thẻ tín dụng / Ghi nợ
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="1234 5678 9012 3456"
+                      required
+                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all tracking-widest placeholder:font-medium placeholder:tracking-normal"
+                    />
+                    <FontAwesomeIcon icon={faCreditCard} className="absolute left-4 top-4 text-slate-400" />
+                  </div>
+                </div>
+
+                {/* Tên chủ thẻ */}
+                <div>
+                  <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                    Tên in trên thẻ
                   </label>
                   <input
                     type="text"
-                    placeholder="1234 5678 9012 3456"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    placeholder="NGUYEN VAN A"
+                    required
+                    className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all uppercase placeholder:normal-case placeholder:font-medium"
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                {/* Ngày hết hạn & CVV */}
+                <div className="grid grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
                       Ngày hết hạn
                     </label>
                     <input
                       type="text"
                       placeholder="MM/YY"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      required
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center placeholder:font-medium"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-2">
-                      CVV
+                    <label className="block text-[11px] font-black text-slate-400 uppercase tracking-widest mb-2">
+                      Mã bảo mật (CVV)
                     </label>
                     <input
                       type="text"
                       placeholder="123"
-                      className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      required
+                      className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-center placeholder:font-medium"
                     />
                   </div>
                 </div>
+              </form>
+            </div>
 
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Tên chủ thẻ
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="NGUYEN VAN A"
-                    className="w-full px-4 py-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="mt-6 flex items-start gap-3 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                <FontAwesomeIcon icon={faShieldAlt} className="text-blue-600 mt-1" />
-                <p className="text-sm text-slate-700">
-                  <span className="font-bold">Thanh toán an toàn:</span> Thông tin của bạn được mã hóa và bảo mật tuyệt đối.
+            {/* Thông báo bảo mật */}
+            <div className="flex items-start gap-3 p-5 bg-emerald-50 rounded-2xl border border-emerald-100 text-emerald-800">
+              <FontAwesomeIcon icon={faShieldHalved} className="text-xl mt-0.5" />
+              <div>
+                <h4 className="text-sm font-bold">Bảo mật tuyệt đối</h4>
+                <p className="text-xs mt-1.5 opacity-90 leading-relaxed font-medium">
+                  Hệ thống sử dụng mã hóa SSL 256-bit chuẩn quốc tế. Thông tin thẻ của bạn không bao giờ được lưu trữ trên máy chủ của EduSync.
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Order Summary */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sticky top-24">
-              <h3 className="text-lg font-bold text-slate-900 mb-6">
+          {/* CỘT PHẢI: TÓM TẮT ĐƠN HÀNG (ĐÃ DỌN SẠCH THUẾ/GIÁ GỐC) */}
+          <div className="w-full lg:w-2/5">
+            <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/50 sticky top-24">
+              <h3 className="text-xl font-bold text-slate-900 mb-6">
                 Tóm tắt đơn hàng
               </h3>
 
-              <div className="flex items-start gap-4 mb-6 pb-6 border-b border-slate-100">
+              {/* Box Khóa học */}
+              <div className="flex gap-4 mb-8 pb-6 border-b border-slate-100">
                 <img
                   src={courseData.thumbnail}
                   alt={courseData.title}
-                  className="w-20 h-20 rounded-lg object-cover"
+                  className="w-20 h-20 rounded-2xl object-cover shrink-0 border border-slate-100 shadow-sm"
                 />
-                <div className="flex-1 min-w-0">
-                  <h4 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1">
+                <div className="flex-1 min-w-0 flex flex-col justify-center">
+                  <h4 className="font-bold text-sm text-slate-900 line-clamp-2 mb-1.5 leading-snug">
                     {courseData.title}
                   </h4>
-                  <p className="text-xs text-slate-500">
-                    {courseData.instructor}
+                  <p className="text-xs font-medium text-slate-500">
+                    Bởi {courseData.instructor}
                   </p>
                 </div>
               </div>
 
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Giá gốc:</span>
-                  <span className="font-semibold text-slate-900">
-                    ${courseData.price}
+              {/* Tổng cộng & Nút thanh toán */}
+              <div className="space-y-6">
+                <div className="flex justify-between items-end">
+                  <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">
+                    Tổng thanh toán
+                  </span>
+                  <span className="text-3xl font-black text-blue-600">
+                    {formatCurrency(courseData.price)}
                   </span>
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-600">Thuế:</span>
-                  <span className="font-semibold text-slate-900">$0.00</span>
-                </div>
+
+                <button
+                  onClick={handlePayment}
+                  disabled={isProcessing}
+                  className="w-full py-4 bg-slate-900 hover:bg-blue-600 text-white font-black text-base rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-wait"
+                >
+                  {isProcessing ? (
+                    <>
+                      <FontAwesomeIcon icon={faSpinner} spin className="text-xl" /> 
+                      <span>Đang xử lý giao dịch...</span>
+                    </>
+                  ) : (
+                    <>
+                      <FontAwesomeIcon icon={faLock} className="text-lg" /> 
+                      <span>Hoàn tất thanh toán</span>
+                    </>
+                  )}
+                </button>
+
+                <p className="text-center text-[11px] font-medium text-slate-400 leading-relaxed px-2">
+                  Bằng cách nhấn Hoàn tất, bạn đồng ý với Điều khoản Dịch vụ và Chính sách Hoàn tiền của EduSync.
+                </p>
               </div>
-
-              <div className="flex justify-between items-center pt-4 border-t border-slate-200 mb-6">
-                <span className="text-lg font-bold text-slate-900">Tổng cộng:</span>
-                <span className="text-2xl font-black text-blue-600">
-                  ${courseData.price}
-                </span>
-              </div>
-
-              <button
-                onClick={handlePayment}
-                disabled={isProcessing}
-                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all shadow-lg shadow-blue-600/30 active:scale-95 flex items-center justify-center gap-2"
-              >
-                {isProcessing ? (
-                  <>
-                    <FontAwesomeIcon icon={faCheckCircle} spin />
-                    Đang xử lý...
-                  </>
-                ) : (
-                  <>
-                    <FontAwesomeIcon icon={faCheckCircle} />
-                    Hoàn tất thanh toán
-                  </>
-                )}
-              </button>
-
-              <p className="text-xs text-center text-slate-500 mt-4">
-                Bằng cách thanh toán, bạn đồng ý với{" "}
-                <a href="#" className="text-blue-600 hover:underline">
-                  Điều khoản dịch vụ
-                </a>
-              </p>
             </div>
           </div>
+
         </div>
       </div>
-    </div>
+    </main>
   );
 };
 

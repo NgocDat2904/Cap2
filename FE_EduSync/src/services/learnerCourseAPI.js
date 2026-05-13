@@ -77,6 +77,16 @@ export async function enrollFreeCourseAPI(courseId) {
   return res.data;
 }
 
+// Thanh toán và đăng ký khóa học có phí
+export async function createPaymentAPI(courseId, token) {
+  const res = await axios.post(
+    `${BASE_URL}/payments/create`,
+    { course_id: courseId },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+  return res.data;
+}
+
 // lấy danh sách Q&A của khóa học
 export const getCourseQuestionsAPI = async (courseId, token) => {
   const res = await axios.get(`${BASE_URL}/questions/course/${courseId}`, {
