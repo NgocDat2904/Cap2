@@ -119,6 +119,7 @@ async def _context_from_video(video_id: str) -> LessonContext:
         title=video.get("title") or "Video lesson",
         description=video.get("description") or "",
         transcript=transcript,
+        duration=str(video.get("duration", "0")),
     )
 
 

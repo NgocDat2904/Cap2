@@ -259,7 +259,7 @@ class CourseService:
 
         try:
 
-            print("👉 course_id:", course_id)
+            # print("👉 course_id:", course_id)
 
             # ====================================
             # FIX OBJECT ID
@@ -281,7 +281,7 @@ class CourseService:
                 course_id
             )
 
-            print("👉 course:", course)
+            # print("👉 course:", course)
 
             if not course:
                 return None
@@ -349,7 +349,7 @@ class CourseService:
                 }).sort("order_index", 1)
             )
 
-            print("👉 lessons:", lessons_db)
+            # print("👉 lessons:", lessons_db)
 
             lessons_list = []
 
