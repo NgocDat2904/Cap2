@@ -4,7 +4,7 @@ from urllib import response
 from fastapi import HTTPException
 from bson import ObjectId
 from app.database.mongodb import db
-from datetime import datetime   # ✅ THÊM
+from datetime import datetime, timedelta  # ✅ THÊM
 
 # instructor
 from .instructor_repository import *
@@ -201,9 +201,6 @@ class InstructorService:
         search: str = None,
         course_id: str = None
     ):
-
-        from bson import ObjectId
-        from datetime import datetime, timedelta
 
         # =========================================
         # 1. QUERY COURSES
@@ -456,7 +453,7 @@ class InstructorService:
 
         unique_students = set([
 
-            str(e["learner_id"])
+            str(e["user_id"])
 
             for e in enrollments
         ])
@@ -473,7 +470,7 @@ class InstructorService:
 
         active_students = set([
 
-            str(e["learner_id"])
+            str(e["user_id"])
 
             for e in enrollments
 
@@ -519,9 +516,10 @@ class InstructorService:
 
             "students": response
         }
+    
     def calculate_course_progress(
         self,
-        learner_id,
+        user_id,
         course_id
     ):
 
@@ -554,14 +552,11 @@ class InstructorService:
         # ====================================
         # COMPLETED LESSONS
         # ====================================
-
         completed_lessons = db.lesson_progress.count_documents({
 
-            "learner_id": learner_id,
+            "course_id": course_id,
 
-            "lesson_id": {
-                "$in": lesson_ids
-            },
+            "user_id": user_id,
 
             "is_completed": True
         })
@@ -575,7 +570,7 @@ class InstructorService:
         )
 
         return progress
-    
+        
 
     def get_top_courses(self, instructor_id: str):
 
@@ -687,7 +682,7 @@ class InstructorService:
 
             progress = self.calculate_course_progress(
 
-                learner_id=enrollment["user_id"],
+                user_id=enrollment["user_id"],
 
                 course_id=enrollment["course_id"]
             )

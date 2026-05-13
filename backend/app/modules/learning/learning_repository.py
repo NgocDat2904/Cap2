@@ -25,7 +25,9 @@ class LearningRepository:
 
             "user_id": ObjectId(user_id),
 
-            "created_at": datetime.utcnow()
+            "created_at": datetime.utcnow(),
+
+            "last_accessed_at": None
         })
 
     # ======================
@@ -105,6 +107,10 @@ class LearningRepository:
 
                     "course_id": ObjectId(course_id),
 
+                    "lesson_id": ObjectId(lesson_id),
+
+                    "user_id": ObjectId(user_id),
+
                     "is_completed": True,
 
                     "progress_percent": 100,
@@ -142,6 +148,14 @@ class LearningRepository:
                 (seconds / duration) * 100
             )
 
+        is_completed = (
+            progress_percent >= 90
+        )
+
+        # ======================
+        # UPDATE LESSON PROGRESS
+        # ======================
+
         db.lesson_progress.update_one(
 
             {
@@ -167,9 +181,7 @@ class LearningRepository:
 
                     "progress_percent": progress_percent,
 
-                    "is_completed": (
-                        progress_percent >= 90
-                    ),
+                    "is_completed": is_completed,
 
                     "last_watched_at": datetime.utcnow(),
 
@@ -183,7 +195,28 @@ class LearningRepository:
             },
 
             upsert=True
-        )   
+        )
+
+        # ======================
+        # UPDATE ENROLLMENT LAST ACCESS
+        # ======================
+
+        db.enrollments.update_one(
+
+            {
+                "course_id": ObjectId(course_id),
+
+                "user_id": ObjectId(user_id)
+            },
+
+            {
+                "$set": {
+
+                    "last_accessed_at": datetime.utcnow()
+                }
+            }
+        )
+
     # ======================
     # GET LESSON PROGRESS
     # ======================
@@ -199,6 +232,50 @@ class LearningRepository:
 
             "user_id": ObjectId(user_id)
         })
+
+    # ======================
+    # GET COURSE PROGRESS
+    # ======================
+    def get_course_progress(
+        self,
+        course_id,
+        user_id
+    ):
+
+        total_lessons = db.lessons.count_documents({
+
+            "course_id": ObjectId(course_id)
+        })
+
+        if total_lessons == 0:
+
+            return {
+                "completed_lessons": 0,
+                "total_lessons": 0,
+                "progress_percent": 0
+            }
+
+        completed_lessons = db.lesson_progress.count_documents({
+
+            "course_id": ObjectId(course_id),
+
+            "user_id": ObjectId(user_id),
+
+            "is_completed": True
+        })
+
+        progress_percent = int(
+            (completed_lessons / total_lessons) * 100
+        )
+
+        return {
+
+            "completed_lessons": completed_lessons,
+
+            "total_lessons": total_lessons,
+
+            "progress_percent": progress_percent
+        }
 
     # ======================
     # LAST ACCESS
@@ -221,3 +298,6 @@ class LearningRepository:
                 ("updated_at", -1)
             ]
         )
+
+
+learning_repository = LearningRepository()
