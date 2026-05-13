@@ -58,7 +58,7 @@ const mockInstructorData = {
       id: "CRS-105",
       title: "Tư duy UI/UX Thực chiến cho Web & App",
       category: "Design",
-      price: 49.99,
+      price: 499000,
       videoCount: 42,
       thumbnail:
         "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
@@ -332,7 +332,7 @@ const InstructorPublicProfile = () => {
                         <span
                           className={`text-[22px] font-black ${course.price === 0 ? "text-emerald-600" : "text-slate-900"}`}
                         >
-                          {course.price === 0 ? "Free" : `$${course.price}`}
+                          {course.price === 0 ? "Miễn phí" : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(course.price)}
                         </span>
                         <span className="text-[13px] font-bold text-blue-800 bg-blue-50 px-4 py-2.5 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors">
                           Xem chi tiết

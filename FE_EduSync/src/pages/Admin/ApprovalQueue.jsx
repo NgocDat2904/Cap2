@@ -288,12 +288,12 @@ const AdminApprovalQueue = () => {
             <form onSubmit={handleConfirmApprove} className="p-6">
               <div className="mb-6">
                 <label className="block text-sm font-bold text-slate-700 mb-2 flex items-center gap-2">
-                  <FontAwesomeIcon icon={faTags} className="text-slate-400" /> Giá khóa học (USD)
+                  <FontAwesomeIcon icon={faTags} className="text-slate-400" /> Giá khóa học (VND)
                 </label>
                 <input
                   type="number"
                   min="0"
-                  step="0.01"
+                  step="1000"
                   value={priceInput}
                   onChange={(e) => setPriceInput(e.target.value)}
                   placeholder="Ví dụ: 49.99 (Để trống hoặc 0 để miễn phí)"
