@@ -14,6 +14,10 @@ class LessonContext(BaseModel):
         default=None,
         description="Transcript hoặc nội dung chi tiết (ưu tiên cho độ chính xác)",
     )
+    duration: Optional[str] = Field(
+        default=None,
+        description="Thời lượng video (để AI phân bổ timeline hợp lý)",
+    )
 
 
 class ChatMessage(BaseModel):

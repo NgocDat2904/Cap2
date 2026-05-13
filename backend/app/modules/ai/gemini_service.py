@@ -493,10 +493,13 @@ async def generate_timeline_json(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ):
+    duration_info = f" (Thời lượng tối đa của video: {ctx.duration})" if ctx.duration and ctx.duration != "0" and ctx.duration != "00:00" else ""
     prompt = f"""
 Tạo các mốc thời gian quan trọng (timeline) cho bài học bằng {language}.
 Dựa vào transcript hoặc mô tả, hãy trích xuất các khoảnh khắc (key moments).
 Nếu transcript không có timestamp, hãy tự ước lượng khoảng thời gian hợp lý (ví dụ mỗi ý chính cách nhau vài phút).
+QUAN TRỌNG: Đảm bảo thời gian được tạo ra KHÔNG VƯỢT QUÁ thời lượng video{duration_info}. 
+Phân bổ thời gian logic từ 00:00 đến thời lượng tối đa.
 
 YÊU CẦU:
 - Trả về JSON array

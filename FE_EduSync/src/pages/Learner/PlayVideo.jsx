@@ -132,6 +132,7 @@ const CourseLearningWorkspace = () => {
       title: activeLesson?.title || "",
       description: activeLesson?.description || "",
       transcript: activeLesson?.transcript || "",
+      duration: activeLesson?.duration || "0",
     };
     
     console.log("LESSON CONTEXT:", context);
@@ -142,6 +143,7 @@ const CourseLearningWorkspace = () => {
       activeLesson?.title,
       activeLesson?.description,
       activeLesson?.transcript,
+      activeLesson?.duration,
     ]);
   const activeVideoId = activeLesson?.video_id || activeLesson?.videoId;
 
@@ -281,7 +283,12 @@ const CourseLearningWorkspace = () => {
 
   const handleSeekVideo = (seconds) => {
     if (videoRef.current) {
-      videoRef.current.currentTime = seconds;
+      const maxDuration = videoRef.current.duration;
+      // Clamp to maxDuration - 1s if AI hallucinates timestamp beyond video length
+      const safeSeconds = maxDuration && seconds > maxDuration ? maxDuration - 1 : seconds;
+      
+      videoRef.current.currentTime = safeSeconds;
+      videoRef.current.play().catch(err => console.log("Play interrupted:", err));
       setIsPlaying(true);
     }
   };
