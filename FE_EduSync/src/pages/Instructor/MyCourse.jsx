@@ -48,7 +48,7 @@ const InstructorMyCourses = () => {
         return;
       }
       const data = await getInstructorCoursesAPI(token);
-      setAllCourses(data || []);
+      setAllCourses(Array.isArray(data) ? [...data].reverse() : []);
     } catch (err) {
       setError("Lỗi truy xuất: Không thể tải danh sách khóa học. " + (err.message || ""));
       console.error("Chi tiết lỗi fetchCourses:", err);
