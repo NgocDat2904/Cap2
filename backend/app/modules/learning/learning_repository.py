@@ -111,9 +111,27 @@ class LearningRepository:
 
                     "user_id": ObjectId(user_id),
 
+                    # ======================
+                    # COMPLETE STATUS
+                    # ======================
+
                     "is_completed": True,
 
+                    # ======================
+                    # FULL PROGRESS
+                    # ======================
+
                     "progress_percent": 100,
+
+                    "progress_seconds": 100,
+
+                    "duration": 100,
+
+                    # ======================
+                    # TIME
+                    # ======================
+
+                    "last_watched_at": datetime.utcnow(),
 
                     "updated_at": datetime.utcnow()
                 },
@@ -127,6 +145,25 @@ class LearningRepository:
             upsert=True
         )
 
+        # ======================
+        # UPDATE LAST ACCESS
+        # ======================
+
+        db.enrollments.update_one(
+
+            {
+                "course_id": ObjectId(course_id),
+
+                "user_id": ObjectId(user_id)
+            },
+
+            {
+                "$set": {
+
+                    "last_accessed_at": datetime.utcnow()
+                }
+            }
+        )
     # ======================
     # UPDATE PROGRESS
     # ======================
@@ -177,7 +214,7 @@ class LearningRepository:
 
                     "progress_seconds": seconds,
 
-                    "duration_seconds": duration,
+                    "duration": duration,
 
                     "progress_percent": progress_percent,
 
