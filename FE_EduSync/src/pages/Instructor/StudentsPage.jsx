@@ -10,11 +10,11 @@ import {
   faSpinner,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
-import { getInstructorStudentsAPI } from "../../services/instructorAPI"; // Đảm bảo import đúng đường dẫn nha má
+import { getInstructorStudentsAPI } from "../../services/instructorAPI";
 
 const InstructorStudentsPage = () => {
   // =========================================================================
-  // 1. STATE QUẢN LÝ DỮ LIỆU TỪ API
+  // 1. QUẢN LÝ TRẠNG THÁI DỮ LIỆU TỪ API
   // =========================================================================
   const [students, setStudents] = useState([]);
   const [stats, setStats] = useState({
@@ -25,12 +25,12 @@ const InstructorStudentsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // State bộ lọc
+  // Trạng thái bộ lọc
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCourse, setFilterCourse] = useState("all");
 
   // =========================================================================
-  // 2. GỌI API KHI LOAD TRANG
+  // 2. TRUY XUẤT DỮ LIỆU KHỞI TẠO
   // =========================================================================
   useEffect(() => {
     const fetchStudents = async () => {
@@ -39,20 +39,19 @@ const InstructorStudentsPage = () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          setError("Session expired. Please log in again.");
+          setError("Lỗi xác thực: Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
           setLoading(false);
           return;
         }
 
         const data = await getInstructorStudentsAPI(token);
         
-        // Cập nhật state từ cấu trúc JSON trả về của Backend
         setStats(data.stats || { total_students: 0, active_learners: 0, avg_completion_rate: 0 });
         setStudents(data.students || []);
 
       } catch (err) {
-        console.error("Failed to fetch students:", err);
-        setError("Failed to load students data.");
+        console.error("Lỗi khi tải dữ liệu học viên:", err);
+        setError("Lỗi hệ thống: Không thể tải dữ liệu học viên.");
       } finally {
         setLoading(false);
       }
@@ -62,9 +61,9 @@ const InstructorStudentsPage = () => {
   }, []);
 
   // =========================================================================
-  // 3. XỬ LÝ LỌC VÀ TÌM KIẾM
+  // 3. XỬ LÝ LỌC VÀ TÌM KIẾM DỮ LIỆU
   // =========================================================================
-  // Tự động tạo danh sách khóa học từ data sinh viên trả về để làm Menu Filter
+  // Trích xuất danh sách khóa học duy nhất để tạo bộ lọc
   const coursesList = useMemo(() => {
     const uniqueCourses = [];
     const courseIds = new Set();
@@ -76,10 +75,10 @@ const InstructorStudentsPage = () => {
       }
     });
     
-    return [{ id: "all", name: "All courses" }, ...uniqueCourses];
+    return [{ id: "all", name: "Tất cả khóa học" }, ...uniqueCourses];
   }, [students]);
 
-  // Lọc data theo Dropdown và Ô tìm kiếm
+  // Bộ lọc dữ liệu hiển thị
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
       const matchCourse = filterCourse === "all" || student.course_id === filterCourse;
@@ -90,7 +89,7 @@ const InstructorStudentsPage = () => {
     });
   }, [students, filterCourse, searchTerm]);
 
-  // Hàm tạo chữ cái đầu cho avatar nếu không có link ảnh
+  // Hàm tạo ký tự đại diện cho ảnh đại diện (Avatar)
   const getInitials = (name) => {
     if (!name) return "U";
     const parts = name.split(" ");
@@ -100,22 +99,22 @@ const InstructorStudentsPage = () => {
 
   return (
     <div className="flex-1 p-6 lg:p-8 bg-slate-50 h-full animate-fade-slide-up">
-      {/* HEADER */}
+      {/* HEADER TỔNG QUAN */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-            My Students
+            Quản lý Học viên
           </h1>
           <p className="text-slate-500 font-medium mt-1">
-            Track progress and engage with your learners.
+            Theo dõi tiến độ học tập và quản lý sinh viên trong các khóa học của bạn.
           </p>
         </div>
-        <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2 text-sm active:scale-95">
-          <FontAwesomeIcon icon={faDownload} /> Export CSV
-        </button>
+        {/* <button className="px-5 py-2.5 bg-white border border-slate-300 text-slate-700 font-bold rounded-xl hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2 text-sm active:scale-95">
+          <FontAwesomeIcon icon={faDownload} /> Xuất báo cáo CSV
+        </button> */}
       </div>
 
-      {/* KPI CARDS (Lấy từ data.stats) */}
+      {/* THẺ THỐNG KÊ (KPI CARDS) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex items-center gap-5">
           <div className="w-14 h-14 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-2xl shrink-0">
@@ -123,7 +122,7 @@ const InstructorStudentsPage = () => {
           </div>
           <div>
             <p className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">
-              Total Students
+              Tổng số học viên
             </p>
             <h3 className="text-3xl font-black text-slate-900">{stats.total_students.toLocaleString()}</h3>
           </div>
@@ -134,7 +133,7 @@ const InstructorStudentsPage = () => {
           </div>
           <div>
             <p className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">
-              Active Learners
+              Học viên đang hoạt động
             </p>
             <h3 className="text-3xl font-black text-slate-900">{stats.active_learners.toLocaleString()}</h3>
           </div>
@@ -145,23 +144,23 @@ const InstructorStudentsPage = () => {
           </div>
           <div>
             <p className="text-slate-500 text-sm font-bold uppercase tracking-wider mb-1">
-              Avg. Completion Rate
+              Tỉ lệ hoàn thành (TB)
             </p>
             <h3 className="text-3xl font-black text-slate-900">{Math.round(stats.avg_completion_rate)}%</h3>
           </div>
         </div>
       </div>
 
-      {/* VÙNG CHỨA BẢNG VÀ BỘ LỌC */}
+      {/* BẢNG DỮ LIỆU & BỘ LỌC */}
       <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm relative flex flex-col h-[600px] overflow-hidden">
         
-        {/* THANH CÔNG CỤ LỌC & TÌM KIẾM */}
+        {/* THANH CÔNG CỤ */}
         <div className="sticky top-0 z-20 p-5 border-b border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col md:flex-row gap-4 items-center shadow-sm">
           <div className="relative flex-1 w-full">
             <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-3.5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by name or email..."
+              placeholder="Tìm kiếm theo tên hoặc email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
@@ -183,12 +182,12 @@ const InstructorStudentsPage = () => {
           </div>
         </div>
 
-        {/* BẢNG DỮ LIỆU */}
+        {/* NỘI DUNG BẢNG */}
         <div className="overflow-y-auto flex-1 custom-scrollbar">
           {loading ? (
             <div className="flex flex-col items-center justify-center h-full text-slate-500 gap-3">
               <FontAwesomeIcon icon={faSpinner} spin className="text-3xl text-blue-500" />
-              <p className="font-semibold">Loading students...</p>
+              <p className="font-semibold">Đang truy xuất dữ liệu...</p>
             </div>
           ) : error ? (
             <div className="flex flex-col items-center justify-center h-full text-red-500 gap-3">
@@ -199,10 +198,9 @@ const InstructorStudentsPage = () => {
             <table className="w-full text-left border-collapse min-w-[800px]">
               <thead className="sticky top-0 z-10 bg-white/95 backdrop-blur-sm shadow-sm">
                 <tr className="border-b border-slate-200 text-slate-500 text-xs uppercase tracking-wider font-bold">
-                  <th className="p-5 w-1/3">Learner</th>
-                  <th className="p-5">Enrolled Course</th>
-                  <th className="p-5">Progress</th>
-                  {/* Đã xóa cột Actions theo yêu cầu */}
+                  <th className="p-5 w-1/3">Học viên</th>
+                  <th className="p-5">Khóa học đăng ký</th>
+                  <th className="p-5">Tiến độ học tập</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -210,7 +208,7 @@ const InstructorStudentsPage = () => {
                   filteredStudents.map((student) => (
                     <tr key={student.student_id} className="hover:bg-slate-50/80 transition-colors group">
                       
-                      {/* Cột 1: Thông tin User */}
+                      {/* Cột 1: Thông tin Học viên */}
                       <td className="p-5">
                         <div className="flex items-center gap-4">
                           {student.avatar && !student.avatar.includes("null") ? (
@@ -221,7 +219,6 @@ const InstructorStudentsPage = () => {
                               onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
                             />
                           ) : null}
-                          {/* Fallback avatar nếu lỗi ảnh hoặc không có ảnh */}
                           <div
                             className={`w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-sm shrink-0 bg-blue-600 ${(!student.avatar || student.avatar.includes("null")) ? "" : "hidden"}`}
                           >
@@ -230,7 +227,7 @@ const InstructorStudentsPage = () => {
                           
                           <div className="min-w-0">
                             <h4 className="font-bold text-slate-900 text-sm truncate">
-                              {student.name || "Unknown Learner"}
+                              {student.name || "Học viên ẩn danh"}
                             </h4>
                             <p className="text-xs text-slate-500 truncate mt-0.5">
                               {student.email}
@@ -245,7 +242,7 @@ const InstructorStudentsPage = () => {
                           {student.course_name}
                         </p>
                         <p className="text-[11px] font-medium text-slate-400 mt-1">
-                          Enrolled: {student.enrolled_at || "N/A"}
+                          Ngày tham gia: {student.enrolled_at || "Không xác định"}
                         </p>
                       </td>
 
@@ -265,18 +262,17 @@ const InstructorStudentsPage = () => {
                           </span>
                         </div>
                         <p className="text-[10px] font-medium text-slate-400 mt-1.5 flex justify-between">
-                          <span>Last active: {student.last_active || "Never"}</span>
-                          <span>{student.progress_summary?.completed_lessons || 0} / {student.progress_summary?.total_lessons || 0} lessons</span>
+                          <span>Hoạt động gần nhất: {student.last_active || "Chưa từng"}</span>
+                          <span>{student.progress_summary?.completed_lessons || 0} / {student.progress_summary?.total_lessons || 0} bài học</span>
                         </p>
                       </td>
 
-                      {/* Đã chém bay màu Cột Actions chỗ này luôn nha má 😎 */}
                     </tr>
                   ))
                 ) : (
                   <tr>
                     <td colSpan="3" className="p-10 text-center text-slate-500 font-medium">
-                      No students found.
+                      Không tìm thấy dữ liệu học viên nào phù hợp với điều kiện lọc.
                     </td>
                   </tr>
                 )}
@@ -288,18 +284,17 @@ const InstructorStudentsPage = () => {
         {/* PHÂN TRANG */}
         <div className="sticky bottom-0 z-20 p-4 border-t border-slate-200 bg-slate-50 flex items-center justify-between text-sm shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)]">
           <p className="text-slate-500 font-medium">
-            Showing <span className="font-bold text-slate-700">{filteredStudents.length}</span> students
+            Đang hiển thị <span className="font-bold text-slate-700">{filteredStudents.length}</span> học viên
           </p>
-          {/* Giữ giao diện phân trang (Có thể đấu logic API sau nếu Backend hỗ trợ pagination) */}
           <div className="flex gap-1">
             <button className="px-3 py-1.5 border border-slate-200 rounded-md bg-white text-slate-400 cursor-not-allowed">
-              Previous
+              Trước
             </button>
             <button className="px-3 py-1.5 border border-blue-600 rounded-md bg-blue-50 text-blue-700 font-bold hover:bg-blue-100 transition-colors">
               1
             </button>
             <button className="px-3 py-1.5 border border-slate-200 rounded-md bg-white text-slate-400 cursor-not-allowed">
-              Next
+              Sau
             </button>
           </div>
         </div>

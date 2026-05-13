@@ -83,19 +83,17 @@ const InstructorProfilePage = () => {
         const token = localStorage.getItem("access_token");
         if (!token) return;
 
-        // Gọi API lấy cục data tổng hợp
         const data = await getInstructorProfileAPI(token);
 
         setProfileData((prev) => ({
           ...prev,
-          ...data, // Trải toàn bộ dữ liệu Backend map sẵn vào form
-          // Xử lý specializations nếu Backend lỡ trả về Array thì nối thành chuỗi
+          ...data, 
           specializations: Array.isArray(data.specializations)
             ? data.specializations.join(", ")
             : data.specializations || "",
         }));
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Lỗi khi tải dữ liệu:", error);
       } finally {
         setIsLoading(false);
       }
@@ -104,42 +102,36 @@ const InstructorProfilePage = () => {
   }, []);
 
   // =========================================================================
-  // 2. GỌI API LƯU HỒ SƠ (Tách 2 gói gửi về 2 bảng)
+  // 2. GỌI API LƯU HỒ SƠ 
   // =========================================================================
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     setIsSaving(true);
     try {
       const token = localStorage.getItem("access_token");
-
-      // Đóng gói dữ liệu vào FormData theo ĐÚNG tên biến Backend yêu cầu
       const formData = new FormData();
 
-      // Thông tin User
       formData.append("fullName", profileData.fullName || "");
       formData.append("phone", profileData.phone || "");
       formData.append("gender", profileData.gender || "");
       formData.append("dob", profileData.dob || "");
       formData.append("address", profileData.address || "");
 
-      // Thông tin Instructor
       formData.append("headline", profileData.headline || "");
       formData.append("bio", profileData.bio || "");
       formData.append("specializations", profileData.specializations || "");
 
-      // Liên kết mạng xã hội
       formData.append("linkedin", profileData.linkedin || "");
       formData.append("github", profileData.github || "");
       formData.append("youtube", profileData.youtube || "");
       formData.append("website", profileData.website || "");
 
-      // Bắn 1 phát API duy nhất
       await updateInstructorProfileAPI(formData, token);
 
-      alert("Profile updated successfully!");
+      alert("Hệ thống: Cập nhật hồ sơ giảng viên thành công.");
     } catch (error) {
-      console.error("Error saving profile:", error);
-      alert("Save failed! Please check your network connection.");
+      console.error("Lỗi lưu hồ sơ:", error);
+      alert("Lỗi hệ thống: Không thể lưu hồ sơ. Vui lòng kiểm tra kết nối mạng.");
     } finally {
       setIsSaving(false);
     }
@@ -159,7 +151,6 @@ const InstructorProfilePage = () => {
     const file = event.target.files[0];
     if (!file) return;
 
-    // Show ảnh preview mờ mờ trước cho user yên tâm
     const previewUrl = URL.createObjectURL(file);
     setProfileData((prev) => ({ ...prev, avatarUrl: previewUrl }));
 
@@ -167,24 +158,23 @@ const InstructorProfilePage = () => {
       setIsUploadingAvatar(true);
       const token = localStorage.getItem("access_token");
 
-      // Gọi API Upload (có thể đang tái sử dụng của userAPI)
       const data = await uploadAvatarAPI(file, token);
 
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Avatar updated successfully!");
+        alert("Hệ thống: Cập nhật ảnh đại diện thành công.");
       }
     } catch (error) {
-      alert("Failed to upload image!");
+      alert("Lỗi xử lý: Tải ảnh lên không thành công.");
     } finally {
       setIsUploadingAvatar(false);
     }
   };
 
   const tabs = [
-    { id: "personal", label: "Personal Info & Expertise", icon: faUserEdit },
-    { id: "social",   label: "External Links",            icon: faLink },
-    { id: "account",  label: "Account Settings",          icon: faGear },
+    { id: "personal", label: "Thông tin & Chuyên môn", icon: faUserEdit },
+    { id: "social",   label: "Liên kết ngoài",          icon: faLink },
+    { id: "account",  label: "Bảo mật tài khoản",       icon: faGear },
   ];
 
   if (isLoading) {
@@ -194,22 +184,21 @@ const InstructorProfilePage = () => {
           icon={faSpinner}
           className="text-4xl animate-spin text-blue-500 mb-4"
         />
-        <p className="font-bold">Loading instructor profile...</p>
+        <p className="font-bold">Đang tải hồ sơ giảng viên...</p>
       </div>
     );
   }
 
-  // GIỮ NGUYÊN GIAO DIỆN HTML NHƯ CŨ
   return (
     <main className="animate-fade-slide-up w-full pb-16">
       <div className="p-4 sm:p-6 lg:p-8 relative overflow-visible z-10">
         <div className="flex flex-col sm:flex-row md:items-center justify-between gap-4 mb-10 border-b border-slate-200 pb-8 relative z-20">
           <div>
             <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Personal Profile
+              Hồ sơ Cá nhân
             </h1>
             <p className="text-slate-500 font-medium mt-1">
-              Update professional information and build your personal brand.
+              Cập nhật thông tin chuyên môn và xây dựng thương hiệu cá nhân của bạn.
             </p>
           </div>
           <button
@@ -221,7 +210,7 @@ const InstructorProfilePage = () => {
               icon={isSaving ? faSpinner : faSave}
               className={isSaving ? "animate-spin" : ""}
             />
-            {isSaving ? "Saving..." : "Save changes"}
+            {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
           </button>
         </div>
 
@@ -265,12 +254,12 @@ const InstructorProfilePage = () => {
                   <FontAwesomeIcon
                     icon={faCheckCircle}
                     className="text-blue-500 text-lg"
-                    title="Verified"
+                    title="Đã xác thực"
                   />
                 )}
               </h2>
               <p className="text-sm font-semibold text-blue-700 mt-2 px-4 py-1.5 bg-blue-50 rounded-full inline-block leading-normal">
-                {profileData.headline || "No professional headline yet"}
+                {profileData.headline || "Chưa cập nhật chức danh chuyên môn"}
               </p>
               <div className="border-t border-slate-100 my-8"></div>
               <div className="flex items-center gap-3 p-4 bg-slate-50 rounded-xl border border-slate-100 text-left">
@@ -280,7 +269,7 @@ const InstructorProfilePage = () => {
                 />
                 <div>
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Work Email
+                    Email công việc
                   </p>
                   <p className="text-sm font-semibold text-slate-800 mt-0.5">
                     {profileData.email}
@@ -291,17 +280,17 @@ const InstructorProfilePage = () => {
 
             <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 space-y-4">
               <h3 className="text-lg font-extrabold text-slate-900 mb-5 border-l-4 border-blue-600 pl-3">
-                Achievements Overview
+                Tổng quan thành tích
               </h3>
               <MetricCard
                 icon={faUsers}
-                label="Students"
+                label="Học viên"
                 value={profileData.totalStudents.toLocaleString()}
                 color="text-blue-600"
               />
               <MetricCard
                 icon={faBook}
-                label="Courses"
+                label="Khóa học"
                 value={profileData.totalCourses}
                 color="text-emerald-600"
               />
@@ -332,19 +321,19 @@ const InstructorProfilePage = () => {
                         icon={faUserCircle}
                         className="text-blue-500"
                       />{" "}
-                      Basic Information
+                      Thông tin cơ bản
                     </h3>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Full Name <span className="text-red-500">*</span>
+                          Họ và tên <span className="text-red-500">*</span>
                         </label>
                         <input
                           type="text"
                           name="fullName"
                           value={profileData.fullName}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                       <div>
@@ -353,14 +342,14 @@ const InstructorProfilePage = () => {
                             icon={faPhone}
                             className="text-slate-400"
                           />{" "}
-                          Phone Number
+                          Số điện thoại
                         </label>
                         <input
                           type="tel"
                           name="phone"
                           value={profileData.phone}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                       <div>
@@ -369,17 +358,18 @@ const InstructorProfilePage = () => {
                             icon={faVenusMars}
                             className="text-slate-400"
                           />{" "}
-                          Gender
+                          Giới tính
                         </label>
                         <select
                           name="gender"
                           value={profileData.gender}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         >
-                          <option>Male</option>
-                          <option>Female</option>
-                          <option>Other</option>
+                          <option value="">Chọn giới tính</option>
+                          <option value="male">Nam</option>
+                          <option value="female">Nữ</option>
+                          <option value="other">Khác</option>
                         </select>
                       </div>
                       <div>
@@ -388,14 +378,14 @@ const InstructorProfilePage = () => {
                             icon={faBirthdayCake}
                             className="text-slate-400"
                           />{" "}
-                          Date of Birth
+                          Ngày sinh
                         </label>
                         <input
                           type="date"
                           name="dob"
                           value={profileData.dob}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                       <div className="sm:col-span-2">
@@ -404,14 +394,14 @@ const InstructorProfilePage = () => {
                             icon={faMapMarkerAlt}
                             className="text-slate-400"
                           />{" "}
-                          Address
+                          Địa chỉ
                         </label>
                         <input
                           type="text"
                           name="address"
                           value={profileData.address}
                           onChange={handleInputChange}
-                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                     </div>
@@ -423,36 +413,36 @@ const InstructorProfilePage = () => {
                         icon={faBriefcase}
                         className="text-blue-500"
                       />{" "}
-                      Professional Profile
+                      Hồ sơ chuyên môn
                     </h3>
                     <div className="space-y-6">
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Job Title / Headline
+                          Chức danh / Tiêu đề
                         </label>
                         <input
                           type="text"
                           name="headline"
                           value={profileData.headline}
                           onChange={handleInputChange}
-                          placeholder="Example: Senior AI Engineer | Python Instructor"
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          placeholder="Ví dụ: Kỹ sư AI Cao cấp | Giảng viên Python"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                         <p className="text-xs text-slate-400 mt-2">
-                          This line will appear right below your name on all courses. Keep it short, concise, and impactful.
+                          Dòng này sẽ hiển thị ngay dưới tên bạn trên các khóa học. Hãy viết ngắn gọn, súc tích và ấn tượng.
                         </p>
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          About Yourself (Bio)
+                          Giới thiệu bản thân (Bio)
                         </label>
                         <textarea
                           name="bio"
                           value={profileData.bio}
                           onChange={handleInputChange}
                           rows="5"
-                          placeholder="Tell students about your experience..."
-                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:ring-2 focus:ring-blue-500 resize-y"
+                          placeholder="Chia sẻ với học viên về kinh nghiệm của bạn..."
+                          className="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium leading-relaxed focus:ring-2 focus:ring-blue-500 resize-y outline-none"
                         ></textarea>
                       </div>
                       <div>
@@ -461,15 +451,15 @@ const InstructorProfilePage = () => {
                             icon={faGraduationCap}
                             className="text-slate-400"
                           />{" "}
-                          Main Teaching Specializations
+                          Chuyên môn giảng dạy chính
                         </label>
                         <input
                           type="text"
                           name="specializations"
                           value={profileData.specializations}
                           onChange={handleInputChange}
-                          placeholder="Example: Python, Machine Learning, UI/UX..."
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500"
+                          placeholder="Ví dụ: Python, Machine Learning, UI/UX..."
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                         />
                       </div>
                     </div>
@@ -480,16 +470,16 @@ const InstructorProfilePage = () => {
               {activeTab === "social" && (
                 <form className="space-y-6">
                   <h3 className="text-base font-bold text-slate-800 mb-6">
-                    Social Links & Portfolio
+                    Mạng xã hội & Hồ sơ năng lực
                   </h3>
                   <p className="text-sm text-slate-600 bg-slate-50 p-4 rounded-xl border border-slate-100 mb-8">
-                    Add links so students can learn more about your practical experience and projects.
+                    Thêm các liên kết để học viên có thể tìm hiểu thêm về kinh nghiệm thực tế và dự án của bạn.
                   </p>
                   {[
-                    { name: "linkedin", icon: faLinkedin, color: "text-[#0077B5]", label: "LinkedIn Profile",          placeholder: "https://linkedin.com/in/yourprofile" },
-                    { name: "github",   icon: faGithub,   color: "text-[#181717]", label: "GitHub Account",            placeholder: "https://github.com/yourusername" },
-                    { name: "youtube",  icon: faYoutube,  color: "text-[#FF0000]", label: "YouTube Channel (Optional)", placeholder: "https://youtube.com/@yourchannel" },
-                    { name: "website",  icon: faUserCircle,color: "text-blue-600", label: "Personal Website / Portfolio",placeholder: "https://yourwebsite.com" },
+                    { name: "linkedin", icon: faLinkedin, color: "text-[#0077B5]", label: "Hồ sơ LinkedIn",          placeholder: "https://linkedin.com/in/yourprofile" },
+                    { name: "github",   icon: faGithub,   color: "text-[#181717]", label: "Tài khoản GitHub",            placeholder: "https://github.com/yourusername" },
+                    { name: "youtube",  icon: faYoutube,  color: "text-[#FF0000]", label: "Kênh YouTube (Tùy chọn)", placeholder: "https://youtube.com/@yourchannel" },
+                    { name: "website",  icon: faUserCircle,color: "text-blue-600", label: "Website cá nhân / Portfolio",placeholder: "https://yourwebsite.com" },
                   ].map((link) => (
                     <div key={link.name}>
                       <label
@@ -507,7 +497,7 @@ const InstructorProfilePage = () => {
                         value={profileData[link.name]}
                         onChange={handleInputChange}
                         placeholder={link.placeholder}
-                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500"
+                        className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                       />
                     </div>
                   ))}
@@ -522,37 +512,37 @@ const InstructorProfilePage = () => {
                         icon={faKey}
                         className="text-amber-500"
                       />{" "}
-                      Change Password
+                      Thay đổi mật khẩu
                     </h3>
                     <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Current Password
+                          Mật khẩu hiện tại
                         </label>
                         <input
                           type="password"
                           placeholder="••••••••"
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          New Password
+                          Mật khẩu mới
                         </label>
                         <input
                           type="password"
                           placeholder="••••••••"
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
                       </div>
                       <div>
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                          Confirm New Password
+                          Xác nhận mật khẩu mới
                         </label>
                         <input
                           type="password"
                           placeholder="••••••••"
-                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500"
+                          className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
                       </div>
                       <div className="sm:col-span-2 flex justify-end">
@@ -560,7 +550,7 @@ const InstructorProfilePage = () => {
                           type="button"
                           className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5"
                         >
-                          Update Password
+                          Cập nhật mật khẩu
                         </button>
                       </div>
                     </form>

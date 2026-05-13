@@ -24,16 +24,12 @@ import {
   faEye,
   faTrash,
   faIdCard,
-  faCalendarAlt,
   faBookOpen,
-  faPhone,
-  faVenusMars,
-  faMapMarkerAlt,
   faBriefcase,
   faGraduationCap,
   faGlobe
 } from "@fortawesome/free-solid-svg-icons";
-import { adminGetUsersAPI, adminToggleBlockAPI, adminGetUserDetailAPI, adminDeleteUserAPI } from "../../services/userAPI";
+import { adminGetUsersAPI, adminToggleBlockAPI, adminGetUserDetailAPI, adminDeleteUserAPI, adminCreateUserAPI } from "../../services/userAPI";
 
 // =========================================================================
 // HELPER: Lấy token từ localStorage
@@ -257,16 +253,22 @@ const AdminUserManagement = () => {
     setIsAddModalOpen(true);
   };
 
+  // 🚨 ĐÃ GHÉP API VÀO HÀM NÀY
   const handleCreateUser = async (e) => {
     e.preventDefault();
     setIsCreating(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const token = getToken();
+      // Bắn API gọi Backend
+      await adminCreateUserAPI(newUser, token);
+      
       alert("Khởi tạo tài khoản người dùng mới thành công.");
       setIsAddModalOpen(false);
-      handleRefresh(); 
+      handleRefresh(); // Cập nhật lại danh sách ngay lập tức
     } catch (err) {
-      alert("Lỗi: Không thể khởi tạo người dùng. Vui lòng kiểm tra lại thông tin.");
+      // Bắt lỗi từ Backend trả về (nếu email trùng, mật khẩu yếu...)
+      const errorMsg = err?.response?.data?.detail || err?.response?.data?.message || "Không thể khởi tạo người dùng. Vui lòng kiểm tra lại thông tin.";
+      alert("Lỗi: " + errorMsg);
     } finally {
       setIsCreating(false);
     }

@@ -5,6 +5,7 @@ import myLogo from "../assets/logo.png";
 import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
 import { getInstructorProfileAPI } from "../services/instructorAPI";
+import NotificationBell from "../components/common/NotificationBell";
 import {
   faBars,
   faSearch,
@@ -16,69 +17,19 @@ import {
   faGear,
   faUser,
   faArrowRightFromBracket,
-  faCheckCircle,
-  faCommentDots,
-  faBullhorn,
-  faTimesCircle,
-  faCheckDouble
 } from "@fortawesome/free-solid-svg-icons";
-
-// =========================================================================
-// DỮ LIỆU MẪU: Giả lập danh sách thông báo (Đã Việt hóa)
-// =========================================================================
-const MOCK_NOTIFICATIONS = [
-  {
-    id: 1,
-    type: "approval", 
-    title: "Khóa học đã được duyệt! 🎉",
-    message: 'Khóa học "Lập trình ReactJS 2026" của bạn đã được Quản trị viên phê duyệt và xuất bản.',
-    timeAgo: "10 phút trước",
-    isRead: false,
-  },
-  {
-    id: 2,
-    type: "qna", 
-    title: "Câu hỏi Q&A mới",
-    message: 'Hoàng Nguyễn đã đặt một câu hỏi trong bài học "JSX và Rendering Elements".',
-    timeAgo: "2 giờ trước",
-    isRead: false,
-  },
-  {
-    id: 3,
-    type: "system", 
-    title: "Bảo trì hệ thống",
-    message: "EduSync sẽ tiến hành bảo trì hệ thống ngắn hạn vào Chủ Nhật này lúc 2:00 sáng.",
-    timeAgo: "1 ngày trước",
-    isRead: true,
-  },
-  {
-    id: 4,
-    type: "rejection", 
-    title: "Yêu cầu chỉnh sửa khóa học",
-    message: 'Khóa học "Python nâng cao" cần thay đổi nội dung trước khi duyệt. Vui lòng kiểm tra phản hồi.',
-    timeAgo: "2 ngày trước",
-    isRead: true,
-  }
-];
 
 const InstructorLayout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  // 1. STATE LƯU THÔNG TIN PROFILE CỦA GIẢNG VIÊN
+  // STATE LƯU THÔNG TIN PROFILE CỦA GIẢNG VIÊN
   const [instructorProfile, setInstructorProfile] = useState({
     fullName: "",
     role: "",
     avatarUrl: "",
   });
-
-  // 2. STATE CHO THÔNG BÁO (NOTIFICATIONS)
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const [isNotifOpen, setIsNotifOpen] = useState(false);
-  const notifRef = useRef(null);
-
-  const unreadCount = notifications.filter(n => !n.isRead).length;
 
   // Gọi API lấy thông tin giảng viên
   useEffect(() => {
@@ -94,17 +45,6 @@ const InstructorLayout = () => {
       }
     };
     fetchInstructorProfile();
-  }, []);
-  
-  // Xử lý click ra ngoài để đóng dropdown thông báo
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (notifRef.current && !notifRef.current.contains(event.target)) {
-        setIsNotifOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   // Xử lý Responsive Sidebar
@@ -129,7 +69,7 @@ const InstructorLayout = () => {
 
   const bottomLinks = [
     { name: "Tài khoản", icon: faUser, path: "/instructor/account" },
-    { name: "Cài đặt", icon: faGear, path: "/instructor/settings" },
+    // { name: "Cài đặt", icon: faGear, path: "/instructor/settings" },
   ];
 
   const handleLinkClick = () => {
@@ -154,25 +94,6 @@ const InstructorLayout = () => {
       localStorage.removeItem("user_role");
       localStorage.removeItem("user_id");
       navigate("/instructor/login");
-    }
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-  };
-
-  const renderNotifIcon = (type) => {
-    switch (type) {
-      case "approval":
-        return <div className="w-10 h-10 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0"><FontAwesomeIcon icon={faCheckCircle} /></div>;
-      case "qna":
-        return <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0"><FontAwesomeIcon icon={faCommentDots} /></div>;
-      case "system":
-        return <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0"><FontAwesomeIcon icon={faBullhorn} /></div>;
-      case "rejection":
-        return <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0"><FontAwesomeIcon icon={faTimesCircle} /></div>;
-      default:
-        return <div className="w-10 h-10 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0"><FontAwesomeIcon icon={faBell} /></div>;
     }
   };
 
@@ -320,64 +241,7 @@ const InstructorLayout = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
-            {/* THÔNG BÁO */}
-            <div className="relative" ref={notifRef}>
-              <button 
-                onClick={() => setIsNotifOpen(!isNotifOpen)}
-                className={`text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center ${isNotifOpen ? 'bg-blue-50 text-blue-600' : ''}`}
-              >
-                <FontAwesomeIcon icon={faBell} className="text-xl" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-2 right-2 h-2.5 w-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse"></span>
-                )}
-              </button>
-
-              {isNotifOpen && (
-                <div className="absolute right-0 mt-3 w-[320px] sm:w-[380px] bg-white rounded-2xl shadow-2xl border border-slate-200 z-50 overflow-hidden animate-fade-slide-up origin-top-right">
-                  <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                    <h3 className="font-extrabold text-slate-800 text-base">Thông báo</h3>
-                    {unreadCount > 0 && (
-                      <button onClick={markAllAsRead} className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1.5">
-                        <FontAwesomeIcon icon={faCheckDouble} />
-                        Đánh dấu tất cả là đã đọc
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="max-h-[350px] overflow-y-auto custom-scrollbar divide-y divide-slate-100">
-                    {notifications.length > 0 ? (
-                      notifications.map(notif => (
-                        <div 
-                          key={notif.id} 
-                          className={`p-4 flex gap-4 hover:bg-slate-50 cursor-pointer transition-colors ${!notif.isRead ? 'bg-blue-50/30' : ''}`}
-                          onClick={() => setNotifications(notifications.map(n => n.id === notif.id ? { ...n, isRead: true } : n))}
-                        >
-                          {renderNotifIcon(notif.type)}
-                          <div className="flex-1 min-w-0">
-                            <h4 className={`text-sm mb-0.5 truncate ${!notif.isRead ? 'font-bold text-slate-900' : 'font-semibold text-slate-700'}`}>
-                              {notif.title}
-                            </h4>
-                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed mb-1.5">{notif.message}</p>
-                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{notif.timeAgo}</span>
-                          </div>
-                          {!notif.isRead && <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5"></div>}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="p-8 text-center text-slate-500 flex flex-col items-center gap-2">
-                        <FontAwesomeIcon icon={faBell} className="text-3xl text-slate-300" />
-                        <p className="text-sm font-medium">Bạn không có thông báo nào.</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="p-3 border-t border-slate-100 bg-slate-50 text-center">
-                    <button className="text-xs font-bold text-slate-500 hover:text-slate-800 w-full py-1">Xem tất cả thông báo</button>
-                  </div>
-                </div>
-              )}
-            </div>
-
+            <NotificationBell notificationsPageUrl="/instructor/notifications" />
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
             <button onClick={() => navigate("/instructor/account")} className="flex items-center gap-3 hover:opacity-80 transition-opacity">

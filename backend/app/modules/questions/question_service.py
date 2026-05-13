@@ -207,5 +207,85 @@ class QuestionService:
             "reply_id": reply_id
         }
 
+    # =====================================
+    # DELETE QUESTION
+    # =====================================
+
+    async def delete_question(self, question_id, user_id, user_role):
+        """
+        Xóa câu hỏi (question).
+        - Learner: Chỉ xóa được question của chính mình
+        - Instructor: Xóa được tất cả question trong khóa học của mình
+        """
+        from fastapi import HTTPException
+
+        # Kiểm tra question có tồn tại không
+        question = db.questions.find_one({"_id": ObjectId(question_id)})
+        if not question:
+            raise HTTPException(status_code=404, detail="Question not found")
+
+        # PHÂN QUYỀN
+        if user_role == "learner":
+            # Learner chỉ xóa được question của chính mình
+            if str(question["user_id"]) != str(user_id):
+                raise HTTPException(status_code=403, detail="You can only delete your own questions")
+
+        elif user_role == "instructor":
+            # Instructor xóa được question trong khóa học của mình
+            course = db.courses.find_one({"_id": question["course_id"]})
+            if not course or str(course.get("instructor_id")) != str(user_id):
+                raise HTTPException(status_code=403, detail="You can only delete questions in your courses")
+
+        # Xóa tất cả replies của question này
+        db.questions.delete_many({
+            "parent_id": ObjectId(question_id)
+        })
+
+        # Xóa question
+        db.questions.delete_one({"_id": ObjectId(question_id)})
+
+        return {
+            "message": "Question deleted successfully"
+        }
+
+    # =====================================
+    # DELETE REPLY
+    # =====================================
+
+    async def delete_reply(self, reply_id, user_id, user_role):
+        """
+        Xóa reply (câu trả lời).
+        - Learner: Chỉ xóa được reply của chính mình
+        - Instructor: Xóa được tất cả reply trong khóa học của mình
+        """
+        from fastapi import HTTPException
+
+        # Kiểm tra reply có tồn tại không
+        reply = db.questions.find_one({"_id": ObjectId(reply_id)})
+        if not reply:
+            raise HTTPException(status_code=404, detail="Reply not found")
+
+        # PHÂN QUYỀN
+        if user_role == "learner":
+            # Learner chỉ xóa được reply của chính mình
+            if str(reply["user_id"]) != str(user_id):
+                raise HTTPException(status_code=403, detail="You can only delete your own replies")
+
+        elif user_role == "instructor":
+            # Instructor xóa được reply trong khóa học của mình
+            # Tìm question cha để lấy course_id
+            question = db.questions.find_one({"_id": reply.get("parent_id")})
+            if question:
+                course = db.courses.find_one({"_id": question["course_id"]})
+                if not course or str(course.get("instructor_id")) != str(user_id):
+                    raise HTTPException(status_code=403, detail="You can only delete replies in your courses")
+
+        # Xóa reply
+        db.questions.delete_one({"_id": ObjectId(reply_id)})
+
+        return {
+            "message": "Reply deleted successfully"
+        }
+
 
 question_service = QuestionService()

@@ -18,7 +18,7 @@ import {
 import { getInstructorCoursesAPI, deleteCourseAPI } from "../../services/instructorAPI";
 
 const InstructorMyCourses = () => {
-  // ==================== STATES ====================
+  // ==================== QUẢN LÝ TRẠNG THÁI ====================
   const [allCourses, setAllCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +27,7 @@ const InstructorMyCourses = () => {
   const [activeFilter, setActiveFilter] = useState("all");
   const [deletingId, setDeletingId] = useState(null);
 
-  // ==================== EFFECTS ====================
+  // ==================== TÁC VỤ VÒNG ĐỜI (EFFECTS) ====================
   useEffect(() => {
     fetchCourses();
   }, []);
@@ -36,22 +36,22 @@ const InstructorMyCourses = () => {
     applyFilters();
   }, [allCourses, searchQuery, activeFilter]);
 
-  // ==================== FUNCTIONS ====================
+  // ==================== CHỨC NĂNG XỬ LÝ (FUNCTIONS) ====================
   const fetchCourses = async () => {
     try {
       setIsLoading(true);
       setError(null);
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Token not found. Please log in again.");
+        setError("Lỗi xác thực: Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại.");
         setIsLoading(false);
         return;
       }
       const data = await getInstructorCoursesAPI(token);
       setAllCourses(data || []);
     } catch (err) {
-      setError(err.message || "Error loading course list");
-      console.error("Error fetching courses:", err);
+      setError("Lỗi truy xuất: Không thể tải danh sách khóa học. " + (err.message || ""));
+      console.error("Chi tiết lỗi fetchCourses:", err);
     } finally {
       setIsLoading(false);
     }
@@ -79,34 +79,40 @@ const InstructorMyCourses = () => {
   };
 
   const handleDeleteCourse = async (courseId) => {
-    if (!window.confirm("Are you sure you want to delete this course? This action cannot be undone.")) return;
+    if (!window.confirm("Cảnh báo hệ thống: Bạn có chắc chắn muốn xóa vĩnh viễn khóa học này? Dữ liệu bị xóa sẽ không thể khôi phục.")) return;
 
     try {
       setDeletingId(courseId);
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Không tìm thấy token. Vui lòng đăng nhập lại.");
+        setError("Lỗi xác thực: Không tìm thấy phiên làm việc hợp lệ.");
         return;
       }
       await deleteCourseAPI(courseId, token);
       setAllCourses(prev => prev.filter(c => c.id !== courseId));
     } catch (err) {
-      setError(err.message || "Error deleting course");
-      console.error("Error deleting course:", err);
+      setError("Lỗi xử lý: Thao tác xóa khóa học không thành công. " + (err.message || ""));
+      console.error("Chi tiết lỗi deleteCourse:", err);
     } finally {
       setDeletingId(null);
     }
   };
 
-  // ==================== HELPER COMPONENTS ====================
-  // Format tiền chuyên nghiệp
+  // ==================== THÀNH PHẦN HỖ TRỢ (HELPER COMPONENTS) ====================
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount || 0);
   };
 
-  // Status Badge chuẩn UI/UX Dashboard
   const StatusBadge = ({ status }) => {
     const normalizedStatus = status?.toLowerCase() || "draft";
+    
+    // Ánh xạ trạng thái sang nhãn tiếng Việt
+    const labels = {
+      published: "Đã xuất bản",
+      pending: "Chờ kiểm duyệt",
+      draft: "Bản nháp"
+    };
+
     let styles = {
       published: "bg-emerald-50 text-emerald-700 border-emerald-200 ring-emerald-500/20",
       dot_published: "bg-emerald-500",
@@ -118,16 +124,16 @@ const InstructorMyCourses = () => {
 
     const currentStyle = styles[normalizedStatus] || styles.draft;
     const dotStyle = styles[`dot_${normalizedStatus}`] || styles.dot_draft;
+    const label = labels[normalizedStatus] || "Không xác định";
 
     return (
       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-semibold border ${currentStyle}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${dotStyle}`}></span>
-        <span className="capitalize">{status}</span>
+        <span>{label}</span>
       </span>
     );
   };
 
-  // ==================== SKELETON LOADER ====================
   const CourseSkeleton = () => (
     <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm animate-pulse flex flex-col">
       <div className="aspect-[4/3] bg-slate-100"></div>
@@ -146,19 +152,19 @@ const InstructorMyCourses = () => {
     </div>
   );
 
-  // ==================== RENDER ====================
+  // ==================== GIAO DIỆN CHÍNH (RENDER) ====================
   return (
     <main className="animate-fade-slide-up flex-1 p-6 sm:p-8 md:p-10 bg-[#fafafa] font-sans min-h-screen">
       <div className="max-w-7xl mx-auto space-y-8">
         
-        {/* ================= HEADER ================= */}
+        {/* HEADER */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5 pb-6 border-b border-slate-200/80">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">
-              Course Management
+              Quản lý Khóa học của bạn
             </h1>
             <p className="text-slate-500 mt-1 text-sm font-medium">
-              Create, edit, and monitor the performance of your courses.
+              Khởi tạo, điều chỉnh và theo dõi hiệu suất các khóa học do bạn phụ trách.
             </p>
           </div>
           <Link
@@ -166,45 +172,48 @@ const InstructorMyCourses = () => {
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-slate-900 text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-all duration-300 shadow-sm active:scale-95"
           >
             <FontAwesomeIcon icon={faPlus} />
-            Create Course
+            Tạo Khóa học mới
           </Link>
         </div>
 
-        {/* ================= SEARCH & FILTER BAR ================= */}
+        {/* THANH TÌM KIẾM & BỘ LỌC */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          {/* Search Input chuẩn SaaS */}
           <div className="relative w-full md:max-w-md">
             <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
               <FontAwesomeIcon icon={faSearch} className="text-slate-400 text-sm" />
             </div>
             <input
               type="search"
-              placeholder="Search courses..."
+              placeholder="Tìm kiếm theo tên khóa học, danh mục..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="block w-full pl-10 pr-4 py-2 bg-white border border-slate-200/80 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm font-medium text-slate-800 outline-none shadow-sm placeholder:text-slate-400"
             />
           </div>
 
-          {/* Segmented Control Filter (Đẳng cấp hơn dạng nút rời rạc) */}
-          <div className="inline-flex bg-slate-100/80 p-1 rounded-lg border border-slate-200/50 w-full md:w-auto">
-            {["all", "published", "pending", "draft"].map((filter) => (
+          <div className="inline-flex bg-slate-100/80 p-1 rounded-lg border border-slate-200/50 w-full md:w-auto overflow-x-auto">
+            {[
+              { id: "all", label: "Tất cả" },
+              { id: "published", label: "Đã xuất bản" },
+              { id: "pending", label: "Chờ duyệt" },
+              { id: "draft", label: "Bản nháp" }
+            ].map((filter) => (
               <button
-                key={filter}
-                onClick={() => setActiveFilter(filter)}
-                className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 capitalize ${
-                  activeFilter === filter
+                key={filter.id}
+                onClick={() => setActiveFilter(filter.id)}
+                className={`flex-1 md:flex-none px-4 py-1.5 text-xs font-bold rounded-md transition-all duration-200 whitespace-nowrap ${
+                  activeFilter === filter.id
                     ? "bg-white text-slate-800 shadow-sm border border-slate-200/50"
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-200/50"
                 }`}
               >
-                {filter}
+                {filter.label}
               </button>
             ))}
           </div>
         </div>
 
-        {/* ================= STATES ================= */}
+        {/* TRẠNG THÁI HIỂN THỊ (LOADING & ERROR) */}
         {isLoading && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {[1, 2, 3, 4, 5, 6].map((i) => <CourseSkeleton key={i} />)}
@@ -215,13 +224,13 @@ const InstructorMyCourses = () => {
           <div className="bg-red-50/50 border border-red-100 rounded-xl p-5 flex items-start gap-4">
             <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-xl mt-0.5" />
             <div>
-              <h4 className="text-red-800 font-bold text-sm">Failed to load courses</h4>
+              <h4 className="text-red-800 font-bold text-sm">Lỗi tải dữ liệu</h4>
               <p className="text-red-600/80 text-sm mt-1 mb-3">{error}</p>
               <button
                 onClick={fetchCourses}
                 className="px-4 py-1.5 bg-white border border-red-200 text-red-600 text-xs font-bold rounded-md hover:bg-red-50 transition-colors shadow-sm"
               >
-                Try Again
+                Thử lại
               </button>
             </div>
           </div>
@@ -233,12 +242,12 @@ const InstructorMyCourses = () => {
               <FontAwesomeIcon icon={faFolderOpen} className="text-slate-400 text-2xl" />
             </div>
             <h3 className="text-lg font-bold text-slate-800 mb-1">
-              {searchQuery || activeFilter !== "all" ? "No matches found" : "No courses created yet"}
+              {searchQuery || activeFilter !== "all" ? "Không tìm thấy dữ liệu khớp" : "Chưa có khóa học nào"}
             </h3>
             <p className="text-slate-500 text-sm mb-6 text-center max-w-sm">
               {searchQuery || activeFilter !== "all"
-                ? "We couldn't find any courses matching your current filters. Try adjusting them."
-                : "Your dashboard is looking a bit empty. Start creating your first course to share your knowledge!"}
+                ? "Không có khóa học nào phù hợp với bộ lọc hiện tại. Vui lòng thử lại với từ khóa khác."
+                : "Bảng điều khiển của bạn đang trống. Hãy bắt đầu tạo khóa học đầu tiên để chia sẻ kiến thức!"}
             </p>
             {!(searchQuery || activeFilter !== "all") && (
               <Link
@@ -246,13 +255,13 @@ const InstructorMyCourses = () => {
                 className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition shadow-sm"
               >
                 <FontAwesomeIcon icon={faPlus} />
-                Create First Course
+                Khởi tạo khóa học đầu tiên
               </Link>
             )}
           </div>
         )}
 
-        {/* ================= COURSES GRID ================= */}
+        {/* LƯỚI KHÓA HỌC (COURSES GRID) */}
         {!isLoading && !error && filteredCourses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredCourses.map((course) => (
@@ -260,10 +269,10 @@ const InstructorMyCourses = () => {
                 key={course.id}
                 className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-300 transition-all duration-300 overflow-hidden flex flex-col group relative"
               >
-                {/* IMAGE & BADGE */}
+                {/* ẢNH BÌA & NHÃN TRẠNG THÁI */}
                 <div className="relative aspect-[4/3] bg-slate-100 overflow-hidden border-b border-slate-100">
                   <img
-                    src={course.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"} // Dùng ảnh placeholder xịn hơn
+                    src={course.image || "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"}
                     alt={course.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-in-out"
                   />
@@ -272,7 +281,7 @@ const InstructorMyCourses = () => {
                   </div>
                 </div>
 
-                {/* CONTENT */}
+                {/* NỘI DUNG */}
                 <div className="p-5 flex-1 flex flex-col">
                   <div className="flex items-center gap-1.5 text-[11px] font-bold text-blue-600 uppercase tracking-wider mb-2">
                     <FontAwesomeIcon icon={faTag} />
@@ -283,38 +292,37 @@ const InstructorMyCourses = () => {
                     {course.title}
                   </h3>
 
-                  {/* MINI STATS ROW - Clean & Minimal */}
+                  {/* THỐNG KÊ RÚT GỌN */}
                   <div className="flex items-center gap-4 mt-auto text-sm text-slate-600 font-medium pb-4 border-b border-slate-100">
-                    <div className="flex items-center gap-1.5" title="Students enrolled">
+                    <div className="flex items-center gap-1.5" title="Số lượng học viên">
                       <FontAwesomeIcon icon={faUserGroup} className="text-slate-400 text-xs" />
                       {course.students || 0}
                     </div>
                     <div className="w-1 h-1 rounded-full bg-slate-300"></div>
-                    <div className="flex items-center gap-1.5" title="Total lessons">
+                    <div className="flex items-center gap-1.5" title="Tổng số bài học">
                       <FontAwesomeIcon icon={faBookOpen} className="text-slate-400 text-xs" />
                       {course.lessons || 0}
                     </div>
                   </div>
 
-                  {/* FOOTER ACTIONS */}
+                  {/* THAO TÁC & GIÁ */}
                   <div className="flex items-center justify-between pt-4">
                     <span className="font-extrabold text-slate-900">
-                      {formatCurrency(course.price)}
+                      {course.price === 0 ? "Miễn phí" : formatCurrency(course.price)}
                     </span>
                     
-                    {/* Action Toolbar */}
                     <div className="flex items-center gap-1">
                       <Link
                         to={`/instructor/courses/${course.id || course._id}`}
                         className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
-                        title="View details"
+                        title="Xem chi tiết"
                       >
                         <FontAwesomeIcon icon={faEye} className="text-sm" />
                       </Link>
                       <Link
                         to={`/instructor/courses/${course.id}/edit`}
                         className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                        title="Edit course"
+                        title="Chỉnh sửa khóa học"
                       >
                         <FontAwesomeIcon icon={faEdit} className="text-sm" />
                       </Link>
@@ -322,7 +330,7 @@ const InstructorMyCourses = () => {
                         onClick={() => handleDeleteCourse(course.id)}
                         disabled={deletingId === course.id}
                         className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        title="Delete course"
+                        title="Xóa khóa học"
                       >
                         <FontAwesomeIcon
                           icon={deletingId === course.id ? faSpinner : faTrash}

@@ -144,18 +144,4 @@ export async function moderateCourseAPI(courseId, status, token) {
 }
 
 
-// add user
-export async function addUserToCourseAPI(courseId, userId, token) {
-  try {
-    const response = await axios.post(
-      `${BASE_URL}/admin/courses/${courseId}/users`,
-      { userId },
-      {
-        headers: authHeaders(token),
-      }
-    );
-    return response.data;
-  } catch (error) {
-    throw new Error(parseAxiosError(error, "Thêm người dùng thất bại"));
-  }
-}
+

@@ -16,7 +16,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
     const run = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Please sign in to take the AI quiz.");
+        setError("Vui lòng đăng nhập để tham gia bài kiểm tra AI.");
         setLoading(false);
         return;
       }
@@ -32,7 +32,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
           : await aiQuizAPI(token, lessonContext, 5, "vi");
         if (!cancelled) setQuestions(data.questions || []);
       } catch (e) {
-        if (!cancelled) setError(e.message || "Failed to generate quiz.");
+        if (!cancelled) setError(e.message || "Hệ thống: Không thể khởi tạo bài kiểm tra.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -65,15 +65,15 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
 
   if (loading) {
     return (
-      <div className="animate-fade-slide-up py-8 text-center text-slate-500 text-sm">
-        Generating questions from lesson content...
+      <div className="animate-fade-slide-up py-8 text-center text-slate-500 text-sm font-medium">
+        Hệ thống AI đang khởi tạo bộ câu hỏi dựa trên nội dung bài học...
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="animate-fade-slide-up text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3">
+      <div className="animate-fade-slide-up text-red-600 text-sm bg-red-50 border border-red-100 rounded-xl px-4 py-3 font-medium">
         {error}
       </div>
     );
@@ -82,14 +82,14 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
   return (
     <div className="animate-fade-slide-up">
       <div className="mb-6 flex justify-between items-center flex-wrap gap-2">
-        <h3 className="text-lg font-bold text-slate-800">Knowledge Check (AI)</h3>
+        <h3 className="text-lg font-bold text-slate-800">Kiểm tra kiến thức (AI)</h3>
         <span className="bg-blue-100 text-blue-700 text-xs font-bold px-3 py-1 rounded-full">
-          {questions.length} Questions
+          {questions.length} Câu hỏi
         </span>
       </div>
       {submitted && score !== null && (
-        <p className="mb-4 text-sm font-bold text-blue-700">
-          Result: {score} / {questions.length} correct
+        <p className="mb-4 text-sm font-bold text-blue-700 bg-blue-50 p-3 rounded-lg border border-blue-100">
+          Kết quả: {score} / {questions.length} câu đúng
         </p>
       )}
       <div className="space-y-6">
@@ -128,17 +128,17 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
               })}
             </div>
             {submitted && (
-              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
+              <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
     
                 <p className="text-sm font-semibold text-slate-800">
-                  Correct Answer:
-                  <span className="ml-2 text-green-600">
+                  Đáp án chính xác:
+                  <span className="ml-2 text-green-600 font-bold">
                     {q.options[q.correct_index]}
                   </span>
                 </p>
 
                 {q.explanation && (
-                  <p className="mt-2 text-sm text-slate-600 leading-relaxed">
+                  <p className="mt-2 text-sm text-slate-600 leading-relaxed border-t border-slate-100 pt-2">
                     {q.explanation}
                   </p>
                 )}
@@ -150,7 +150,7 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
                 onClick={onSwitchToDiscussion}
                 className="text-xs font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5"
               >
-                <FontAwesomeIcon icon={faCommentDots} /> Have a question about this?
+                <FontAwesomeIcon icon={faCommentDots} /> Có thắc mắc về câu hỏi này?
               </button>
             </div>
           </div>
@@ -160,9 +160,9 @@ const CourseQuiz = ({ lessonContext, videoId, onSwitchToDiscussion }) => {
             type="button"
             onClick={handleSubmit}
             disabled={submitted}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-md"
+            className="w-full py-3 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-colors shadow-md active:scale-95"
           >
-            {submitted ? "Submitted" : "Submit"}
+            {submitted ? "Đã nộp bài" : "Nộp bài"}
           </button>
         )}
       </div>

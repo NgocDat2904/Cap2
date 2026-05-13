@@ -34,7 +34,7 @@ export const uploadAvatarAPI = async (file, token) => {
       Authorization: `Bearer ${token}`,
       // KHÔNG set Content-Type ở đây, trình duyệt sẽ tự động xử lý
     },
-    body: formData,
+    data: formData,
   });
 
   if (!response.ok) {
@@ -102,4 +102,12 @@ export const adminDeleteUserAPI = async (userId, token) => {
     { headers: { Authorization: `Bearer ${token}` } }
   );
   return response.data;
+};
+
+// add user
+export const adminCreateUserAPI = async (userData, token) => {
+  const res = await axios.post(`${ADMIN_API_URL}/admin/users`, userData, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return res.data;
 };

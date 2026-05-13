@@ -6,7 +6,8 @@ import DashboardFooter from "../components/InstructorAndAdminFooter";
 import { logoutAPI } from "../services/authService";
 import { getProfileAPI } from "../services/userAPI";
 // ✅ IMPORT THÊM API ĐỂ FETCH SỐ LƯỢNG CHỜ DUYỆT:
-import { fetchPendingCoursesAPI } from "../services/adminCourseAPI"; 
+import { fetchPendingCoursesAPI } from "../services/adminCourseAPI";
+import NotificationBell from "../components/common/NotificationBell"; 
 import {
   faBars,
   faSearch,
@@ -315,14 +316,7 @@ const AdminLayout = () => {
           </div>
 
           <div className="flex items-center gap-3 sm:gap-5 ml-4">
-            <button className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 w-10 h-10 rounded-xl relative transition-all flex items-center justify-center">
-              <FontAwesomeIcon icon={faBell} className="text-xl" />
-              {pendingCount > 0 && (
-                <span className="absolute top-1 right-1 h-4 w-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center border-2 border-white">
-                  {pendingCount}
-                </span>
-              )}
-            </button>
+            <NotificationBell notificationsPageUrl="/admin/notifications" />
             <div className="h-8 w-px bg-slate-200 hidden sm:block mx-1"></div>
 
             <button
