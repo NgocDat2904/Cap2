@@ -20,6 +20,8 @@ def _get_model() -> WhisperModel:
             model_name,
             device="cpu",
             compute_type=compute_type,
+            cpu_threads=int(os.getenv("WHISPER_CPU_THREADS", str(os.cpu_count() or 4))),
+            num_workers=int(os.getenv("WHISPER_NUM_WORKERS", "2")),
         )
     return _MODEL
 
@@ -32,8 +34,10 @@ def _ensure_ffmpeg() -> None:
 
 def _download_file(url: str, out_path: str) -> None:
     try:
+        CHUNK = 1 << 20
         with urllib.request.urlopen(url) as resp, open(out_path, "wb") as f:
-            f.write(resp.read())
+            while chunk := resp.read(CHUNK):
+                f.write(chunk)
     except Exception as e:
         raise RuntimeError(f"Không tải được video/audio từ URL: {e}") from e
 
@@ -41,26 +45,28 @@ def _download_file(url: str, out_path: str) -> None:
 def _extract_audio(video_path: str, audio_path: str) -> None:
     _ensure_ffmpeg()
     cmd = [
-        "ffmpeg",
-        "-y",
-        "-i",
-        video_path,
+        "ffmpeg", "-y",
+        "-i", video_path,
         "-vn",
-        "-ac",
-        "1",
-        "-ar",
-        "16000",
-        "-f",
-        "wav",
+        "-ac", "1",
+        "-ar", "16000",
+        "-acodec", "pcm_s16le",
+        "-threads", str(os.cpu_count() or 4),
+        "-f", "wav",
         audio_path,
     ]
-    result = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    result = subprocess.run(
+        cmd, capture_output=True, text=True, encoding="utf-8", errors="replace"
+    )
     if result.returncode != 0:
         err = (result.stderr or "").strip()
         raise RuntimeError(f"ffmpeg tách audio thất bại: {err[:300]}")
 
 
-def transcribe_from_video_url(video_url: str, language: str = "vi") -> Tuple[str, List[Dict[str, Any]]]:
+def transcribe_from_video_url(
+    video_url: str,
+    language: str = "vi",
+) -> Tuple[str, List[Dict[str, Any]]]:
     if not video_url:
         raise RuntimeError("video_url trống, không thể tạo transcript")
 
@@ -77,10 +83,16 @@ def transcribe_from_video_url(video_url: str, language: str = "vi") -> Tuple[str
             language=language or "vi",
             vad_filter=True,
             beam_size=1,
+            condition_on_previous_text=False,
+            vad_parameters=dict(
+                min_silence_duration_ms=500,
+                speech_pad_ms=200,
+            ),
         )
 
         text_parts: List[str] = []
         seg_items: List[Dict[str, Any]] = []
+
         for seg in segments:
             chunk = (seg.text or "").strip()
             if not chunk:
