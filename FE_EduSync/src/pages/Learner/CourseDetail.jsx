@@ -113,9 +113,9 @@ const CourseDetailPage = () => {
 
   const formatCurrency = (amount) => {
     if (amount === 0) return "Miễn phí";
-    return new Intl.NumberFormat("en-US", {
+    return new Intl.NumberFormat("vi-VN", {
       style: "currency",
-      currency: "USD",
+      currency: "VND",
     }).format(amount);
   };
 
@@ -313,7 +313,7 @@ const CourseDetailPage = () => {
             <span className={`text-3xl font-black tracking-tight leading-none ${isFree ? 'text-emerald-600 uppercase tracking-wider text-2xl' : 'text-slate-900'}`}>
               {formatCurrency(courseDetail.price)}
             </span>
-            {isFree && <span className="text-sm font-bold text-slate-400 line-through pb-0.5">$99.99</span>}
+            {isFree && <span className="text-sm font-bold text-slate-400 line-through pb-0.5">999.000₫</span>}
           </div>
 
           {/* ======================================================= */}
