@@ -493,8 +493,39 @@ async def generate_timeline_json(
     ctx: LessonContext,
     language: str = "Vietnamese"
 ):
-    duration_info = f" (Thời lượng tối đa của video: {ctx.duration})" if ctx.duration and ctx.duration != "0" and ctx.duration != "00:00" else ""
-    prompt = f"""
+    if ctx.transcript_segments:
+        segments_text = ""
+        for s in ctx.transcript_segments:
+            start_s = int(s['start'])
+            start_hhmm = f"{start_s // 60:02d}:{start_s % 60:02d}"
+            segments_text += f"[{start_hhmm}] {s['text']}\n"
+            
+        prompt = f"""
+Bạn là AI chuyên phân tích video bài giảng. Nhiệm vụ của bạn là tạo các mốc thời gian quan trọng (timeline / chapters) cho bài học bằng ngôn ngữ {language}.
+Dưới đây là hội thoại của video kèm theo timestamp chính xác:
+
+{segments_text}
+
+YÊU CẦU QUAN TRỌNG:
+- Trích xuất các khoảnh khắc chuyển giao ý chính (key moments / chapters).
+- Thời gian (time) CHỈ ĐƯỢC CHỌN TỪ các timestamp có sẵn trong đoạn text bên trên. KHÔNG TỰ CHẾ HOẶC ƯỚC LƯỢNG THỜI GIAN.
+- "time" là định dạng MM:SS (ví dụ 01:30).
+- "seconds" là số giây tương ứng với "time" (ví dụ 01:30 -> 90).
+- "label" là tiêu đề ngắn gọn cho chapter đó.
+- Trả về kết quả dưới dạng JSON array. KHÔNG có format markdown bên ngoài JSON, không giải thích thêm.
+
+FORMAT:
+[
+  {{
+    "time": "00:00",
+    "seconds": 0,
+    "label": "Giới thiệu"
+  }}
+]
+"""
+    else:
+        duration_info = f" (Thời lượng tối đa của video: {ctx.duration})" if ctx.duration and ctx.duration != "0" and ctx.duration != "00:00" else ""
+        prompt = f"""
 Tạo các mốc thời gian quan trọng (timeline) cho bài học bằng {language}.
 Dựa vào transcript hoặc mô tả, hãy trích xuất các khoảnh khắc (key moments).
 Nếu transcript không có timestamp, hãy tự ước lượng khoảng thời gian hợp lý (ví dụ mỗi ý chính cách nhau vài phút).
