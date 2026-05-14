@@ -247,6 +247,29 @@ class VideoService:
                     print(f"[SUMMARY] ⚠️ Gemini không khả dụng, summary chưa được tạo cho video {video_id}")
             except Exception as summary_err:
                 print(f"[SUMMARY]  Lỗi auto-generate summary cho video {video_id}: {summary_err}")
+
+            # ===================== AUTO GENERATE TIMELINE =====================
+            try:
+                from app.modules.ai.gemini_service import generate_timeline_json_sync
+
+                timeline_items = generate_timeline_json_sync(ctx, "vi")
+
+                if timeline_items:
+                    db.videos.update_one(
+                        {"_id": ObjectId(video_id)},
+                        {
+                            "$set": {
+                                "ai_cache.timeline.vi": timeline_items,
+                                "updated_at": datetime.utcnow(),
+                            }
+                        }
+                    )
+                    print(f"[TIMELINE] Timeline đã tạo thành công cho video {video_id}")
+                else:
+                    print(f"[TIMELINE] ⚠️ Gemini không khả dụng, timeline chưa được tạo cho video {video_id}")
+            except Exception as timeline_err:
+                print(f"[TIMELINE] ❌ Lỗi auto-generate timeline cho video {video_id}: {timeline_err}")
+
         except Exception as e:
             print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")
             db.videos.update_one(

@@ -489,10 +489,7 @@ Transcript:
     return result
 
 
-async def generate_timeline_json(
-    ctx: LessonContext,
-    language: str = "Vietnamese"
-):
+def _build_timeline_prompt(ctx: LessonContext, language: str) -> str:
     if ctx.transcript_segments:
         segments_text = ""
         for s in ctx.transcript_segments:
@@ -500,7 +497,7 @@ async def generate_timeline_json(
             start_hhmm = f"{start_s // 60:02d}:{start_s % 60:02d}"
             segments_text += f"[{start_hhmm}] {s['text']}\n"
             
-        prompt = f"""
+        return f"""
 Bạn là AI chuyên phân tích video bài giảng. Nhiệm vụ của bạn là tạo các mốc thời gian quan trọng (timeline / chapters) cho bài học bằng ngôn ngữ {language}.
 Dưới đây là hội thoại của video kèm theo timestamp chính xác:
 
@@ -525,7 +522,7 @@ FORMAT:
 """
     else:
         duration_info = f" (Thời lượng tối đa của video: {ctx.duration})" if ctx.duration and ctx.duration != "0" and ctx.duration != "00:00" else ""
-        prompt = f"""
+        return f"""
 Tạo các mốc thời gian quan trọng (timeline) cho bài học bằng {language}.
 Dựa vào transcript hoặc mô tả, hãy trích xuất các khoảnh khắc (key moments).
 Nếu transcript không có timestamp, hãy tự ước lượng khoảng thời gian hợp lý (ví dụ mỗi ý chính cách nhau vài phút).
@@ -556,6 +553,12 @@ Mô tả: {ctx.description}
 Transcript: {ctx.transcript}
 """
 
+
+async def generate_timeline_json(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+):
+    prompt = _build_timeline_prompt(ctx, language)
     result = await _call_gemini(prompt)
 
     if not result:
@@ -571,3 +574,28 @@ Transcript: {ctx.transcript}
     except Exception as e:
         print("⚠️ JSON parse lỗi:", e)
         return _fallback_timeline(ctx)
+
+
+def generate_timeline_json_sync(
+    ctx: LessonContext,
+    language: str = "Vietnamese"
+):
+    """SYNC version - dùng cho background task (video_service)"""
+    prompt = _build_timeline_prompt(ctx, language)
+    result = _call_gemini_sync(prompt)
+
+    if not result:
+        print("[TIMELINE] Gemini trả về None → không tạo timeline")
+        return None
+
+    clean_json = _extract_json(result)
+
+    if not clean_json:
+        return None
+
+    try:
+        return json.loads(clean_json)
+    except Exception as e:
+        print("⚠️ [SYNC] JSON parse lỗi (timeline):", e)
+        return None
+
