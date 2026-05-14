@@ -787,6 +787,7 @@ class CourseService:
             "status": "DRAFT",
             "instructor_id": ObjectId(instructor_id),
             "is_locked": False,
+            "lessons": [],  # Fix: Initialize lessons array to prevent MongoDB error
         }
 
         course_id = await course_repository.create(course)
@@ -1174,24 +1175,18 @@ class CourseService:
         return {"message": "Course rejected"}
 
     async def resolve_pending_update(self, course_id: str, new_price: float | None = None):
-        """
-        Admin xử lý bản cập nhật của khóa học đang PUBLISHED
-        """
-
-        _db.courses.update_one(
-            {"_id": ObjectId(course_id)},
-            {"$set": {"lessons.$[].is_approved": True}}
-        )
 
         update_data = {
             "has_pending_update": False,
-            "has_new_update": False,   
+            "has_new_update": False,
         }
+
         if new_price is not None:
             update_data["price"] = new_price
 
         await course_repository.update(course_id, update_data)
-        return {"message": "Pending update resolved, all lessons approved"}
+
+        return {"message": "Pending update resolved"}
 
     async def get_admin_course_detail(self, course_id: str):
         course = await course_repository.get_by_id(course_id)

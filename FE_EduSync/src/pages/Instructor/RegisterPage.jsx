@@ -12,6 +12,7 @@ import {
 import myLogo from "../../assets/logo.png";
 // Import hàm gọi API đăng ký giảng viên
 import { registerInstructorAPI } from "../../services/authService";
+import toast from "../../utils/toast";
 
 const InstructorRegisterPage = () => {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ const InstructorRegisterPage = () => {
 
       // Nếu API trả về thành công
       if (response && response.message) {
-        alert("Registration successful! Please sign in.");
+        toast.success("Registration successful! Please sign in.");
         navigate("/instructor/login");
       }
     } catch (err) {

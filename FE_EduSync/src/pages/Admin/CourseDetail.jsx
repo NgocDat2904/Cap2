@@ -21,6 +21,7 @@ import {
   faSpinner,
   faEdit, 
 } from "@fortawesome/free-solid-svg-icons";
+import toast from "../../utils/toast";
 import {
   fetchAdminCourseDetailAPI,
   approveCourseAPI,
@@ -119,12 +120,12 @@ const AdminCourseDetail = () => {
     if (course.status !== "pending") return;
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Lỗi xác thực: Phiên làm việc đã hết hạn.");
+      toast.error("Lỗi xác thực: Phiên làm việc đã hết hạn.");
       return;
     }
     const p = adminPrice === "" || adminPrice === null ? 0 : parseFloat(String(adminPrice).replace(",", "."));
     if (Number.isNaN(p) || p < 0) { 
-      alert("Tham số không hợp lệ: Giá niêm yết phải là định dạng số dương."); 
+      toast.warning("Tham số không hợp lệ: Giá niêm yết phải là định dạng số dương."); 
       return; 
     }
     
@@ -133,10 +134,10 @@ const AdminCourseDetail = () => {
     setActionLoading(true);
     try {
       await approveCourseAPI(id, p, token);
-      alert("Hệ thống: Khóa học đã được xuất bản công khai thành công.");
+      toast.success("Hệ thống: Khóa học đã được xuất bản công khai thành công.");
       navigate("/admin/approvals");
     } catch (e) {
-      alert("Lỗi nghiệp vụ: Quá trình phê duyệt thất bại.");
+      toast.error("Lỗi nghiệp vụ: Quá trình phê duyệt thất bại.");
     } finally {
       setActionLoading(false);
     }
@@ -151,10 +152,10 @@ const AdminCourseDetail = () => {
     setActionLoading(true);
     try {
       await rejectCourseAPI(id, reason, token);
-      alert("Hệ thống: Đã từ chối phê duyệt khóa học và gửi thông báo phản hồi.");
+      toast.success("Hệ thống: Đã từ chối phê duyệt khóa học và gửi thông báo phản hồi.");
       await loadCourse();
     } catch (e) {
-      alert("Lỗi hệ thống: Không thể thực hiện thao tác từ chối.");
+      toast.error("Lỗi hệ thống: Không thể thực hiện thao tác từ chối.");
     } finally {
       setActionLoading(false);
     }
@@ -171,10 +172,10 @@ const AdminCourseDetail = () => {
       try {
         const newPrice = isPriceChanged ? parseFloat(adminPrice) : null;
         await resolveUpdateAPI(id, newPrice, token);
-        alert("Thông báo: Đã phê duyệt các bản cập nhật nội dung mới.");
+        toast.success("Thông báo: Đã phê duyệt các bản cập nhật nội dung mới.");
         await loadCourse();
       } catch (e) {
-        alert("Lỗi xử lý: Cập nhật nội dung thất bại.");
+        toast.error("Lỗi xử lý: Cập nhật nội dung thất bại.");
       } finally {
         setActionLoading(false);
       }
@@ -189,12 +190,12 @@ const AdminCourseDetail = () => {
       
     if (window.confirm(msg)) {
       setCourse({ ...course, status: newStatus });
-      alert("Hệ thống: Trạng thái khóa học đã được thay đổi.");
+      toast.success("Hệ thống: Trạng thái khóa học đã được thay đổi.");
     }
   };
 
   const handleDeleteCourse = () => {
-    alert("Tính năng: Xóa khóa học vĩnh viễn hiện đang được bảo trì.");
+    toast.info("Tính năng: Xóa khóa học vĩnh viễn hiện đang được bảo trì.");
   };
 
   const lessons = Array.isArray(course?.lessons) ? course.lessons : [];
@@ -224,7 +225,7 @@ const AdminCourseDetail = () => {
                 type="number"
                 step="1000"
                 min="0"
-                step="0.01"
+                // step="0.01"
                 value={adminPrice}
                 onChange={(e) => setAdminPrice(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-white border border-amber-200 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-amber-500/20 outline-none"

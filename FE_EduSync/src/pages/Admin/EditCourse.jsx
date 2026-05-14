@@ -20,6 +20,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 
 import { fetchAdminCourseDetailAPI } from "../../services/adminCourseAPI";
+import toast from "../../utils/toast";
 
 const THUMB_FALLBACK =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
@@ -163,10 +164,10 @@ const AdminEditCourse = () => {
       // Giả lập thời gian call API lưu dữ liệu
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      alert("Hệ thống: Cập nhật thông tin khóa học thành công.");
+      toast.success("Hệ thống: Cập nhật thông tin khóa học thành công.");
       navigate(`/admin/courses/${id}`);
     } catch (err) {
-      alert("Lỗi: Không thể lưu thay đổi. Vui lòng kiểm tra lại kết nối server.");
+      toast.error("Lỗi: Không thể lưu thay đổi. Vui lòng kiểm tra lại kết nối server.");
     } finally {
       setIsSaving(false);
     }
@@ -484,7 +485,7 @@ const AdminEditCourse = () => {
               <p className="text-sm text-slate-500 mb-6">Các hành động này sẽ ảnh hưởng vĩnh viễn đến khóa học.</p>
               
               <button 
-                onClick={() => alert('Hệ thống: Tính năng xóa hiện đã được tạm khóa trong bản demo.')}
+                onClick={() => toast.info('Hệ thống: Tính năng xóa hiện đã được tạm khóa trong bản demo.')}
                 className="w-full py-3.5 bg-white border-2 border-rose-200 text-rose-600 font-bold rounded-2xl hover:bg-rose-50 transition-all active:scale-95 flex items-center justify-center gap-2"
               >
                 <FontAwesomeIcon icon={faTrash} /> Xóa khóa học này

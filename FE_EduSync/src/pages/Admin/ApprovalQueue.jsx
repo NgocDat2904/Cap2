@@ -17,6 +17,7 @@ import {
   approveCourseAPI,
   rejectCourseAPI,
 } from "../../services/adminCourseAPI";
+import toast from "../../utils/toast";
 
 const THUMB_FALLBACK =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80";
@@ -61,7 +62,7 @@ const AdminApprovalQueue = () => {
     } catch (e) {
       console.error(e);
       // alert phù hợp báo cáo:
-      alert("Hệ thống không thể kết nối để lấy danh sách chờ duyệt. Vui lòng kiểm tra lại kết nối API.");
+      toast.error("Hệ thống không thể kết nối để lấy danh sách chờ duyệt. Vui lòng kiểm tra lại kết nối API.");
       setQueue([]);
       setTotal(0);
     } finally {
@@ -83,27 +84,27 @@ const AdminApprovalQueue = () => {
     e.preventDefault();
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
+      toast.error("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
       return;
     }
-    
+
     const p = priceInput === "" || priceInput === null
         ? 0
         : parseFloat(String(priceInput).replace(",", "."));
 
     if (Number.isNaN(p) || p < 0) {
-      alert("Định dạng giá không hợp lệ. Giá phải là số và không được nhỏ hơn 0.");
+      toast.warning("Định dạng giá không hợp lệ. Giá phải là số và không được nhỏ hơn 0.");
       return;
     }
 
     setActionLoading(true);
     try {
       await approveCourseAPI(selectedCourse.id, p, token);
-      alert(`Phê duyệt thành công khóa học: ${selectedCourse.title}`);
+      toast.success(`Phê duyệt thành công khóa học: ${selectedCourse.title}`);
       setIsModalOpen(false);
       await loadQueue();
     } catch (err) {
-      alert("Quá trình phê duyệt gặp lỗi hệ thống: " + (err.message || "Không xác định"));
+      toast.error("Quá trình phê duyệt gặp lỗi hệ thống: " + (err.message || "Không xác định"));
     } finally {
       setActionLoading(false);
     }
@@ -117,7 +118,7 @@ const AdminApprovalQueue = () => {
     
     const token = localStorage.getItem("access_token");
     if (!token) {
-      alert("Phiên đăng nhập đã hết hạn.");
+      toast.error("Phiên đăng nhập đã hết hạn.");
       return;
     }
 
@@ -125,10 +126,10 @@ const AdminApprovalQueue = () => {
     setActionLoading(true);
     try {
       await rejectCourseAPI(courseId, reason, token);
-      alert("Đã từ chối phê duyệt và gửi phản hồi tới giảng viên.");
+      toast.success("Đã từ chối phê duyệt và gửi phản hồi tới giảng viên.");
       await loadQueue();
     } catch (err) {
-      alert("Có lỗi xảy ra khi thực hiện thao tác từ chối: " + err.message);
+      toast.error("Có lỗi xảy ra khi thực hiện thao tác từ chối: " + err.message);
     } finally {
       setActionLoading(false);
     }

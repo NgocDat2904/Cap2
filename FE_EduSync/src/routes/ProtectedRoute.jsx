@@ -1,5 +1,6 @@
 import React from "react";
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import toast from "../utils/toast";
 
 const normalize = (value) => {
   if (!value) return "";
@@ -37,7 +38,7 @@ const ProtectedRoute = ({ allowedRoles }) => {
       : normalize(allowedRoles) === userRole);
 
   if (!allowed) {
-    alert("You do not have permission to access this area!");
+    toast.warning("You do not have permission to access this area!");
     if (userRole === "admin") return <Navigate to="/admin/dashboard" replace />;
     if (userRole === "instructor")
       return <Navigate to="/instructor/dashboard" replace />;

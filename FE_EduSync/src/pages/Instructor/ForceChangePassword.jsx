@@ -9,7 +9,8 @@ import {
   faArrowRight,
   faCheckCircle,
 } from "@fortawesome/free-solid-svg-icons";
-import myLogo from "../assets/logo.png"; 
+import myLogo from "../assets/logo.png";
+import toast from "../../utils/toast"; 
 
 const ForceChangePassword = () => {
   const [newPassword, setNewPassword] = useState("");
@@ -30,7 +31,7 @@ const ForceChangePassword = () => {
     }
     setError("");
     // Giả lập gọi API thành công và chuyển hướng
-    alert("Password changed successfully! Welcome to EduSync Dashboard.");
+    toast.success("Password changed successfully! Welcome to EduSync Dashboard.");
     // Điều hướng sang trang Dashboard ở đây
   };
 

@@ -9,6 +9,7 @@ import {
   faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
 import { getCourseDetailAPI, createPaymentAPI } from "../../services/learnerCourseAPI";
+import toast from "../../utils/toast";
 
 const LearnerCheckoutPage = () => {
   const navigate = useNavigate();
@@ -50,12 +51,12 @@ const LearnerCheckoutPage = () => {
         // Redirect to VNPAY portal
         window.location.href = res.checkout_url;
       } else {
-        alert("Có lỗi xảy ra khi tạo giao dịch thanh toán.");
+        toast.error("Có lỗi xảy ra khi tạo giao dịch thanh toán.");
         setIsProcessing(false);
       }
     } catch (err) {
       console.error(err);
-      alert("Hệ thống đang gặp gián đoạn. Vui lòng thử lại sau.");
+      toast.error("Hệ thống đang gặp gián đoạn. Vui lòng thử lại sau.");
       setIsProcessing(false);
     }
   };

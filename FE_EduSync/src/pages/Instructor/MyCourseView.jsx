@@ -22,6 +22,7 @@ import {
   deleteQuestionAPI,
   deleteReplyAPI
 } from "../../services/instructorAPI";
+import toast from "../../utils/toast";
 
 const formatDateTime = (dateStr) => {
   if (!dateStr) return "Vừa xong";
@@ -258,7 +259,7 @@ const InstructorCourseDetailPage = () => {
 
       setReplyInputs(prev => ({ ...prev, [questionId]: "" }));
     } catch (error) {
-      alert("Lỗi hệ thống: Gửi phản hồi không thành công. Vui lòng thử lại.");
+      toast.error("Lỗi hệ thống: Gửi phản hồi không thành công. Vui lòng thử lại.");
     } finally {
       setIsReplying(false);
     }
@@ -276,7 +277,7 @@ const InstructorCourseDetailPage = () => {
       setQnaData(prev => prev.filter(q => q.id !== questionId));
     } catch (error) {
       console.error("Lỗi khi xóa câu hỏi:", error);
-      alert("Lỗi hệ thống: Xóa câu hỏi không thành công.");
+      toast.error("Lỗi hệ thống: Xóa câu hỏi không thành công.");
     }
   };
 
@@ -300,7 +301,7 @@ const InstructorCourseDetailPage = () => {
       ));
     } catch (error) {
       console.error("Lỗi khi xóa phản hồi:", error);
-      alert("Lỗi hệ thống: Xóa phản hồi không thành công.");
+      toast.error("Lỗi hệ thống: Xóa phản hồi không thành công.");
     }
   };
 
