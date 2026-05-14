@@ -1,0 +1,427 @@
+{
+  "notification_examples": [
+    {
+      "name": "Question Reply (Learner receives)",
+      "description": "Instructor đã trả lời câu hỏi của learner trong một bài học",
+      "payload": {
+        "id": "507f1f77bcf86cd799439011",
+        "type": "question_reply",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T10:30:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": "507f1f77bcf86cd799439013",
+        "question_id": "507f1f77bcf86cd799439014",
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": "Bài 5: React Hooks và Custom Hooks",
+        "lesson_title": "Bài 5: React Hooks và Custom Hooks",
+        "instructor_name": "Nguyễn Văn A",
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "💬 Phản hồi mới từ Giảng viên",
+        "message": "Giảng viên Nguyễn Văn A đã trả lời bình luận của bạn tại bài học \"Bài 5: React Hooks và Custom Hooks\" trong khóa học \"React Advanced - Khóa học nâng cao\". Nhấn để xem chi tiết."
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439012/lessons/507f1f77bcf86cd799439013",
+        "state": {
+          "activeLeftTab": "q&a",
+          "scrollToQuestionId": "507f1f77bcf86cd799439014",
+          "highlightQuestion": true
+        }
+      }
+    },
+    {
+      "name": "New Question (Instructor receives)",
+      "description": "Học viên đặt câu hỏi mới trong khóa học",
+      "payload": {
+        "id": "507f1f77bcf86cd799439015",
+        "type": "qa",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T11:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": "507f1f77bcf86cd799439013",
+        "question_id": "507f1f77bcf86cd799439016",
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": "Bài 5: React Hooks và Custom Hooks",
+        "lesson_title": "Bài 5: React Hooks và Custom Hooks",
+        "instructor_name": null,
+        "student_name": "Trần Thị Bích Ngọc",
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": "507f1f77bcf86cd799439017",
+        "url": null
+      },
+      "frontend_display": {
+        "title": "💬 Có câu hỏi mới",
+        "message": "Trần Thị Bích Ngọc vừa đặt câu hỏi tại bài học \"Bài 5: React Hooks và Custom Hooks\" trong khóa học \"React Advanced - Khóa học nâng cao\". Hãy phản hồi để hỗ trợ họ."
+      },
+      "navigation": {
+        "path": "/instructor/courses/507f1f77bcf86cd799439012",
+        "state": {
+          "activeTab": "qa",
+          "scrollToQuestionId": "507f1f77bcf86cd799439016",
+          "lessonId": "507f1f77bcf86cd799439013"
+        }
+      }
+    },
+    {
+      "name": "Course Approved",
+      "description": "Admin đã phê duyệt khóa học của instructor",
+      "payload": {
+        "id": "507f1f77bcf86cd799439018",
+        "type": "course_approved",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T09:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "✅ Khóa học đã được duyệt!",
+        "message": "Chúc mừng! Khóa học \"React Advanced - Khóa học nâng cao\" đã được phê duyệt và đang được xuất bản trên hệ thống. Học viên giờ có thể tìm thấy và đăng ký khóa học của bạn."
+      },
+      "navigation": {
+        "path": "/instructor/courses/507f1f77bcf86cd799439012",
+        "state": {
+          "notificationType": "approved"
+        }
+      }
+    },
+    {
+      "name": "Course Rejected",
+      "description": "Admin từ chối khóa học với lý do cụ thể",
+      "payload": {
+        "id": "507f1f77bcf86cd799439019",
+        "type": "course_rejected",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T09:30:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": "Nội dung chưa đầy đủ, cần bổ sung thêm ví dụ thực tế và bài tập thực hành. Video bài học 3 và 4 chưa có phụ đề.",
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "❌ Khóa học cần chỉnh sửa",
+        "message": "Khóa học \"React Advanced - Khóa học nâng cao\" Nội dung chưa đầy đủ, cần bổ sung thêm ví dụ thực tế và bài tập thực hành. Video bài học 3 và 4 chưa có phụ đề.. Vui lòng xem chi tiết phản hồi và chỉnh sửa lại để gửi phê duyệt."
+      },
+      "navigation": {
+        "path": "/instructor/courses/507f1f77bcf86cd799439012/edit",
+        "state": {
+          "notificationType": "rejected",
+          "showRejectionReason": true,
+          "rejectionReason": "Nội dung chưa đầy đủ, cần bổ sung thêm ví dụ thực tế và bài tập thực hành. Video bài học 3 và 4 chưa có phụ đề."
+        }
+      }
+    },
+    {
+      "name": "New Course",
+      "description": "Khóa học mới được xuất bản",
+      "payload": {
+        "id": "507f1f77bcf86cd799439020",
+        "type": "new_course",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T08:00:00Z",
+        "course_id": "507f1f77bcf86cd799439021",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "Python for Data Science",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": "Lê Minh Quân",
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "🎉 Khóa học mới ra mắt!",
+        "message": "\"Python for Data Science\" bởi Lê Minh Quân vừa được thêm vào danh mục. Khám phá ngay để không bỏ lỡ kiến thức mới."
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439021",
+        "state": {}
+      }
+    },
+    {
+      "name": "New Enrollment",
+      "description": "Học viên mới đăng ký khóa học (instructor receives)",
+      "payload": {
+        "id": "507f1f77bcf86cd799439022",
+        "type": "new_enroll",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T12:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": "Phạm Văn Hùng",
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": "507f1f77bcf86cd799439023",
+        "url": null
+      },
+      "frontend_display": {
+        "title": "🎊 Có học viên mới ghi danh",
+        "message": "Phạm Văn Hùng vừa đăng ký học khóa học \"React Advanced - Khóa học nâng cao\". Chào đón và hỗ trợ họ trong hành trình học tập nhé!"
+      },
+      "navigation": {
+        "path": "/instructor/courses/507f1f77bcf86cd799439012",
+        "state": {
+          "activeTab": "students",
+          "highlightNewStudent": "507f1f77bcf86cd799439023"
+        }
+      }
+    },
+    {
+      "name": "Course Update",
+      "description": "Khóa học được cập nhật nội dung mới",
+      "payload": {
+        "id": "507f1f77bcf86cd799439024",
+        "type": "course_update",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T13:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "📢 Khóa học được cập nhật",
+        "message": "Khóa học \"React Advanced - Khóa học nâng cao\" vừa có nội dung mới hoặc cập nhật quan trọng. Hãy xem thử để không bỏ lỡ nhé!"
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439012",
+        "state": {}
+      }
+    },
+    {
+      "name": "Achievement Unlocked",
+      "description": "Học viên đạt thành tích mới",
+      "payload": {
+        "id": "507f1f77bcf86cd799439025",
+        "type": "achievement",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T14:00:00Z",
+        "course_id": null,
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": null,
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": "507f1f77bcf86cd799439026",
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "🏆 Bạn đạt thành tích mới!",
+        "message": "Chúc mừng! Bạn vừa hoàn thành một cột mốc quan trọng trong hành trình học tập."
+      },
+      "navigation": {
+        "path": "/profile",
+        "state": {
+          "activeTab": "achievements",
+          "highlightAchievement": "507f1f77bcf86cd799439026"
+        }
+      }
+    },
+    {
+      "name": "Payment Success",
+      "description": "Thanh toán thành công",
+      "payload": {
+        "id": "507f1f77bcf86cd799439027",
+        "type": "payment_success",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T15:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "💳 Thanh toán thành công!",
+        "message": "Giao dịch của bạn đã được xử lý. Giờ bạn có thể truy cập khóa học đã mua."
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439012",
+        "state": {
+          "showWelcomeMessage": true
+        }
+      }
+    },
+    {
+      "name": "Payment Failed",
+      "description": "Thanh toán thất bại",
+      "payload": {
+        "id": "507f1f77bcf86cd799439028",
+        "type": "payment_failed",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T15:30:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "⚠️ Thanh toán thất bại",
+        "message": "Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại hoặc liên hệ hỗ trợ."
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439012",
+        "state": {
+          "showPaymentError": true
+        }
+      }
+    },
+    {
+      "name": "System Notification",
+      "description": "Thông báo hệ thống quan trọng",
+      "payload": {
+        "id": "507f1f77bcf86cd799439029",
+        "type": "system",
+        "title": "Bảo trì hệ thống",
+        "message": "Hệ thống sẽ bảo trì vào 20:00 - 22:00 ngày 15/05/2026. Vui lòng lưu lại tiến độ học tập.",
+        "is_read": false,
+        "created_at": "2026-05-14T16:00:00Z",
+        "course_id": null,
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": null,
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": "/system/maintenance-schedule"
+      },
+      "frontend_display": {
+        "title": "Bảo trì hệ thống",
+        "message": "Hệ thống sẽ bảo trì vào 20:00 - 22:00 ngày 15/05/2026. Vui lòng lưu lại tiến độ học tập."
+      },
+      "navigation": {
+        "path": "/system/maintenance-schedule",
+        "state": {}
+      }
+    },
+    {
+      "name": "Reminder",
+      "description": "Nhắc nhở học tập",
+      "payload": {
+        "id": "507f1f77bcf86cd799439030",
+        "type": "reminder",
+        "title": null,
+        "message": null,
+        "is_read": false,
+        "created_at": "2026-05-14T17:00:00Z",
+        "course_id": "507f1f77bcf86cd799439012",
+        "lesson_id": null,
+        "question_id": null,
+        "course_name": "React Advanced - Khóa học nâng cao",
+        "lesson_name": null,
+        "lesson_title": null,
+        "instructor_name": null,
+        "student_name": null,
+        "rejection_reason": null,
+        "achievement_id": null,
+        "student_id": null,
+        "url": null
+      },
+      "frontend_display": {
+        "title": "⏰ Nhắc nhở học tập",
+        "message": "Đã lâu bạn chưa học bài! Hãy tiếp tục hành trình của mình nhé."
+      },
+      "navigation": {
+        "path": "/courses/507f1f77bcf86cd799439012",
+        "state": {}
+      }
+    }
+  ],
+
+  "backend_implementation_notes": {
+    "denormalization_strategy": "Lưu course_name, lesson_name, user names ngay khi tạo notification để tránh nhiều query khi fetch",
+    "performance_tip": "Sử dụng MongoDB aggregation pipeline để join nhiều collection cùng lúc",
+    "caching_tip": "Cache user names trong Redis với TTL 1 giờ",
+    "update_policy": "Notification là snapshot tại thời điểm tạo, không cần update khi source data thay đổi"
+  },
+
+  "frontend_fallback_logic": {
+    "description": "Nếu backend chưa gửi course_name, lesson_name, etc., frontend sẽ hiển thị text generic",
+    "example": {
+      "without_context": "Giảng viên đã trả lời bình luận của bạn tại bài học trong khóa học của bạn.",
+      "with_context": "Giảng viên Nguyễn Văn A đã trả lời bình luận của bạn tại bài học 'Bài 5: React Hooks' trong khóa học 'React Advanced'."
+    }
+  }
+}

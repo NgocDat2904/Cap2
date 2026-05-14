@@ -10,6 +10,7 @@ import {
   faSpinner,
   faTrash
 } from "@fortawesome/free-solid-svg-icons";
+import { toast } from "sonner";
 
 import { getLessonQuestionsAPI, postQuestionAPI, postReplyAPI, deleteQuestionAPI, deleteReplyAPI } from "../services/learnerCourseAPI";
 
@@ -119,7 +120,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
     if (!newQuestion.trim() || isSubmitting) return; // Chặn gửi nếu đang loading hoặc rỗng
 
     if (!lessonId) {
-      alert("Lỗi: Không tìm thấy lesson_id. Bạn đang học bài nào vậy?");
+      toast.error("Lỗi: Không tìm thấy lesson_id. Bạn đang học bài nào vậy?");
       return;
     }
 
@@ -159,7 +160,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       // Trước đây gọi fetchQnA() → reload toàn bộ danh sách → tốn thời gian, mất scroll
       // Bây giờ: cập nhật trực tiếp state → mượt mà, không reload!
     } catch (error) {
-      alert("Không thể gửi câu hỏi. Vui lòng thử lại sau.");
+      toast.error("Không thể gửi câu hỏi. Vui lòng thử lại sau.");
     } finally {
       setIsSubmitting(false);
     }
@@ -218,7 +219,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       // ❌ ĐÃ XÓA: fetchQnA();
       // Không cần reload toàn bộ nữa → UI mượt hơn!
     } catch (error) {
-      alert("Không thể gửi câu trả lời. Vui lòng thử lại sau.");
+      toast.error("Không thể gửi câu trả lời. Vui lòng thử lại sau.");
     } finally {
       setIsSubmitting(false);
     }
@@ -247,7 +248,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       setQnaList(prev => prev.filter(q => q.id !== questionId));
     } catch (error) {
       console.error("Failed to delete question:", error);
-      alert(error.response?.data?.detail || "Không thể xóa câu hỏi. Vui lòng thử lại.");
+      toast.error(error.response?.data?.detail || "Không thể xóa câu hỏi. Vui lòng thử lại.");
     }
   };
 
@@ -272,7 +273,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       ));
     } catch (error) {
       console.error("Failed to delete reply:", error);
-      alert(error.response?.data?.detail || "Không thể xóa câu trả lời. Vui lòng thử lại.");
+      toast.error(error.response?.data?.detail || "Không thể xóa câu trả lời. Vui lòng thử lại.");
     }
   };
 
@@ -466,10 +467,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
                 </div>
               ) : (
                 <div className="mt-4 ml-4 sm:ml-6 flex flex-col gap-2">
-                  <div className="flex items-center gap-2 text-slate-400">
+                  {/* <div className="flex items-center gap-2 text-slate-400">
                     <FontAwesomeIcon icon={faChalkboardTeacher} className="text-sm" />
                     <p className="text-xs font-medium italic">Đang chờ giảng viên trả lời...</p>
-                  </div>
+                  </div> */}
                   {activeReplyId === q.id ? (
                     <div className="mt-2 animate-fade-slide-up bg-white p-3 rounded-xl border border-blue-200 shadow-sm">
                       <textarea
@@ -502,7 +503,7 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
                       onClick={() => setActiveReplyId(q.id)}
                       className="text-xs font-bold text-slate-500 hover:text-blue-600 flex items-center gap-1.5 mt-1 transition-colors w-fit"
                     >
-                      <FontAwesomeIcon icon={faReply} /> Thêm chi tiết
+                      <FontAwesomeIcon icon={faReply} /> Trả lời
                     </button>
                   )}
                 </div>
