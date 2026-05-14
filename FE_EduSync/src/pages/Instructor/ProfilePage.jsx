@@ -30,6 +30,7 @@ import {
   getInstructorProfileAPI,
   updateInstructorProfileAPI,
 } from "../../services/instructorAPI";
+import toast from "../../utils/toast";
 
 const MetricCard = ({ icon, label, value, color }) => (
   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100 flex items-center gap-4 group transition-all hover:bg-white hover:border-blue-100 hover:shadow-sm">
@@ -128,10 +129,10 @@ const InstructorProfilePage = () => {
 
       await updateInstructorProfileAPI(formData, token);
 
-      alert("Hệ thống: Cập nhật hồ sơ giảng viên thành công.");
+      toast.success("Hệ thống: Cập nhật hồ sơ giảng viên thành công.");
     } catch (error) {
       console.error("Lỗi lưu hồ sơ:", error);
-      alert("Lỗi hệ thống: Không thể lưu hồ sơ. Vui lòng kiểm tra kết nối mạng.");
+      toast.error("Lỗi hệ thống: Không thể lưu hồ sơ. Vui lòng kiểm tra kết nối mạng.");
     } finally {
       setIsSaving(false);
     }
@@ -162,10 +163,10 @@ const InstructorProfilePage = () => {
 
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Hệ thống: Cập nhật ảnh đại diện thành công.");
+        toast.success("Hệ thống: Cập nhật ảnh đại diện thành công.");
       }
     } catch (error) {
-      alert("Lỗi xử lý: Tải ảnh lên không thành công.");
+      toast.error("Lỗi xử lý: Tải ảnh lên không thành công.");
     } finally {
       setIsUploadingAvatar(false);
     }

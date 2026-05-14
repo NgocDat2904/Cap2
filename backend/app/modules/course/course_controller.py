@@ -312,20 +312,23 @@ async def moderate_course(
 @router.put("/admin/courses/{course_id}/resolve-update")
 async def resolve_pending_update(
     course_id: str,
-    price: float | None = None,   # Optional — Admin điều chỉnh giá, để trống = giữ nguyên
+    price: float | None = None,
     user=Depends(require_role(["admin"])),
 ):
-    """
-    Admin xác nhận đã review bản cập nhật của khóa học đang PUBLISHED.
-    - Approve tất cả bài giảng đang chờ duyệt (is_approved=False → True)
-    - Tắt cờ has_pending_update
-    - Cập nhật giá bán nếu được truyền vào
-    """
     try:
-        return await course_service.resolve_pending_update(course_id, price)
-    except Exception as e:
-        raise _http_from_exc(e)
+        print("===== ROUTE RUNNING =====")
+        print("course_id =", course_id)
+        print("price =", price)
 
+        result = await course_service.resolve_pending_update(course_id, price)
+
+        print("RESULT =", result)
+
+        return result
+
+    except Exception as e:
+        print("ERROR FROM ROUTE =", str(e))
+        raise _http_from_exc(e)
 
 
 

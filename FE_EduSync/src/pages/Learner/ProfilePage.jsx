@@ -17,6 +17,7 @@ import {
   updateProfileAPI,
   uploadAvatarAPI,
 } from "../../services/userAPI";
+import toast from "../../utils/toast";
 
 const LearnerProfilePage = () => {
   const [profileData, setProfileData] = useState({
@@ -57,10 +58,10 @@ const LearnerProfilePage = () => {
     try {
       const token = localStorage.getItem("access_token");
       await updateProfileAPI(profileData, token);
-      alert("Cập nhật thông tin hồ sơ thành công.");
+      toast.success("Cập nhật thông tin hồ sơ thành công.");
     } catch (error) {
       console.error("Lỗi khi lưu hồ sơ:", error);
-      alert("Không thể lưu thông tin. Vui lòng kiểm tra lại.");
+      toast.error("Không thể lưu thông tin. Vui lòng kiểm tra lại.");
     } finally {
       setIsSaving(false);
     }
@@ -92,11 +93,11 @@ const LearnerProfilePage = () => {
 
       if (data && data.url) {
         setProfileData((prev) => ({ ...prev, avatarUrl: data.url }));
-        alert("Cập nhật ảnh đại diện thành công.");
+        toast.success("Cập nhật ảnh đại diện thành công.");
       }
     } catch (error) {
       console.error("Lỗi tải lên:", error);
-      alert("Tải ảnh đại diện thất bại. Vui lòng thử lại.");
+      toast.error("Tải ảnh đại diện thất bại. Vui lòng thử lại.");
     } finally {
       setIsUploadingAvatar(false);
     }

@@ -5,6 +5,7 @@ import {
   faSave, faCloudArrowUp, faTimes, faVideo, faImage, faPaperPlane,
   faGraduationCap, faChevronDown, faSearch, faSpinner,
 } from "@fortawesome/free-solid-svg-icons";
+import toast from "../../utils/toast";
 
 // IMPORT API
 import {
@@ -106,7 +107,7 @@ const InstructorCreateCourse = () => {
 
   const handleVideoDetailChange = (id, field, value) => {
     if (field === "title" && countWords(value) > MAX_WORDS) {
-      alert(`Hệ thống: Tiêu đề video không được vượt quá ${MAX_WORDS} từ.`);
+      toast.warning(`Hệ thống: Tiêu đề video không được vượt quá ${MAX_WORDS} từ.`);
       return;
     }
 
@@ -129,54 +130,54 @@ const InstructorCreateCourse = () => {
     const description = courseInfo.description.trim();
 
     if (!title) {
-      alert("Vui lòng nhập tên khóa học.");
+      toast.warning("Vui lòng nhập tên khóa học.");
       return;
     }
     if (title.length < 5) {
-      alert("Tên khóa học phải có tối thiểu 5 ký tự.");
+      toast.warning("Tên khóa học phải có tối thiểu 5 ký tự.");
       return;
     }
     if (countWords(title) > MAX_WORDS) {
-      alert(`Tên khóa học không được vượt quá ${MAX_WORDS} từ.`);
+      toast.warning(`Tên khóa học không được vượt quá ${MAX_WORDS} từ.`);
       return;
     }
     if (hasInvalidFormat(title)) {
-      alert("Tên khóa học chứa các ký tự hoặc định dạng không hợp lệ.");
+      toast.warning("Tên khóa học chứa các ký tự hoặc định dạng không hợp lệ.");
       return;
     }
     if (!courseInfo.category) {
-      alert("Vui lòng chọn danh mục khóa học.");
+      toast.warning("Vui lòng chọn danh mục khóa học.");
       return;
     }
     if (!description) {
-      alert("Vui lòng nhập mô tả khóa học.");
+      toast.warning("Vui lòng nhập mô tả khóa học.");
       return;
     }
     if (!thumbnailFile) {
-      alert("Vui lòng tải lên ảnh bìa đại diện cho khóa học.");
+      toast.warning("Vui lòng tải lên ảnh bìa đại diện cho khóa học.");
       return;
     }
     if (uploadedVideos.length === 0) {
-      alert("Vui lòng thêm ít nhất 1 video bài giảng.");
+      toast.warning("Vui lòng thêm ít nhất 1 video bài giảng.");
       return;
     }
     for (const video of uploadedVideos) {
       const videoTitle = (video.title || "").trim();
       if (!videoTitle) {
-        alert("Lỗi kiểm tra: Mỗi video phải có tiêu đề bài học tương ứng.");
+        toast.warning("Lỗi kiểm tra: Mỗi video phải có tiêu đề bài học tương ứng.");
         return;
       }
       if (countWords(videoTitle) > MAX_WORDS) {
-        alert(`Lỗi kiểm tra: Tiêu đề video "${video.originalName}" vượt quá ${MAX_WORDS} từ.`);
+        toast.warning(`Lỗi kiểm tra: Tiêu đề video "${video.originalName}" vượt quá ${MAX_WORDS} từ.`);
         return;
       }
       if (hasInvalidFormat(videoTitle)) {
-        alert(`Tiêu đề video "${video.originalName}" chứa định dạng không hợp lệ.`);
+        toast.warning(`Tiêu đề video "${video.originalName}" chứa định dạng không hợp lệ.`);
         return;
       }
     }
     if (actionType === "pending" && uploadedVideos.length === 0) {
-      alert("Điều kiện xuất bản: Khóa học phải có ít nhất 1 video bài giảng để gửi yêu cầu phê duyệt.");
+      toast.warning("Điều kiện xuất bản: Khóa học phải có ít nhất 1 video bài giảng để gửi yêu cầu phê duyệt.");
       return;
     }
 
@@ -272,12 +273,12 @@ const InstructorCreateCourse = () => {
 
       // BƯỚC 5: XỬ LÝ NÚT BẤM KẾT THÚC
       if (actionType === "draft") {
-        alert(`Lưu bản nháp thành công. (Mã khóa học: ${newCourseId})`);
+        toast.success(`Lưu bản nháp thành công. (Mã khóa học: ${newCourseId})`);
       } else if (actionType === "pending") {
         setUploadProgressText("Đang hoàn tất và gửi yêu cầu phê duyệt tới hệ thống...");
         await submitCourseAPI(newCourseId, token);
 
-        alert("Gửi yêu cầu phê duyệt thành công. Vui lòng chờ Quản trị viên định giá và xuất bản.");
+        toast.success("Gửi yêu cầu phê duyệt thành công. Vui lòng chờ Quản trị viên định giá và xuất bản.");
         
         // Reset form
         setCourseInfo({ title: "", description: "", category: "", prerequisites: "", enableQA: true, visibility: "public" });
@@ -290,7 +291,7 @@ const InstructorCreateCourse = () => {
       }
 
     } catch (error) {
-      alert(`Đã xảy ra lỗi: ${error.message}`);
+      toast.error(`Đã xảy ra lỗi: ${error.message}`);
       console.error("Lỗi chi tiết:", error);
     } finally {
       setIsLoading(false);

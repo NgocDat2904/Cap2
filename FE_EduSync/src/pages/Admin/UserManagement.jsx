@@ -30,6 +30,7 @@ import {
   faGlobe
 } from "@fortawesome/free-solid-svg-icons";
 import { adminGetUsersAPI, adminToggleBlockAPI, adminGetUserDetailAPI, adminDeleteUserAPI, adminCreateUserAPI } from "../../services/userAPI";
+import toast from "../../utils/toast";
 
 // =========================================================================
 // HELPER: Lấy token từ localStorage
@@ -214,7 +215,7 @@ const AdminUserManagement = () => {
         blocked: user.status === "active" ? prev.blocked + 1 : prev.blocked - 1,
       }));
     } catch (err) {
-      alert("Lỗi xử lý: " + (err?.response?.data?.detail || err?.message || "Thao tác thay đổi trạng thái thất bại."));
+      toast.error("Lỗi xử lý: " + (err?.response?.data?.detail || err?.message || "Thao tác thay đổi trạng thái thất bại."));
     } finally {
       setTogglingId(null);
     }
@@ -240,10 +241,10 @@ const AdminUserManagement = () => {
       try {
         const token = getToken();
         await adminDeleteUserAPI(user.id, token);
-        alert(`Đã xóa tài khoản [${user.fullName}] thành công.`);
+        toast.success(`Đã xóa tài khoản [${user.fullName}] thành công.`);
         handleRefresh(); 
       } catch (err) {
-        alert("Lỗi: " + (err?.response?.data?.detail || err?.message || "Không thể thực hiện thao tác xóa."));
+        toast.error("Lỗi: " + (err?.response?.data?.detail || err?.message || "Không thể thực hiện thao tác xóa."));
       }
     }
   };
@@ -262,13 +263,13 @@ const AdminUserManagement = () => {
       // Bắn API gọi Backend
       await adminCreateUserAPI(newUser, token);
       
-      alert("Khởi tạo tài khoản người dùng mới thành công.");
+      toast.success("Khởi tạo tài khoản người dùng mới thành công.");
       setIsAddModalOpen(false);
       handleRefresh(); // Cập nhật lại danh sách ngay lập tức
     } catch (err) {
       // Bắt lỗi từ Backend trả về (nếu email trùng, mật khẩu yếu...)
       const errorMsg = err?.response?.data?.detail || err?.response?.data?.message || "Không thể khởi tạo người dùng. Vui lòng kiểm tra lại thông tin.";
-      alert("Lỗi: " + errorMsg);
+      toast.error("Lỗi: " + errorMsg);
     } finally {
       setIsCreating(false);
     }

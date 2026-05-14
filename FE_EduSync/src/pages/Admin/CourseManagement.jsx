@@ -18,6 +18,7 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
+import toast from "../../utils/toast";
 
 // Danh mục đã được Việt hóa
 const CATEGORIES = [
@@ -108,7 +109,7 @@ const AdminCourseManagement = () => {
         await moderateCourseAPI(id, newStatus, token);
         fetchCourses();
       } catch (err) {
-        alert("Thao tác thất bại: " + err.message);
+        toast.error("Thao tác thất bại: " + err.message);
       }
       setOpenActionMenuId(null);
     }
@@ -122,7 +123,7 @@ const AdminCourseManagement = () => {
         await moderateCourseAPI(id, "REJECTED", token);
         fetchCourses();
       } catch (err) {
-        alert("Lỗi hệ thống: Không thể thực hiện lệnh xóa.");
+        toast.error("Lỗi hệ thống: Không thể thực hiện lệnh xóa.");
       }
       setOpenActionMenuId(null);
     }
