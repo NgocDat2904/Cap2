@@ -18,6 +18,10 @@ class LessonContext(BaseModel):
         default=None,
         description="Thời lượng video (để AI phân bổ timeline hợp lý)",
     )
+    transcript_segments: Optional[List[dict]] = Field(
+        default=None,
+        description="Danh sách các đoạn transcript kèm timestamp (để tạo timeline chính xác)",
+    )
 
 
 class ChatMessage(BaseModel):
