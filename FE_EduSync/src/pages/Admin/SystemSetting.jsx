@@ -9,6 +9,7 @@ import {
   faSave,
   faCloudArrowUp,
 } from "@fortawesome/free-solid-svg-icons";
+import toast from "../../utils/toast";
 
 // =========================================================================
 // MOCK DATA: CÀI ĐẶT HỆ THỐNG GIẢ LẬP
@@ -37,7 +38,7 @@ const AdminSettings = () => {
   const handleSaveSettings = () => {
     console.log("Dữ liệu cài đặt mới:", settings);
     // Alert đã được chuẩn hóa theo phong cách thông báo hệ thống, không dùng emoji
-    alert("Hệ thống: Cập nhật cấu hình thành công.");
+    toast.success("Hệ thống: Cập nhật cấu hình thành công.");
     // TODO: Bắn API PUT /admin/settings
   };
 

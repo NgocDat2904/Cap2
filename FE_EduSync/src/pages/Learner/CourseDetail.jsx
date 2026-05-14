@@ -14,7 +14,8 @@ import {
   faBoltLightning,
   faGraduationCap 
 } from "@fortawesome/free-solid-svg-icons";
-import { getCourseDetailAPI, enrollFreeCourseAPI, getMyCoursesAPI, getCourseProgressAPI } from "../../services/learnerCourseAPI"; 
+import { getCourseDetailAPI, enrollFreeCourseAPI, getMyCoursesAPI, getCourseProgressAPI } from "../../services/learnerCourseAPI";
+import toast from "../../utils/toast"; 
 
 const formatTimeAgo = (date) => {
   if (!date) return "Gần đây";
@@ -131,7 +132,7 @@ const CourseDetailPage = () => {
 
     // Bước 2: Đã đăng nhập nhưng chưa enroll -> Chặn và thông báo
     if (!isEnrolled) {
-      alert("Vui lòng đăng ký khóa học để xem bài giảng này!");
+      toast.warning("Vui lòng đăng ký khóa học để xem bài giảng này!");
       return;
     }
 
@@ -155,7 +156,7 @@ const CourseDetailPage = () => {
       if (firstLessonId) {
         navigate(`/courses/${courseId || "1"}/lessons/${firstLessonId}`);
       } else {
-        alert("Khóa học này hiện đang được cập nhật bài giảng. Vui lòng quay lại sau nhé!");
+        toast.info("Khóa học này hiện đang được cập nhật bài giảng. Vui lòng quay lại sau nhé!");
       }
       return;
     }
@@ -174,13 +175,13 @@ const CourseDetailPage = () => {
         
         // Thành công: Chuyển trạng thái nút thành "Đã đăng ký"
         setIsEnrolled(true);
-        
+
         // Optional: Hiện thông báo cho User biết
-        alert("Chúc mừng bạn đã đăng ký khóa học thành công!");
-        
+        toast.success("Chúc mừng bạn đã đăng ký khóa học thành công!");
+
       } catch (err) {
         console.error("Enrollment failed:", err);
-        alert("Hệ thống đang gặp gián đoạn nhỏ, vui lòng thử lại sau ít phút.");
+        toast.error("Hệ thống đang gặp gián đoạn nhỏ, vui lòng thử lại sau ít phút.");
       } finally {
         setIsProcessingAction(false);
       }
@@ -313,7 +314,7 @@ const CourseDetailPage = () => {
             <span className={`text-3xl font-black tracking-tight leading-none ${isFree ? 'text-emerald-600 uppercase tracking-wider text-2xl' : 'text-slate-900'}`}>
               {formatCurrency(courseDetail.price)}
             </span>
-            {isFree && <span className="text-sm font-bold text-slate-400 line-through pb-0.5">999.000₫</span>}
+            {/* {isFree && <span className="text-sm font-bold text-slate-400 line-through pb-0.5">999.000₫</span>} */}
           </div>
 
           {/* ======================================================= */}
@@ -353,9 +354,9 @@ const CourseDetailPage = () => {
             }
           </button>
 
-          <p className="text-center text-xs text-slate-500 mt-3 font-medium">
+          {/* <p className="text-center text-xs text-slate-500 mt-3 font-medium">
             {isEnrolled ? "Bạn đã đăng ký khóa học này" : isFree ? "Truy cập trọn đời" : "Hoàn tiền trong 30 ngày"}
-          </p>
+          </p> */}
         </div>
       </div>
 
@@ -428,14 +429,14 @@ const CourseDetailPage = () => {
                 </div>
               )}
 
-              <button
+              {/* <button
                 onClick={(e) => {
                   e.stopPropagation();
                 }}
                 className="text-slate-400 hover:text-slate-700 px-3 py-2 shrink-0 self-start sm:self-center"
               >
                 <FontAwesomeIcon icon={faEllipsisVertical} />
-              </button>
+              </button> */}
             </div>
           ))}
         </div>

@@ -12,7 +12,6 @@ import {
   faHouse,
   faBook,
   faBookOpen,
-  faHeart,
   faUser,
   faGear,
   faArrowRightFromBracket,

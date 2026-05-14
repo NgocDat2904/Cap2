@@ -369,9 +369,9 @@ const CourseLearningWorkspace = () => {
             <div className="flex items-center border-b border-slate-200 overflow-x-auto custom-scrollbar">
               {[
                 { id: "summary", label: "Tóm tắt" },
-                { id: "mindmap", label: "Sơ đồ tư duy" },
-                { id: "quiz", label: "Trắc nghiệm" },
-                { id: "chatbot", label: "Trò chuyện AI" },
+                { id: "mindmap", label: "Mindmap" },
+                { id: "quiz", label: "Quiz" },
+                { id: "chatbot", label: "Chatbot" },
                 { id: "q&a", label: "Hỏi đáp" }
               ].map((tab) => (
                 <button
@@ -433,13 +433,13 @@ const CourseLearningWorkspace = () => {
                 onClick={() => setActiveRightTab("timeline")}
                 className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeRightTab === "timeline" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
-                Mốc thời gian
+                Timeline
               </button>
               <button
                 onClick={() => setActiveRightTab("videos")}
                 className={`flex-1 py-3 text-sm font-bold border-b-2 transition-colors ${activeRightTab === "videos" ? "border-blue-600 text-blue-700" : "border-transparent text-slate-500 hover:text-slate-800"}`}
               >
-                Danh sách Video
+                Video
               </button>
             </div>
 

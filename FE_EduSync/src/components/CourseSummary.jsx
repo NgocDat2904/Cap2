@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { aiSummaryAPI, aiSummaryByVideoAPI, getSummaryByVideoAPI } from "../services/aiAPI";
 import ReactMarkdown from "react-markdown";
 
-
 const CourseSummary = ({ lessonContext, videoId }) => {
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
@@ -94,7 +93,8 @@ const CourseSummary = ({ lessonContext, videoId }) => {
   }
 
   return (
-    <div className="animate-fade-slide-up text-slate-600">
+    // THAY ĐỔI 1: Thêm w-full và overflow-hidden để block cha không phình ra
+    <div className="animate-fade-slide-up text-slate-600 w-full overflow-hidden">
       <h3 className="text-lg font-bold text-slate-800 mb-3">
         Lesson Summary
       </h3>
@@ -107,7 +107,8 @@ const CourseSummary = ({ lessonContext, videoId }) => {
         </p>
       )}
       {!loading && !error && summary && (
-        <div className="prose prose-sm max-w-none text-slate-700">
+        // THAY ĐỔI 2: Thêm max-w-full, overflow-x-auto, break-words cho khối render Markdown
+        <div className="prose prose-sm max-w-full w-full overflow-x-auto break-words text-slate-700 custom-scrollbar">
           <ReactMarkdown>{summary}</ReactMarkdown>
         </div>
       )}

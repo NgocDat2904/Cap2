@@ -32,6 +32,7 @@ import {
   uploadVideoToGCS,
   saveVideoToDBAPI,
 } from "../../services/courseAPI";
+import toast from "../../utils/toast";
 
 const COURSE_CATEGORIES = [
   { id: "frontend", label: "Phát triển Web Frontend" },
@@ -185,11 +186,11 @@ const InstructorCourseEditPage = () => {
   const handleSubmitLesson = (e) => {
     e.preventDefault();
     if (!lessonTitle.trim()) {
-      alert("Vui lòng nhập tiêu đề bài học.");
+      toast.warning("Vui lòng nhập tiêu đề bài học.");
       return;
     }
     if (!lessonVideoName || !lessonVideoFile) {
-      alert("Vui lòng chọn tệp video bài học.");
+      toast.warning("Vui lòng chọn tệp video bài học.");
       return;
     }
 
@@ -301,11 +302,11 @@ const InstructorCourseEditPage = () => {
       const shouldShowQCAlert = courseData.hasNewUpdateForQC;
 
       setIsSaving(false);
-      
-      alert(
-        "Lưu thay đổi thành công.\n" +
+
+      toast.success(
+        "Lưu thay đổi thành công." +
           (shouldShowQCAlert
-            ? "Lưu ý: Quản trị viên sẽ tiến hành kiểm duyệt chất lượng nội dung cập nhật mới trước khi hệ thống ghi nhận chính thức."
+            ? " Lưu ý: Quản trị viên sẽ tiến hành kiểm duyệt chất lượng nội dung cập nhật mới trước khi hệ thống ghi nhận chính thức."
             : "")
       );
 
@@ -320,7 +321,7 @@ const InstructorCourseEditPage = () => {
       console.error("Lỗi khi lưu khóa học:", err);
       setError(err.response?.data?.detail || "Lưu dữ liệu thất bại.");
       setIsSaving(false);
-      alert("" + (err.response?.data?.detail || "Thao tác lưu không thành công."));
+      toast.error("" + (err.response?.data?.detail || "Thao tác lưu không thành công."));
     }
   };
 

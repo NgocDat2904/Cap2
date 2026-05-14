@@ -109,24 +109,22 @@ export async function rejectCourseAPI(courseId, reason, token) {
 
 export async function resolveUpdateAPI(courseId, newPrice, token) {
   try {
-    const bodyData = {}; 
-    if (newPrice !== null && newPrice !== undefined) {
-      bodyData.price = newPrice;
-    }
-
     const response = await axios.put(
       `${BASE_URL}/admin/courses/${courseId}/resolve-update`,
-      bodyData, // Nhét data vào vị trí số 2 
+      null,
       {
-        headers: authHeaders(token), 
+        params: {
+          price: newPrice,
+        },
+        headers: authHeaders(token),
       }
     );
+
     return response.data;
   } catch (error) {
     throw new Error(parseAxiosError(error, "Xử lý cập nhật thất bại"));
   }
 }
-
 export async function moderateCourseAPI(courseId, status, token) {
   try {
     const response = await axios.put(

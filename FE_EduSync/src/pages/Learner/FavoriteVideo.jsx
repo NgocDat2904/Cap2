@@ -7,6 +7,7 @@ import {
   faSearch,
   faFilter,
 } from "@fortawesome/free-solid-svg-icons";
+import toast from "../../utils/toast";
 
 // Mock dữ liệu cho video yêu thích
 const favoriteVideos = [
@@ -51,7 +52,7 @@ const LearnerFavoritesPage = () => {
 
   // Xử lý bỏ yêu thích (tạm thời mockup)
   const handleUnfavorite = (videoId) => {
-    alert(`Unfavorited video with ID: ${videoId}`);
+    toast.info(`Unfavorited video with ID: ${videoId}`);
   };
 
   return (
