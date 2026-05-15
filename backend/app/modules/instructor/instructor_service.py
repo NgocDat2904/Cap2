@@ -35,6 +35,37 @@ class InstructorService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # ====================================
+        # TÍNH TOÁN THỰC TẾ TOTAL COURSES
+        # ====================================
+        total_courses = db.courses.count_documents({
+            "instructor_id": ObjectId(user_id),
+            "status": "APPROVED"  # Chỉ đếm khóa học đã được duyệt
+        })
+
+        # ====================================
+        # TÍNH TOÁN THỰC TẾ TOTAL STUDENTS
+        # ====================================
+        # Lấy tất cả course_ids của instructor
+        courses = list(db.courses.find({
+            "instructor_id": ObjectId(user_id),
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True}
+        }, {"_id": 1}))
+
+        course_ids = [course["_id"] for course in courses]
+
+        # Đếm số học viên UNIQUE đã đăng ký các khóa học
+        total_students = 0
+        if course_ids:
+            enrollments = list(db.enrollments.find({
+                "course_id": {"$in": course_ids}
+            }, {"user_id": 1}))
+
+            # Lấy danh sách user_id unique
+            unique_students = set([str(e["user_id"]) for e in enrollments])
+            total_students = len(unique_students)
+
         return {
             **instructor_profile_model(profile),
 
@@ -51,8 +82,8 @@ class InstructorService:
             "youtube": profile.get("youtube_url", ""),
             "website": profile.get("website_url", ""),
 
-            "totalStudents": profile.get("totalStudents", 0),
-            "totalCourses": profile.get("totalCourses", 0),
+            "totalStudents": total_students,  # Tính toán thực tế
+            "totalCourses": total_courses,     # Tính toán thực tế
             "isVerified": profile.get("isVerified", True),
         }
 
@@ -399,6 +430,25 @@ class InstructorService:
             # RESPONSE ITEM
             # ====================================
 
+            # Xác định trạng thái dựa trên hoạt động thực tế
+            if student.get("is_blocked", False):
+                user_status = "blocked"
+            else:
+                # Kiểm tra hoạt động dựa trên last_accessed_at
+                last_accessed = enrollment.get("last_accessed_at")
+                if not last_accessed:
+                    user_status = "inactive"  # Chưa bao giờ học
+                else:
+                    # Tính thời gian từ lần cuối truy cập
+                    days_since_active = (datetime.utcnow() - last_accessed).days
+
+                    if days_since_active <= 7:
+                        user_status = "active"  # Hoạt động trong 7 ngày
+                    elif days_since_active <= 30:
+                        user_status = "idle"  # Không hoạt động 7-30 ngày
+                    else:
+                        user_status = "inactive"  # Không hoạt động > 30 ngày
+
             response.append({
 
                 "student_id": str(student["_id"]),
@@ -408,6 +458,8 @@ class InstructorService:
                 "email": student.get("email"),
 
                 "avatar": student.get("avatar_url"),
+
+                "status": user_status,  # active | idle | inactive | blocked
 
                 "course_id": str(
                     enrollment["course_id"]
@@ -463,6 +515,7 @@ class InstructorService:
         # =========================================
         # 8. ACTIVE LEARNERS
         # =========================================
+        # Đếm số học viên có progress trong 30 ngày (CHỈ trong khóa học của instructor này)
 
         one_month_ago = (
             datetime.utcnow() - timedelta(days=30)
@@ -470,9 +523,19 @@ class InstructorService:
 
         active_students = set()
 
+        # Lấy tất cả lesson_id của các khóa học này
+        lesson_ids = list(
+            db.lessons.find(
+                {"course_id": {"$in": course_ids}},
+                {"_id": 1}
+            )
+        )
+        lesson_ids_list = [l["_id"] for l in lesson_ids]
+
+        # Chỉ đếm progress của các bài học thuộc khóa học của instructor này
         recent_progress = list(
             db.lesson_progress.find({
-
+                "lesson_id": {"$in": lesson_ids_list},
                 "updated_at": {
                     "$gte": one_month_ago
                 }
@@ -480,10 +543,11 @@ class InstructorService:
         )
 
         for progress in recent_progress:
-
-            active_students.add(
-                str(progress["user_id"])
-            )
+            # Chỉ đếm nếu user_id có trong danh sách learner_ids
+            if progress["user_id"] in learner_ids:
+                active_students.add(
+                    str(progress["user_id"])
+                )
         active_learners = len(active_students)
 
         # =========================================
@@ -653,7 +717,8 @@ class InstructorService:
         courses = list(
             db.courses.find({
                 "instructor_id": ObjectId(instructor_id),
-                "status": "APPROVED"
+                "status": "APPROVED",
+                "is_deleted": {"$ne": True}
             })
         )
 
