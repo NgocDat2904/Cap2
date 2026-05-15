@@ -11,6 +11,7 @@ from fastapi import HTTPException
 from bson.errors import InvalidId
 
 from app.modules.enrollment.enrollment_repository import EnrollmentRepository
+from app.modules.notifications.notification_repository import notification_repository
 import asyncio
 
 
@@ -169,7 +170,14 @@ class CourseService:
         skip = (page - 1) * limit
 
         pipeline = [
-            {"$match": {"status": "APPROVED", "is_deleted": {"$ne": True}}},
+            # Chỉ hiển thị khóa học active (không bị xóa, không bị archive)
+            {
+                "$match": {
+                    "status": "APPROVED",
+                    "is_deleted": {"$ne": True},
+                    "is_archived": {"$ne": True}  # Thêm filter archived
+                }
+            },
 
             {"$sort": {"created_at": -1}},
 
@@ -215,6 +223,7 @@ class CourseService:
         total = db.courses.count_documents({
             "status": "APPROVED",
             "is_deleted": {"$ne": True},
+            "is_archived": {"$ne": True}  # Thêm filter archived
         })
 
         items = []
@@ -636,6 +645,11 @@ class CourseService:
                     "videoUrl": video_url,
                })
 
+        # 🔥 Đếm số học viên thực tế đã đăng ký khóa học
+            students_count = db.enrollments.count_documents({
+                "course_id": ObjectId(course_id)
+            })
+
         # 🔥 RETURN ĐÚNG FORMAT
             return {
                 "id": str(course["_id"]),
@@ -654,6 +668,7 @@ class CourseService:
 
                 "duration": self._seconds_to_hhmm(total_seconds),
                 "lessonCount": len(lessons),
+                "students": students_count,
                 "lessons": lessons
         }
 
@@ -673,7 +688,11 @@ class CourseService:
         page=1,
         limit=10
 ):
-        filter = {"status": "APPROVED"}
+        filter = {
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True},
+            "is_archived": {"$ne": True}
+        }
 
     # 🔍 Search theo tên
         if keyword:
@@ -934,33 +953,187 @@ class CourseService:
     
 
     async def delete_course(self, course_id: str, instructor_id: str):
+        """
+        INSTRUCTOR CHỈ XÓA ĐƯỢC CHƯA ĐƯỢC DUYỆT
 
+        Quy tắc:
+        - ✅ Cho phép xóa: DRAFT, PENDING, REJECTED (chưa public)
+        - ❌ Không cho xóa: APPROVED (đã công bố, có thể có học viên)
+
+        Lý do cho phép xóa PENDING:
+        - Instructor có thể rút lại để sửa lỗi
+        - PENDING chưa public, chưa có học viên
+        - Tiết kiệm thời gian cho cả instructor và admin
+        """
         course = db.courses.find_one({
-        "_id": ObjectId(course_id)
-    })
+            "_id": ObjectId(course_id),
+            "instructor_id": ObjectId(instructor_id),
+            "is_deleted": {"$ne": True}
+        })
 
         if not course:
-           raise Exception("Course not found")
+            raise HTTPException(status_code=404, detail="Khóa học không tồn tại")
 
-        if str(course.get("instructor_id")) != instructor_id:
-           raise Exception("Permission denied")
+        status = course.get("status", "")
+
+        # ====================================
+        # CHỈ CHO PHÉP XÓA DRAFT, PENDING, REJECTED
+        # ====================================
+        if status not in ["DRAFT", "PENDING", "REJECTED"]:
+            raise HTTPException(
+                status_code=403,
+                detail="Bạn chỉ có thể xóa khóa học chưa được duyệt. "
+                       "Khóa học đã được duyệt là tài sản của trung tâm và có thể đã có học viên mua."
+            )
+
+        # ====================================
+        # SOFT DELETE
+        # ====================================
+        db.courses.update_one(
+            {"_id": ObjectId(course_id)},
+            {
+                "$set": {
+                    "is_deleted": True,
+                    "deleted_at": datetime.utcnow(),
+                    "deleted_by": ObjectId(instructor_id)
+                }
+            }
+        )
+
+        return {"message": "Đã xóa khóa học thành công"}
+
+    async def admin_delete_course(self, course_id: str, admin_id: str):
+        """
+        CHỈ ADMIN MỚI XÓA ĐƯỢC (Soft Delete)
+
+        ⚠️ ĐANG Ở CHẾ ĐỘ TEST - CHO PHÉP XÓA TẤT CẢ
+
+        📌 PRODUCTION: Enable lại check này (uncomment dòng 1033-1041)
+        Quy tắc:
+        - Chỉ xóa được nếu CHƯA có người mua (payments.success = 0)
+        - Nếu đã có người mua → Bắt buộc Archive thay vì Delete
+        """
+        course = db.courses.find_one({"_id": ObjectId(course_id)})
+
+        if not course:
+            raise HTTPException(status_code=404, detail="Khóa học không tồn tại")
+
+        # ====================================
+        # KIỂM TRA GIAO DỊCH THÀNH CÔNG
+        # ====================================
+        successful_payments = db.payments.count_documents({
+            "course_id": ObjectId(course_id),
+            "status": "success"
+        })
 
         enrolled_count = db.enrollments.count_documents({
             "course_id": ObjectId(course_id)
         })
-        if enrolled_count > 0:
-            raise Exception("Cannot delete course with enrolled students")
 
+        # ====================================
+        # 🧪 TEST MODE: COMMENT ĐỂ CHO XÓA TẤT CẢ
+        # 🚀 PRODUCTION: UNCOMMENT CODE DƯỚI ĐÂY
+        # ====================================
+        # if successful_payments > 0:
+        #     raise HTTPException(
+        #         status_code=400,
+        #         detail=(
+        #             f"Không thể xóa khóa học đã có {successful_payments} học viên mua. "
+        #             f"Vui lòng sử dụng 'Lưu trữ' (Archive) để ngừng bán cho khách mới "
+        #             f"nhưng vẫn giữ quyền truy cập cho {successful_payments} học viên đã mua. "
+        #             f"Giữ cam kết 'Học trọn đời' với khách hàng."
+        #         )
+        #     )
+
+        # ====================================
+        # XÓA KHÓA HỌC (SOFT DELETE)
+        # ====================================
         db.courses.update_one(
-        {"_id": ObjectId(course_id)},
-        {
-            "$set": {
-                "is_deleted": True
+            {"_id": ObjectId(course_id)},
+            {
+                "$set": {
+                    "is_deleted": True,
+                    "deleted_at": datetime.utcnow(),
+                    "deleted_by": ObjectId(admin_id),
+                    "deletion_reason": "admin_soft_delete"
+                }
             }
-        }
-    )
+        )
 
-        return {"message": "Course deleted successfully"}
+        warning = ""
+        if successful_payments > 0:
+            warning = f" ⚠️ CHẾ ĐỘ TEST: Đã xóa khóa có {successful_payments} học viên đã mua!"
+
+        return {
+            "message": "Khóa học đã được xóa thành công" + warning,
+            "enrolled_count": enrolled_count,
+            "successful_payments": successful_payments
+        }
+
+    async def archive_course(self, course_id: str, admin_id: str, reason: str = None):
+        """
+        ADMIN ARCHIVE KHÓA HỌC
+
+        Archive = Ngừng bán nhưng học viên đã mua vẫn học được
+        Dùng khi: Đã có người mua, muốn ngừng kinh doanh
+        """
+        course = db.courses.find_one({"_id": ObjectId(course_id)})
+
+        if not course:
+            raise HTTPException(status_code=404, detail="Khóa học không tồn tại")
+
+        # Kiểm tra số lượng học viên
+        enrolled_count = db.enrollments.count_documents({
+            "course_id": ObjectId(course_id)
+        })
+
+        successful_payments = db.payments.count_documents({
+            "course_id": ObjectId(course_id),
+            "status": "success"
+        })
+
+        # Archive
+        db.courses.update_one(
+            {"_id": ObjectId(course_id)},
+            {
+                "$set": {
+                    "is_archived": True,
+                    "archived_at": datetime.utcnow(),
+                    "archived_by": ObjectId(admin_id),
+                    "archived_reason": reason or "Ngừng kinh doanh - Giữ cam kết khách hàng cũ"
+                }
+            }
+        )
+
+        return {
+            "message": "Đã lưu trữ khóa học thành công",
+            "enrolled_count": enrolled_count,
+            "successful_payments": successful_payments,
+            "note": f"Khóa học không còn trên marketplace. {enrolled_count} học viên đã mua vẫn truy cập được."
+        }
+
+    async def delete_course_permanently(self, course_id: str):
+        """
+        Admin xóa khóa học vĩnh viễn (hard delete)
+        """
+        course = db.courses.find_one({"_id": ObjectId(course_id)})
+
+        if not course:
+            raise ValueError("Khóa học không tồn tại")
+
+        # Xóa tất cả enrollments
+        db.enrollments.delete_many({"course_id": ObjectId(course_id)})
+
+        # Xóa tất cả payment records
+        db.payments.delete_many({"course_id": ObjectId(course_id)})
+
+        # Xóa khóa học
+        db.courses.delete_one({"_id": ObjectId(course_id)})
+
+        return {
+            "message": "Khóa học đã được xóa vĩnh viễn khỏi hệ thống",
+            "course_id": course_id
+        }
 
 
 
@@ -1008,6 +1181,27 @@ class CourseService:
         result = db.enrollments.insert_one(
             enrollment
         )
+
+        # ====================================
+        # 🔥 NOTIFY INSTRUCTOR ABOUT NEW ENROLLMENT
+        # ====================================
+        course = db.courses.find_one({"_id": ObjectId(course_id)})
+        if course and course.get("instructor_id"):
+            # Lấy thông tin học viên
+            student = db.users.find_one({"_id": ObjectId(user_id)})
+            student_name = student.get("fullName", "Một học viên") if student else "Một học viên"
+            course_name = course.get("title", "khóa học")
+
+            notification_repository.create({
+                "user_id": course["instructor_id"],
+                "title": "Học viên mới đăng ký!",
+                "message": f"{student_name} vừa đăng ký khóa học \"{course_name}\". Chào đón và hỗ trợ họ trong hành trình học tập nhé!",
+                "type": "new_enroll",
+                "course_id": ObjectId(course_id),
+                "student_id": ObjectId(user_id),
+                "is_read": False,
+                "created_at": datetime.utcnow()
+            })
 
         # ====================================
         # RESPONSE
@@ -1067,7 +1261,8 @@ class CourseService:
         course_ids = [e["course_id"] for e in enrollments]
 
         courses = list(db.courses.find({
-        "_id": {"$in": course_ids}
+        "_id": {"$in": course_ids},
+        "is_deleted": {"$ne": True}
     }))
 
         return [
@@ -1193,6 +1388,58 @@ class CourseService:
 
         return {"message": "Pending update resolved"}
 
+    async def admin_update_course(self, course_id: str, data: dict):
+        """
+        Admin cập nhật thông tin khóa học
+        """
+        course = db.courses.find_one({
+            "_id": ObjectId(course_id),
+            "is_deleted": {"$ne": True}
+        })
+
+        if not course:
+            raise ValueError("Khóa học không tồn tại")
+
+        # Chuẩn bị dữ liệu update
+        update_data = {
+            "updated_at": datetime.utcnow()
+        }
+
+        # Chỉ update những field được gửi lên
+        allowed_fields = ["title", "description", "category", "price", "status", "image"]
+        for field in allowed_fields:
+            if field in data:
+                update_data[field] = data[field]
+
+        # Nếu admin đổi status từ PENDING -> APPROVED thì cần set price
+        if data.get("status") == "APPROVED" and course.get("status") != "APPROVED":
+            if "price" not in data:
+                raise ValueError("Cần thiết lập giá khi phê duyệt khóa học")
+
+        # Nếu admin đổi status thành APPROVED, cần uppercase
+        if "status" in update_data:
+            status_map = {
+                "published": "APPROVED",
+                "pending": "PENDING",
+                "draft": "DRAFT",
+                "suspended": "BLOCKED",
+                "rejected": "REJECTED"
+            }
+            update_data["status"] = status_map.get(update_data["status"], update_data["status"].upper())
+
+        result = db.courses.update_one(
+            {"_id": ObjectId(course_id)},
+            {"$set": update_data}
+        )
+
+        if result.matched_count == 0:
+            raise ValueError("Không thể cập nhật khóa học")
+
+        return {
+            "message": "Cập nhật khóa học thành công",
+            "course_id": course_id
+        }
+
     async def get_admin_course_detail(self, course_id: str):
         course = await course_repository.get_by_id(course_id)
 
@@ -1285,7 +1532,9 @@ class CourseService:
         }
     
     async def get_admin_courses(self, q=None, category=None, status=None, page=1, limit=10):
-        filter_query = {}
+        filter_query = {
+            "is_deleted": {"$ne": True}  # 🔥 FIX: Không hiển thị khóa đã xóa
+        }
 
         # 🔍 SEARCH
         if q:
@@ -1303,11 +1552,28 @@ class CourseService:
 
         courses = list(
             db.courses.find(filter_query)
+            .sort("created_at", -1)
             .skip(skip)
             .limit(limit)
         )
 
         total = db.courses.count_documents(filter_query)
+
+        # ====================================
+        # 🚀 BATCH LOAD INSTRUCTORS (FIX N+1 QUERY)
+        # ====================================
+        instructor_ids = [c.get("instructor_id") for c in courses if c.get("instructor_id")]
+        instructor_ids = list(set(instructor_ids))  # Remove duplicates
+
+        # Load tất cả instructors trong 1 query
+        instructors_cursor = db.users.find(
+            {"_id": {"$in": instructor_ids}},
+            {"_id": 1, "fullName": 1, "email": 1}
+        )
+        instructors_map = {
+            str(u["_id"]): u.get("fullName") or u.get("email") or "Giảng viên EduSync"
+            for u in instructors_cursor
+        }
 
         result = []
 
@@ -1332,25 +1598,14 @@ class CourseService:
 
             else:
                 actions = []
-                
-            instructor_name = "Giảng viên EduSync"
-            iid = course.get("instructor_id")
-            if iid:
-                u = get_user_by_id(str(iid))
-                if u:
-                    instructor_name = u.get("fullName") or u.get("email") or instructor_name
 
-            instructor_name = "Giảng viên EduSync"
+            # Lấy instructor từ map (đã load sẵn)
             iid = course.get("instructor_id")
-            if iid:
-                u = get_user_by_id(str(iid))
-                if u:
-                    instructor_name = u.get("fullName") or u.get("email") or instructor_name
+            instructor_name = instructors_map.get(str(iid), "Giảng viên EduSync") if iid else "Giảng viên EduSync"
 
             result.append({
                 "id": str(course["_id"]),
                 "title": course.get("title"),
-
                 "thumbnail": course.get("image") or course.get("thumbnail"),
                 "category": course.get("category"),
                 "price": course.get("price"),
@@ -1358,12 +1613,17 @@ class CourseService:
                 "actions": actions,
                 "instructor": instructor_name,
                 "has_new_update": course.get("has_pending_update", False)
-
             })
+
+        import math
+        total_pages = math.ceil(total / limit) if limit > 0 else 1
 
         return {
             "courses": result,
-            "total": total
+            "total": total,
+            "total_pages": total_pages,
+            "page": page,
+            "limit": limit
         }
     
     
@@ -1371,7 +1631,11 @@ class CourseService:
     # ===================== FILTER & TOP COURSES =====================
 
     async def filter_courses(self, category: str = "all", price: str = "all", page: int = 1, limit: int = 10):
-        filter = {"status": "APPROVED"}
+        filter = {
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True},
+            "is_archived": {"$ne": True}
+        }
 
         if category and category != "all":
             filter["category"] = category
@@ -1485,7 +1749,7 @@ class CourseService:
             result.append({
                 "id": str(c["_id"]),
                 "title": c.get("title"),
-                "thumbnail": c.get("thumbnail"),
+                "thumbnail": c.get("image") or "",
                 "price": c.get("price", 0),
                 "students": c.get("students_count", 0),
                 "lesson_count": lesson_count,
