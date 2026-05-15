@@ -12,6 +12,8 @@ import {
   faCheckCircle,
   faTimesCircle,
   faTrashCan,
+  faCreditCard,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 
 import { getNotificationsAPI, markNotificationReadAPI, deleteNotificationAPI } from "../../services/notificationAPI";
@@ -518,6 +520,18 @@ const NotificationBell = ({ notificationsPageUrl = "/notifications" }) => {
         return (
           <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0">
             <FontAwesomeIcon icon={faTrophy} />
+          </div>
+        );
+      case "payment_success":
+        return (
+          <div className="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon icon={faCreditCard} />
+          </div>
+        );
+      case "payment_failed":
+        return (
+          <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+            <FontAwesomeIcon icon={faExclamationTriangle} />
           </div>
         );
       default:

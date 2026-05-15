@@ -68,9 +68,20 @@ class QuestionService:
                 "created_at": datetime.utcnow()
             })
 
+        # =====================================
+        # 🔥 RETURN USER INFO
+        # =====================================
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+
         return {
             "message": "Question created",
-            "question_id": question_id
+            "question_id": question_id,
+            "user": {
+                "id": str(user["_id"]) if user else "",
+                "name": user.get("fullName") if user else "Unknown",
+                "avatar": user.get("avatar_url") if user else None,
+                "role": user.get("role") if user else "learner"
+            }
         }
 
     # =====================================
@@ -85,11 +96,17 @@ class QuestionService:
             reply_items = []
             for r in replies:
                 reply_user = db.users.find_one({"_id": r["user_id"]})
+
+                # Format created_at to ISO string
+                created_at = r.get("created_at")
+                if created_at and hasattr(created_at, 'isoformat'):
+                    created_at = created_at.isoformat() + "Z"  # Add Z for UTC timezone
+
                 reply_items.append({
                     "id": str(r["_id"]),
                     "content": r["content"],
                     "type": r["type"],
-                    "created_at": r.get("created_at"),
+                    "created_at": created_at,
                     "user": {
                         "id": str(reply_user["_id"]) if reply_user else "",
                         "name": reply_user.get("fullName") if reply_user else "Unknown",
@@ -116,13 +133,18 @@ class QuestionService:
                 except:
                     pass
 
+            # Format created_at to ISO string
+            question_created_at = q.get("created_at")
+            if question_created_at and hasattr(question_created_at, 'isoformat'):
+                question_created_at = question_created_at.isoformat() + "Z"  # Add Z for UTC timezone
+
             result.append({
                 "id": str(q["_id"]),
                 "lesson_id": lesson_id_str,
                 "lesson_title": lesson_title,
                 "video_url": video_url,
                 "content": q["content"],
-                "created_at": q.get("created_at"),
+                "created_at": question_created_at,
                 "is_answered": len(reply_items) > 0,
                 "user": {
                     "id": str(user["_id"]) if user else "",
@@ -183,6 +205,10 @@ class QuestionService:
         # 🔥 CREATE NOTIFICATION FOR LEARNER
         # =====================================
 
+        # Lấy thông tin giảng viên (user_id chính là instructor_id vì đang reply)
+        instructor = db.users.find_one({"_id": ObjectId(user_id)})
+        instructor_name = instructor.get("fullName", "Giảng viên") if instructor else "Giảng viên"
+
         notification_repository.create({
 
             "user_id": question["user_id"],
@@ -195,16 +221,31 @@ class QuestionService:
 
             "course_id": question["course_id"],
 
+            "lesson_id": question.get("lesson_id"),
+
             "question_id": question["_id"],
+
+            "instructor_name": instructor_name,
 
             "is_read": False,
 
             "created_at": datetime.utcnow()
         })
 
+        # =====================================
+        # 🔥 RETURN USER INFO
+        # =====================================
+        user = db.users.find_one({"_id": ObjectId(user_id)})
+
         return {
             "message": "Reply created",
-            "reply_id": reply_id
+            "reply_id": reply_id,
+            "user": {
+                "id": str(user["_id"]) if user else "",
+                "name": user.get("fullName") if user else "Unknown",
+                "avatar": user.get("avatar_url") if user else None,
+                "role": user.get("role") if user else "learner"
+            }
         }
 
     # =====================================
