@@ -758,9 +758,8 @@ class CourseService:
 
             students_task = self._count_students(course_id)
 
-            lessons = c.get("lesson_count")
-            if lessons is None:
-                lessons = len(c.get("lessons", []))
+            # Count lessons from lessons collection instead of course.lessons array
+            lesson_count = self._count_lessons(course_id)
 
             students = await students_task
 
@@ -770,7 +769,7 @@ class CourseService:
                 "category": self._category_display(c.get("category", "")),
                 "status": self.map_status(c.get("status")),
                 "students": students,
-                "lessons": lessons,
+                "lessons": lesson_count,
                 "price": c.get("price", 0),
                 "image": c.get("image", "")
             }
