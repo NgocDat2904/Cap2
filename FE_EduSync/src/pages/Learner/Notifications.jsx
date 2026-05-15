@@ -12,6 +12,8 @@ import {
   faTrashCan,
   faFilter,
   faSpinner,
+  faCreditCard,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import { getNotificationsAPI, markNotificationReadAPI, deleteNotificationAPI } from "../../services/notificationAPI";
 
@@ -187,6 +189,18 @@ const LearnerNotifications = () => {
             <FontAwesomeIcon icon={faTrophy} />
           </div>
         );
+      case "payment_success":
+        return (
+          <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 text-xl">
+            <FontAwesomeIcon icon={faCreditCard} />
+          </div>
+        );
+      case "payment_failed":
+        return (
+          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xl">
+            <FontAwesomeIcon icon={faExclamationTriangle} />
+          </div>
+        );
       default:
         return (
           <div className="w-12 h-12 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 text-xl">
@@ -238,7 +252,8 @@ const LearnerNotifications = () => {
                 isRed: true,
               },
               { id: "qa", label: "Hỏi đáp (Q&A)" },
-              { id: "course_update", label: "Cập nhật nội dung" },
+              { id: "course_update", label: "Cập nhật khóa học" },
+              { id: "payment_success", label: "Thanh toán" },
               { id: "system", label: "Hệ thống" },
             ].map((filter) => (
               <button

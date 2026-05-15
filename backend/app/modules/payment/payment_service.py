@@ -6,6 +6,7 @@ import os
 
 from app.database.mongodb import db
 from app.modules.payment.vnpay_utils import VNPay
+from app.modules.notifications.notification_repository import notification_repository
 
 # Get VNPay config from env or use defaults (sandbox)
 VNPAY_TMN_CODE = os.getenv("VNPAY_TMN_CODE", "CGXZLS0Z")
@@ -139,7 +140,7 @@ class PaymentService:
                     {"_id": payment["_id"]},
                     {"$set": {"status": "success", "paid_at": datetime.utcnow()}}
                 )
-                
+
                 # Auto enroll
                 db.enrollments.insert_one({
                     "course_id": payment["course_id"],
@@ -147,7 +148,21 @@ class PaymentService:
                     "created_at": datetime.utcnow(),
                     "last_accessed_at": None
                 })
-                
+
+                # Create success notification
+                course = db.courses.find_one({"_id": payment["course_id"]})
+                course_name = course.get("title", "khóa học") if course else "khóa học"
+
+                notification_repository.create({
+                    "user_id": payment["user_id"],
+                    "title": "Thanh toán thành công!",
+                    "message": f"Bạn đã thanh toán thành công cho khóa học \"{course_name}\". Giờ bạn có thể bắt đầu học ngay!",
+                    "type": "payment_success",
+                    "course_id": payment["course_id"],
+                    "is_read": False,
+                    "created_at": datetime.utcnow()
+                })
+
                 return {"status": "success", "message": "Payment successful"}
             else:
                 # Payment failed/canceled
@@ -155,8 +170,92 @@ class PaymentService:
                     {"_id": payment["_id"]},
                     {"$set": {"status": "failed"}}
                 )
+
+                # Create failed notification
+                course = db.courses.find_one({"_id": payment["course_id"]})
+                course_name = course.get("title", "khóa học") if course else "khóa học"
+
+                notification_repository.create({
+                    "user_id": payment["user_id"],
+                    "title": "Thanh toán thất bại",
+                    "message": f"Giao dịch thanh toán cho khóa học \"{course_name}\" không thành công. Vui lòng thử lại hoặc liên hệ hỗ trợ.",
+                    "type": "payment_failed",
+                    "course_id": payment["course_id"],
+                    "is_read": False,
+                    "created_at": datetime.utcnow()
+                })
+
                 return {"status": "failed", "message": "Payment failed"}
         else:
             return {"status": "failed", "message": "Invalid signature"}
+
+    # ====================================
+    # GET PAYMENT HISTORY
+    # ====================================
+    async def get_payment_history(self, user_id: str):
+        """
+        Lấy lịch sử giao dịch của user
+        """
+        # Get all payments của user, sort theo created_at mới nhất
+        # Chỉ lấy success và failed, không lấy pending (giao dịch chưa hoàn thành)
+        payments = list(db.payments.find({
+            "user_id": ObjectId(user_id),
+            "status": {"$in": ["success", "failed"]}  # Loại bỏ pending
+        }).sort("created_at", -1))
+
+        result = []
+
+        for payment in payments:
+            # Get course info
+            course = None
+            course_title = "Khóa học"
+            course_thumbnail = None
+
+            if payment.get("course_id"):
+                course = db.courses.find_one({"_id": payment["course_id"]})
+                if course:
+                    course_title = course.get("title", "Khóa học")
+                    course_thumbnail = course.get("image") or course.get("thumbnail")
+
+            # Format created_at và paid_at thành ISO string
+            created_at = payment.get("created_at")
+            if created_at and hasattr(created_at, 'isoformat'):
+                created_at = created_at.isoformat() + "Z"
+
+            paid_at = payment.get("paid_at")
+            if paid_at and hasattr(paid_at, 'isoformat'):
+                paid_at = paid_at.isoformat() + "Z"
+
+            result.append({
+                "id": str(payment["_id"]),
+                "transaction_id": payment.get("transaction_id"),
+                "course_id": str(payment["course_id"]) if payment.get("course_id") else None,
+                "course_title": course_title,
+                "course_thumbnail": course_thumbnail,
+                "amount": payment.get("amount", 0),
+                "currency": payment.get("currency", "VND"),
+                "payment_method": payment.get("payment_method", "vnpay"),
+                "status": payment.get("status", "pending"),
+                "created_at": created_at,
+                "paid_at": paid_at
+            })
+
+        # Calculate stats
+        total = len(payments)
+        success = len([p for p in payments if p.get("status") == "success"])
+        pending = len([p for p in payments if p.get("status") == "pending"])
+        failed = len([p for p in payments if p.get("status") == "failed"])
+        total_amount = sum([p.get("amount", 0) for p in payments if p.get("status") == "success"])
+
+        return {
+            "transactions": result,
+            "stats": {
+                "total": total,
+                "success": success,
+                "pending": pending,
+                "failed": failed,
+                "total_amount": total_amount
+            }
+        }
 
 payment_service = PaymentService()
