@@ -36,3 +36,8 @@ class InstructorProfileUpdate(BaseModel):
         if v and not v.isdigit():
             raise ValueError("Phone must contain only numbers")
         return v
+
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str

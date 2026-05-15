@@ -29,6 +29,7 @@ import { uploadAvatarAPI } from "../../services/userAPI";
 import {
   getInstructorProfileAPI,
   updateInstructorProfileAPI,
+  changePasswordAPI,
 } from "../../services/instructorAPI";
 import toast from "../../utils/toast";
 
@@ -74,6 +75,14 @@ const InstructorProfilePage = () => {
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const fileInputRef = useRef(null);
+
+  // Password change state
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   // =========================================================================
   // 1. GỌI API LẤY DATA
@@ -141,6 +150,60 @@ const InstructorProfilePage = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfileData({ ...profileData, [name]: value });
+  };
+
+  // =========================================================================
+  // 4. XỬ LÝ ĐỔI MẬT KHẨU
+  // =========================================================================
+  const handlePasswordChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error("Vui lòng điền đầy đủ thông tin");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.error("Mật khẩu mới phải có ít nhất 6 ký tự");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("Mật khẩu mới và xác nhận mật khẩu không khớp");
+      return;
+    }
+
+    try {
+      setIsChangingPassword(true);
+      const token = localStorage.getItem("access_token");
+
+      await changePasswordAPI(
+        passwordData.currentPassword,
+        passwordData.newPassword,
+        token
+      );
+
+      toast.success("Đổi mật khẩu thành công");
+
+      // Clear form
+      setPasswordData({
+        currentPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Lỗi đổi mật khẩu:", error);
+      const errorMsg = error.response?.data?.detail || "Không thể đổi mật khẩu";
+      toast.error(errorMsg);
+    } finally {
+      setIsChangingPassword(false);
+    }
   };
 
   // =========================================================================
@@ -515,13 +578,16 @@ const InstructorProfilePage = () => {
                       />{" "}
                       Thay đổi mật khẩu
                     </h3>
-                    <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
+                    <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end" onSubmit={handleChangePassword}>
                       <div className="sm:col-span-2">
                         <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
                           Mật khẩu hiện tại
                         </label>
                         <input
                           type="password"
+                          name="currentPassword"
+                          value={passwordData.currentPassword}
+                          onChange={handlePasswordChange}
                           placeholder="••••••••"
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
@@ -532,6 +598,9 @@ const InstructorProfilePage = () => {
                         </label>
                         <input
                           type="password"
+                          name="newPassword"
+                          value={passwordData.newPassword}
+                          onChange={handlePasswordChange}
                           placeholder="••••••••"
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
@@ -542,16 +611,27 @@ const InstructorProfilePage = () => {
                         </label>
                         <input
                           type="password"
+                          name="confirmPassword"
+                          value={passwordData.confirmPassword}
+                          onChange={handlePasswordChange}
                           placeholder="••••••••"
                           className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 outline-none"
                         />
                       </div>
                       <div className="sm:col-span-2 flex justify-end">
                         <button
-                          type="button"
-                          className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5"
+                          type="submit"
+                          disabled={isChangingPassword}
+                          className="px-6 py-3 bg-white text-slate-800 border border-slate-300 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-400 transition-all active:scale-95 flex items-center gap-2.5 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          Cập nhật mật khẩu
+                          {isChangingPassword ? (
+                            <>
+                              <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                              Đang xử lý...
+                            </>
+                          ) : (
+                            "Cập nhật mật khẩu"
+                          )}
                         </button>
                       </div>
                     </form>

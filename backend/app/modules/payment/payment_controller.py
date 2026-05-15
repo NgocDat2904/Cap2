@@ -43,12 +43,22 @@ async def create_payment(
 @router.get("/vnpay_return")
 async def vnpay_return(request: Request):
     query_params = dict(request.query_params)
-    
+
     result = await payment_service.process_vnpay_return(query_params)
-    
+
     status = result.get("status", "failed")
-    
+
     # Redirect to frontend payment result page
     redirect_url = f"{FRONTEND_URL}/payment-result?status={status}"
-    
-    return RedirectResponse(url=redirect_url)
+
+    return RedirectResponse(url=redirect_url)
+
+
+@router.get("/history")
+async def get_payment_history(
+    current_user=Depends(require_role(["learner"]))
+):
+    """
+    Lấy lịch sử giao dịch của learner
+    """
+    return await payment_service.get_payment_history(current_user["id"])

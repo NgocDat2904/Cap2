@@ -14,8 +14,9 @@ import {
   faClockRotateLeft,
   faTimesCircle,
   faBell,
-  faRotateRight, 
+  faRotateRight,
   faXmark,
+  faCopy,
 } from "@fortawesome/free-solid-svg-icons";
 import { fetchAllAdminCoursesAPI } from "../../services/adminCourseAPI";
 import toast from "../../utils/toast";
@@ -38,23 +39,54 @@ const AdminCourseManagement = () => {
 
   const [courses, setCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [openActionMenuId, setOpenActionMenuId] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCourses, setTotalCourses] = useState(0);
+  const itemsPerPage = 20;
+
+  // Debounce search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset về trang 1 khi search
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   const fetchCourses = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("access_token");
-      const data = await fetchAllAdminCoursesAPI(token, { limit: 1000 });
+
+      // Gọi API với pagination và filters
+      const params = {
+        page: currentPage,
+        limit: itemsPerPage,
+      };
+
+      if (debouncedSearchTerm) params.q = debouncedSearchTerm;
+      if (categoryFilter !== "all") params.category = categoryFilter;
+      if (statusFilter !== "all") params.status = statusFilter;
+
+      const data = await fetchAllAdminCoursesAPI(token, params);
+
       setCourses(data.courses || []);
+      setTotalPages(data.total_pages || 1);
+      setTotalCourses(data.total || 0);
     } catch (err) {
       console.error("Lỗi truy xuất danh sách khóa học:", err);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, debouncedSearchTerm, categoryFilter, statusFilter]);
 
   useEffect(() => {
     fetchCourses();
@@ -64,37 +96,36 @@ const AdminCourseManagement = () => {
     setSearchTerm("");
     setCategoryFilter("all");
     setStatusFilter("all");
-    fetchCourses();
+    setCurrentPage(1);
   };
 
+  // Stats (không dùng client-side filter nữa, stats sẽ dựa trên total từ backend)
   const stats = {
-    total: courses.length,
-    pending: courses.filter((c) => c.status === "pending").length,
-    published: courses.filter((c) => c.status === "published").length,
-    others: courses.filter((c) =>
-      ["draft", "suspended", "rejected"].includes(c.status),
-    ).length,
+    total: totalCourses,
+    pending: 0, // Có thể thêm endpoint riêng để lấy stats nếu cần
+    published: 0,
+    others: 0,
   };
 
-  const filteredCourses = courses.filter((course) => {
-    const title = (course.title || "").toLowerCase();
-    const instructor = (course.instructor || "").toLowerCase();
-    const search = searchTerm.toLowerCase();
+  // Không cần filter nữa vì backend đã filter
+  const filteredCourses = courses;
 
-    const matchesSearch = title.includes(search) || instructor.includes(search);
-    const matchesCategory = categoryFilter === "all" || (course.category || "").toLowerCase() === categoryFilter.toLowerCase();
-
-    let matchesStatus = false;
-    if (statusFilter === "all") {
-      matchesStatus = true;
-    } else if (statusFilter === "has_update") {
-      matchesStatus = course.has_new_update === true;
-    } else {
-      matchesStatus = (course.status || "").toLowerCase() === statusFilter.toLowerCase();
+  // Pagination handlers
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
     }
+  };
 
-    return matchesSearch && matchesCategory && matchesStatus;
-  });
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePageClick = (pageNum) => {
+    setCurrentPage(pageNum);
+  };
 
   const toggleCourseSuspension = async (id, currentStatus) => {
     const newStatus = currentStatus === "suspended" ? "published" : "suspended";
@@ -116,11 +147,12 @@ const AdminCourseManagement = () => {
   };
 
   const deleteCourse = async (id) => {
-    if (window.confirm("Cảnh báo: Bạn có chắc chắn muốn xóa vĩnh viễn khóa học này khỏi hệ thống? dữ liệu sẽ không thể khôi phục.")) {
+    if (window.confirm("Cảnh báo: Bạn có chắc chắn muốn xóa vĩnh viễn khóa học này khỏi hệ thống? Tất cả dữ liệu liên quan (học viên, thanh toán) sẽ bị xóa và không thể khôi phục.")) {
       const token = localStorage.getItem("access_token");
       try {
-        const { moderateCourseAPI } = await import("../../services/adminCourseAPI");
-        await moderateCourseAPI(id, "REJECTED", token);
+        const { deleteCourseAPI } = await import("../../services/adminCourseAPI");
+        await deleteCourseAPI(id, token);
+        toast.success("Khóa học đã được xóa vĩnh viễn khỏi hệ thống");
         fetchCourses();
       } catch (err) {
         toast.error("Lỗi hệ thống: Không thể thực hiện lệnh xóa.");
@@ -228,8 +260,11 @@ const AdminCourseManagement = () => {
           <div className="flex gap-3 w-full md:w-auto">
             <select
               value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="w-full md:w-48 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none"
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1); // Reset về trang 1 khi filter
+              }}
+              className="w-full md:w-50 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.value} value={cat.value}>{cat.label}</option>
@@ -237,7 +272,10 @@ const AdminCourseManagement = () => {
             </select>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1); // Reset về trang 1 khi filter
+              }}
               className="flex-1 md:w-56 px-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-600 outline-none"
             >
               <option value="all">Tất cả trạng thái</option>
@@ -255,11 +293,11 @@ const AdminCourseManagement = () => {
             <thead className="sticky top-0 z-10 bg-white shadow-sm">
               <tr className="border-b border-slate-200 text-xs uppercase tracking-wider text-slate-500 font-extrabold">
                 <th className="p-5 w-20 text-center">ID</th>
-                <th className="p-5 min-w-[300px]">Thông tin khóa học</th>
-                <th className="p-5">Danh mục</th>
-                <th className="p-5 text-right">Giá niêm yết</th>
-                <th className="p-5">Trạng thái</th>
-                <th className="p-5 text-center">Quản lý</th>
+                <th className="p-5 w-[400px]">Thông tin khóa học</th>
+                <th className="p-5 w-[180px]">Danh mục</th>
+                <th className="p-5 w-[140px] text-right">Giá niêm yết</th>
+                <th className="p-5 w-[180px]">Trạng thái</th>
+                <th className="p-5 w-[100px] text-center">Quản lý</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -273,19 +311,45 @@ const AdminCourseManagement = () => {
                 filteredCourses.map((course) => (
                   <tr key={course.id} className={`hover:bg-slate-50 transition-colors group ${course.has_new_update ? "bg-amber-50/30" : ""}`}>
                     <td className="p-5 text-center">
-                      <span className="text-sm font-bold text-slate-400 font-mono">{course.id.substring(0, 8)}...</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigator.clipboard.writeText(course.id);
+                          toast.success("Đã sao chép ID khóa học!");
+                        }}
+                        className="group/copy inline-flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                        title="Click để sao chép ID"
+                      >
+                        <span className="block max-w-[80px] truncate text-sm font-bold text-slate-400 font-mono group-hover/copy:text-slate-600">
+                          {course.id}
+                        </span>
+                        <FontAwesomeIcon
+                          icon={faCopy}
+                          className="text-[10px] text-slate-300 group-hover/copy:text-blue-500 transition-colors"
+                        />
+                      </button>
                     </td>
                     <td className="p-5">
                       <div className="flex items-start gap-4">
-                        <img src={course.thumbnail} alt="" className="w-20 h-12 rounded-lg object-cover border border-slate-200 mt-1" />
-                        <div className="min-w-0">
-                          <p onClick={() => navigate(`/admin/courses/${course.id}`)} className="text-sm font-extrabold text-slate-800 line-clamp-1 hover:text-blue-600 cursor-pointer">{course.title}</p>
+                        <img src={course.thumbnail} alt="" className="w-20 h-12 rounded-lg object-cover border border-slate-200 shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p
+                            onClick={() => navigate(`/admin/courses/${course.id}`)}
+                            className="text-sm font-extrabold text-slate-800 hover:text-blue-600 cursor-pointer line-clamp-2 leading-snug"
+                            title={course.title}
+                          >
+                            {course.title}
+                          </p>
                           {course.has_new_update && (
                             <span className="mt-1.5 inline-flex items-center gap-1.5 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] font-black rounded-md border border-amber-200 animate-pulse">
                               <FontAwesomeIcon icon={faBell} /> CÓ CẬP NHẬT
                             </span>
                           )}
-                          {!course.has_new_update && <p className="text-xs font-medium text-slate-500 mt-1">Giảng viên: <span className="font-bold text-slate-700">{course.instructor}</span></p>}
+                          {!course.has_new_update && (
+                            <p className="text-xs font-medium text-slate-500 mt-1 truncate">
+                              Giảng viên: <span className="font-bold text-slate-700">{course.instructor}</span>
+                            </p>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -351,6 +415,106 @@ const AdminCourseManagement = () => {
             </tbody>
           </table>
         </div>
+
+        {/* PAGINATION */}
+        {!loading && totalCourses > 0 && (
+          <div className="sticky bottom-0 z-10 p-4 border-t border-slate-200 bg-slate-50/95 backdrop-blur-md flex flex-col sm:flex-row items-center justify-between gap-4">
+            {/* Info */}
+            <div className="text-sm font-medium text-slate-600">
+              Hiển thị {((currentPage - 1) * itemsPerPage) + 1} - {Math.min(currentPage * itemsPerPage, totalCourses)} của {totalCourses} khóa học
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Trước
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {(() => {
+                  const pages = [];
+                  const maxVisible = 5;
+                  let startPage = Math.max(1, currentPage - Math.floor(maxVisible / 2));
+                  let endPage = Math.min(totalPages, startPage + maxVisible - 1);
+
+                  if (endPage - startPage < maxVisible - 1) {
+                    startPage = Math.max(1, endPage - maxVisible + 1);
+                  }
+
+                  // First page + ellipsis
+                  if (startPage > 1) {
+                    pages.push(
+                      <button
+                        key={1}
+                        onClick={() => handlePageClick(1)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100 transition"
+                      >
+                        1
+                      </button>
+                    );
+                    if (startPage > 2) {
+                      pages.push(
+                        <span key="ellipsis-start" className="px-2 text-slate-400">...</span>
+                      );
+                    }
+                  }
+
+                  // Visible pages
+                  for (let i = startPage; i <= endPage; i++) {
+                    pages.push(
+                      <button
+                        key={i}
+                        onClick={() => handlePageClick(i)}
+                        className={`px-3 py-2 rounded-lg text-sm font-bold transition ${
+                          i === currentPage
+                            ? "bg-blue-600 text-white"
+                            : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-100"
+                        }`}
+                      >
+                        {i}
+                      </button>
+                    );
+                  }
+
+                  // Last page + ellipsis
+                  if (endPage < totalPages) {
+                    if (endPage < totalPages - 1) {
+                      pages.push(
+                        <span key="ellipsis-end" className="px-2 text-slate-400">...</span>
+                      );
+                    }
+                    pages.push(
+                      <button
+                        key={totalPages}
+                        onClick={() => handlePageClick(totalPages)}
+                        className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100 transition"
+                      >
+                        {totalPages}
+                      </button>
+                    );
+                  }
+
+                  return pages;
+                })()}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-sm font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                Tiếp
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

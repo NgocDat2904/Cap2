@@ -94,7 +94,7 @@ const AdminLayout = () => {
       icon: faMoneyBillWave,
       path: "/admin/revenue",
     },
-    { name: "Danh mục khóa học", icon: faTags, path: "/admin/categories" },
+    // { name: "Danh mục khóa học", icon: faTags, path: "/admin/categories" },
     { 
       name: "Duyệt khóa học", 
       icon: faListCheck, 
@@ -105,7 +105,7 @@ const AdminLayout = () => {
 
   const bottomLinks = [
     { name: "Hồ sơ cá nhân", icon: faUserShield, path: "/admin/profile" },
-    { name: "Cài đặt hệ thống", icon: faGears, path: "/admin/settings" },
+    // { name: "Cài đặt hệ thống", icon: faGears, path: "/admin/settings" },
   ];
 
   const handleLinkClick = () => {
