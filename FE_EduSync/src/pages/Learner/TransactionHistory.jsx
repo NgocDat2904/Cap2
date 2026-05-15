@@ -14,8 +14,9 @@ import {
   faCircleExclamation,
   faChevronRight,
   faSpinner,
+  faTrash,
 } from "@fortawesome/free-solid-svg-icons";
-import { getPaymentHistoryAPI } from "../../services/paymentAPI";
+import { getPaymentHistoryAPI, deletePaymentHistoryAPI } from "../../services/paymentAPI";
 
 const LearnerTransactionHistory = () => {
   const navigate = useNavigate();
@@ -111,6 +112,40 @@ const LearnerTransactionHistory = () => {
       },
     };
     return configs[status] || configs.pending;
+  };
+
+  // =========================================================================
+  // DELETE TRANSACTION
+  // =========================================================================
+  const handleDeleteTransaction = async (paymentId, courseName) => {
+    if (!window.confirm(`Bạn có chắc muốn xóa giao dịch "${courseName}" khỏi lịch sử?`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("access_token");
+      await deletePaymentHistoryAPI(paymentId, token);
+
+      // Remove from state
+      setTransactions((prev) => prev.filter((tx) => tx.id !== paymentId));
+
+      // Update stats
+      const deletedTx = transactions.find((tx) => tx.id === paymentId);
+      if (deletedTx) {
+        setStats((prev) => ({
+          total: prev.total - 1,
+          success: deletedTx.status === "success" ? prev.success - 1 : prev.success,
+          failed: deletedTx.status === "failed" ? prev.failed - 1 : prev.failed,
+          pending: deletedTx.status === "pending" ? prev.pending - 1 : prev.pending,
+          total_amount: deletedTx.status === "success" ? prev.total_amount - deletedTx.amount : prev.total_amount,
+        }));
+      }
+
+      window.alert("Đã xóa giao dịch khỏi lịch sử!");
+    } catch (error) {
+      console.error("Lỗi khi xóa giao dịch:", error);
+      window.alert(error.response?.data?.detail || "Không thể xóa giao dịch!");
+    }
   };
 
   const filteredTransactions = transactions
@@ -393,22 +428,39 @@ const LearnerTransactionHistory = () => {
                         </span>
                       </div>
 
-                      {/* Action Button */}
-                      {transaction.status === "success" &&
-                        transaction.course_id && (
-                          <button
-                            onClick={() =>
-                              navigate(`/courses/${transaction.course_id}`)
-                            }
-                            className="text-blue-600 hover:text-blue-700 transition-colors shrink-0"
-                            title="Xem khóa học"
-                          >
-                            <FontAwesomeIcon
-                              icon={faChevronRight}
-                              className="text-lg"
-                            />
-                          </button>
-                        )}
+                      {/* Action Buttons */}
+                      <div className="flex items-center gap-2">
+                        {/* Delete Button */}
+                        <button
+                          onClick={() =>
+                            handleDeleteTransaction(
+                              transaction.id,
+                              transaction.course_title
+                            )
+                          }
+                          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-lg transition-all shrink-0"
+                          title="Xóa khỏi lịch sử"
+                        >
+                          <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                        </button>
+
+                        {/* View Course Button */}
+                        {transaction.status === "success" &&
+                          transaction.course_id && (
+                            <button
+                              onClick={() =>
+                                navigate(`/courses/${transaction.course_id}`)
+                              }
+                              className="text-blue-600 hover:text-blue-700 transition-colors shrink-0"
+                              title="Xem khóa học"
+                            >
+                              <FontAwesomeIcon
+                                icon={faChevronRight}
+                                className="text-lg"
+                              />
+                            </button>
+                          )}
+                      </div>
                     </div>
                   </div>
                 </div>

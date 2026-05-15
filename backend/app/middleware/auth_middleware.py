@@ -17,15 +17,18 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
 
     if not payload:
         # print("❌ Invalid token")
-        raise HTTPException(status_code=401, detail="Invalid or revoked token")
+        raise HTTPException(status_code=401, detail="Token không hợp lệ")
 
     user = get_user_by_email(payload["email"])
     # print("USER FROM DB:", user)
 
     if not user:
         # print("❌ User not found")
-        raise HTTPException(status_code=401, detail="User not found")
+        raise HTTPException(status_code=401, detail="Không tìm thấy người dùng")
 
+    # check if user is blocked
+    if user.get("is_blocked", False):
+        raise HTTPException(status_code=403, detail="Tài khoản đã bị chặn")
 
     # print("USER _id (raw):", user["_id"])
     # print("USER ID (string):", str(user["_id"]))
@@ -49,7 +52,7 @@ def require_role(roles: list):
 
         if user["role"] not in roles:
             print("❌ Permission denied")
-            raise HTTPException(status_code=403, detail="Permission denied")
+            raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập")
 
         print("✅ Role OK")
         return user

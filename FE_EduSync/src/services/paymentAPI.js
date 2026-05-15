@@ -32,3 +32,17 @@ export const createPaymentAPI = async (courseId, token) => {
   );
   return response.data;
 };
+
+/**
+ * Xóa 1 giao dịch khỏi lịch sử
+ * @param {string} paymentId - ID giao dịch
+ * @param {string} token - JWT token
+ */
+export const deletePaymentHistoryAPI = async (paymentId, token) => {
+  const response = await axios.delete(`${BASE_URL}/${paymentId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

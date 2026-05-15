@@ -214,9 +214,11 @@ class PaymentService:
         """
         # Get all payments của user, sort theo created_at mới nhất
         # Chỉ lấy success và failed, không lấy pending (giao dịch chưa hoàn thành)
+        # Không lấy những payment đã bị xóa (is_deleted = True)
         payments = list(db.payments.find({
             "user_id": ObjectId(user_id),
-            "status": {"$in": ["success", "failed"]}  # Loại bỏ pending
+            "status": {"$in": ["success", "failed"]},  # Loại bỏ pending
+            "is_deleted": {"$ne": True}  # Loại bỏ đã xóa
         }).sort("created_at", -1))
 
         result = []
@@ -272,6 +274,39 @@ class PaymentService:
                 "failed": failed,
                 "total_amount": total_amount
             }
+        }
+
+    # ====================================
+    # DELETE PAYMENT HISTORY
+    # ====================================
+    async def delete_payment_history(self, payment_id: str, user_id: str):
+        """
+        Xóa 1 giao dịch khỏi lịch sử (soft delete)
+        Chỉ xóa được payment của chính mình
+        """
+        payment = db.payments.find_one({"_id": ObjectId(payment_id)})
+
+        if not payment:
+            raise HTTPException(status_code=404, detail="Payment not found")
+
+        # Check ownership
+        if str(payment["user_id"]) != user_id:
+            raise HTTPException(status_code=403, detail="You can only delete your own payment history")
+
+        # Soft delete: thêm field is_deleted
+        db.payments.update_one(
+            {"_id": ObjectId(payment_id)},
+            {
+                "$set": {
+                    "is_deleted": True,
+                    "deleted_at": datetime.utcnow()
+                }
+            }
+        )
+
+        return {
+            "message": "Payment history deleted successfully",
+            "payment_id": payment_id
         }
 
 payment_service = PaymentService()

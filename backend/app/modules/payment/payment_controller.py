@@ -61,4 +61,15 @@ async def get_payment_history(
     """
     Lấy lịch sử giao dịch của learner
     """
-    return await payment_service.get_payment_history(current_user["id"])
+    return await payment_service.get_payment_history(current_user["id"])
+
+
+@router.delete("/{payment_id}")
+async def delete_payment_history(
+    payment_id: str,
+    current_user=Depends(require_role(["learner"]))
+):
+    """
+    Xóa 1 giao dịch khỏi lịch sử (chỉ xóa được payment của chính mình)
+    """
+    return await payment_service.delete_payment_history(payment_id, current_user["id"])
