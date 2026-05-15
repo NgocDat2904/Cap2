@@ -11,9 +11,10 @@ import {
   faCircle,
   faCheckCircle,
   faTimesCircle,
+  faTrashCan,
 } from "@fortawesome/free-solid-svg-icons";
 
-import { getNotificationsAPI, markNotificationReadAPI } from "../../services/notificationAPI";
+import { getNotificationsAPI, markNotificationReadAPI, deleteNotificationAPI } from "../../services/notificationAPI";
 import { jwtDecode } from "jwt-decode";
 
 // =========================================================================
@@ -301,6 +302,23 @@ const NotificationBell = ({ notificationsPageUrl = "/notifications" }) => {
     }
   };
 
+  // Xử lý Xóa thông báo
+  const handleDeleteNotification = async (e, notificationId) => {
+    e.stopPropagation();
+    if (window.confirm("Bạn có chắc chắn muốn xóa thông báo này?")) {
+      try {
+        const token = localStorage.getItem("access_token");
+        if (token) {
+          await deleteNotificationAPI(notificationId, token);
+          // Cập nhật local state
+          setNotifications(notifications.filter((n) => n.id !== notificationId));
+        }
+      } catch (e) {
+        console.error("Lỗi hệ thống: Không thể xóa thông báo.");
+      }
+    }
+  };
+
   // Xử lý click vào thông báo với điều hướng chính xác (Deep Linking)
   const handleNotificationClick = async (notification) => {
     const userRole = getUserRole();
@@ -584,7 +602,7 @@ const NotificationBell = ({ notificationsPageUrl = "/notifications" }) => {
                   <div
                     key={notif.id}
                     onClick={() => handleNotificationClick(notif)}
-                    className={`p-4 border-b border-slate-50 flex gap-3 cursor-pointer transition-all hover:bg-blue-50/50 hover:shadow-sm active:bg-blue-100/50 relative ${
+                    className={`group p-4 border-b border-slate-50 flex gap-3 cursor-pointer transition-all hover:bg-blue-50/50 hover:shadow-sm active:bg-blue-100/50 relative ${
                       !notif.is_read ? "bg-blue-50/30" : "bg-white"
                     }`}
                   >
@@ -593,11 +611,20 @@ const NotificationBell = ({ notificationsPageUrl = "/notifications" }) => {
 
                     {/* Nội dung */}
                     <div className="flex-1 min-w-0">
-                      <p
-                        className={`text-sm ${!notif.is_read ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}
-                      >
-                        {title}
-                      </p>
+                      <div className="flex items-start justify-between gap-2 mb-1">
+                        <p
+                          className={`text-sm ${!notif.is_read ? "font-bold text-slate-900" : "font-semibold text-slate-700"}`}
+                        >
+                          {title}
+                        </p>
+                        <button
+                          onClick={(e) => handleDeleteNotification(e, notif.id)}
+                          className="w-6 h-6 rounded-full bg-red-50 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                          title="Xóa thông báo"
+                        >
+                          <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
+                        </button>
+                      </div>
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2 leading-relaxed">
                         {message}
                       </p>

@@ -17,3 +17,11 @@ export const markNotificationReadAPI = async (notificationId, token) => {
   });
   return response.data;
 };
+
+// Xóa thông báo
+export const deleteNotificationAPI = async (notificationId, token) => {
+  const response = await axios.delete(`${API_URL}/${notificationId}`, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return response.data;
+};

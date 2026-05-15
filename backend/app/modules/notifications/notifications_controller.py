@@ -62,3 +62,38 @@ async def mark_notification_read(
         "status": "success",
         "message": "Notification marked as read"
     }
+
+
+# =====================================
+# DELETE NOTIFICATION
+# =====================================
+
+@router.delete("/{notification_id}")
+async def delete_notification(
+    notification_id: str,
+    user=Depends(
+        require_role([
+            "learner",
+            "instructor",
+            "admin"
+        ])
+    )
+):
+    """
+    Xóa một thông báo
+    """
+    if not ObjectId.is_valid(notification_id):
+        raise HTTPException(400, "Invalid notification ID")
+
+    deleted = notification_repository.delete_notification(
+        ObjectId(notification_id),
+        ObjectId(user["id"])
+    )
+
+    if not deleted:
+        raise HTTPException(404, "Notification not found or unauthorized")
+
+    return {
+        "status": "success",
+        "message": "Notification deleted successfully"
+    }

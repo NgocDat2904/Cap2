@@ -29,5 +29,17 @@ class NotificationRepository:
             }
         )
 
+    def delete_notification(self, notification_id, user_id):
+        """
+        Xóa thông báo (chỉ cho phép user xóa thông báo của chính họ)
+        """
+        result = db.notifications.delete_one(
+            {
+                "_id": notification_id,
+                "user_id": user_id
+            }
+        )
+        return result.deleted_count > 0
+
 
 notification_repository = NotificationRepository()

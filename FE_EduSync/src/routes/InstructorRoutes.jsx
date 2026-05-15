@@ -9,6 +9,7 @@ import InstructorCourseEditPage from "../pages/Instructor/EditCourse";
 import InstructorStudentsPage from "../pages/Instructor/StudentsPage";
 import InstructorDashboardPage from "../pages/Instructor/DashboardPage";
 import InstructorProfilePage from "../pages/Instructor/ProfilePage";
+import InstructorNotifications from "../pages/Instructor/Notifications";
 // import ForceChangePassword from "../pages/Instructor/ForceChangePassword";
 import ProtectedRoute from "./ProtectedRoute";
 
@@ -22,6 +23,7 @@ const InstructorRoutes = () => {
           <Route path="courses" element={<InstructorMyCourses />} />
           <Route path="courses/create" element={<InstructorCreateCourse />} />
           <Route path="students" element={<InstructorStudentsPage />} />
+          <Route path="notifications" element={<InstructorNotifications />} />
           <Route
             path="performance"
             element={
