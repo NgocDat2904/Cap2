@@ -23,6 +23,9 @@ from app.modules.notifications.notifications_controller import (
 from app.modules.admin.admin_controller import (
     router as admin_router
 )
+from app.modules.admin.revenue_controller import (
+    router as revenue_router
+)
 
 
 # =========================
@@ -72,6 +75,7 @@ app.include_router(payment_router)
 app.include_router(question_router)
 app.include_router(notification_router)
 app.include_router(admin_router)
+app.include_router(revenue_router)
 
 
 # =========================

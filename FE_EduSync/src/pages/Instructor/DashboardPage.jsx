@@ -265,7 +265,7 @@ const InstructorDashboardPage = () => {
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
           <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-6">
             <h2 className="text-2xl font-extrabold text-slate-900">
-              Hỏi đáp (Q&A) mới nhất
+              Q&A Mới nhất
             </h2>
             <Link
               to="/instructor/qna"
@@ -279,10 +279,21 @@ const InstructorDashboardPage = () => {
               qnaList.map((qna, idx) => (
                 <div
                   key={qna.id || idx}
-                  className="flex gap-4 p-4 border border-slate-100 rounded-xl group transition-all hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm"
+                  className="flex gap-4 p-4 border border-slate-100 rounded-xl group transition-all hover:border-blue-200 hover:bg-slate-50 hover:shadow-sm cursor-pointer"
                 >
+                  {qna.avatar ? (
+                    <img
+                      src={qna.avatar}
+                      alt={qna.name}
+                      className="w-10 h-10 rounded-full object-cover shrink-0 border-2 border-slate-200"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
                   <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 border border-slate-300 bg-emerald-600`}
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shrink-0 border-2 border-slate-200 bg-gradient-to-br from-blue-500 to-purple-600 ${qna.avatar ? 'hidden' : ''}`}
                   >
                     {qna.name ? qna.name.charAt(0).toUpperCase() : "H"}
                   </div>
@@ -291,19 +302,32 @@ const InstructorDashboardPage = () => {
                       {qna.name || "Học viên ẩn danh"}
                     </h4>
                     <p className="text-xs text-slate-500 truncate mt-0.5">
-                      Khóa học: {qna.course}
+                      📚 {qna.course}
                     </p>
                     <p className="text-xs text-slate-600 mt-2 leading-relaxed line-clamp-2">
                       {qna.question}
                     </p>
-                    <p className="text-[10px] font-medium text-slate-400 mt-2">
-                      {qna.date || new Date().toLocaleDateString("vi-VN")}
+                    <p className="text-[10px] font-medium text-slate-400 mt-2 flex items-center gap-1">
+                      <span>🕒</span>
+                      {qna.date ? new Date(qna.date).toLocaleString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      }) : "Không rõ"}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <p className="text-sm text-slate-500 text-center py-4">Không có dữ liệu Q&A gần đây.</p>
+              <div className="text-center py-8">
+                <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <FontAwesomeIcon icon={faQuestionCircle} className="text-3xl text-slate-300" />
+                </div>
+                <p className="text-sm text-slate-500 font-medium">Chưa có câu hỏi nào từ học viên</p>
+                <p className="text-xs text-slate-400 mt-1">Học viên sẽ đặt câu hỏi trong các bài học của bạn</p>
+              </div>
             )}
           </div>
         </div>

@@ -16,6 +16,7 @@ import {
   faGear,
   faArrowRightFromBracket,
   faRightToBracket,
+  faFileInvoiceDollar,
 } from "@fortawesome/free-solid-svg-icons";
 
 const LearnerLayout = () => {
@@ -185,6 +186,18 @@ const LearnerLayout = () => {
                           className="w-4 h-4 text-slate-400"
                         />{" "}
                         Hồ sơ của tôi
+                      </Link>
+
+                      <Link
+                        to="/transactions"
+                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-900 transition-colors"
+                        onClick={() => setIsDropdownOpen(false)}
+                      >
+                        <FontAwesomeIcon
+                          icon={faFileInvoiceDollar}
+                          className="w-4 h-4 text-slate-400"
+                        />{" "}
+                        Lịch sử giao dịch
                       </Link>
 
                       <Link

@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faWallet,
@@ -9,71 +10,67 @@ import {
   faTrophy,
   faUsersLine,
   faGraduationCap,
+  faSpinner,
+  faArrowTrendDown,
 } from "@fortawesome/free-solid-svg-icons";
-
-// =========================================================================
-// MOCK DATA MỚI: CHUẨN MÔ HÌNH TRUNG TÂM NỘI BỘ (100% DOANH THU CỦA ADMIN)
-// =========================================================================
-const revenueStats = {
-  totalRevenue: 1254300000, // Tổng doanh thu chảy vào túi Trung tâm (VND)
-  totalSales: 2450, // Tổng số lượt bán khóa học
-  activeLearners: 1850, // Số học viên đang học trong tháng
-  growth: 15.4, // % Tăng trưởng doanh thu
-};
-
-// Dữ liệu biểu đồ doanh thu 6 tháng gần nhất (VND)
-const chartData = [
-  { month: "Th10", revenue: 150000000 },
-  { month: "Th11", revenue: 185000000 },
-  { month: "Th12", revenue: 142000000 },
-  { month: "Th01", revenue: 220000000 },
-  { month: "Th02", revenue: 284000000 },
-  { month: "Th03", revenue: 273300000 },
-];
-const maxRevenue = Math.max(...chartData.map((d) => d.revenue));
-
-// Top khóa học mang lại doanh thu cao nhất cho Trung tâm
-const topCourses = [
-  {
-    id: "CRS-101",
-    title: "Thực chiến ReactJS – Dự án EduSync",
-    instructor: "Tran Viet Anh",
-    price: 499000,
-    sales: 845,
-    totalEarned: 421650000,
-    thumbnail: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80",
-  },
-  {
-    id: "CRS-089",
-    title: "Khóa học IELTS 7.0 Cấp tốc",
-    instructor: "Ms. Mai English",
-    price: 990000,
-    sales: 512,
-    totalEarned: 506880000,
-    thumbnail: "https://images.unsplash.com/photo-1546410531-bea4edad81eb?w=800&q=80",
-  },
-  {
-    id: "CRS-055",
-    title: "Làm chủ Python cho Khoa học Dữ liệu",
-    instructor: "David Pham",
-    price: 655000,
-    sales: 320,
-    totalEarned: 209600000,
-    thumbnail: "https://images.unsplash.com/photo-1526379095098-d400fd0bfce8?w=800&q=80",
-  },
-  {
-    id: "CRS-112",
-    title: "Thiết kế UI/UX với Figma 2026",
-    instructor: "Huong Design",
-    price: 350000,
-    sales: 215,
-    totalEarned: 75250000,
-    thumbnail: "https://images.unsplash.com/photo-1561070791-2526d30994b5?w=800&q=80",
-  },
-];
+import {
+  getRevenueStatsAPI,
+  getRevenueChartAPI,
+  getTopCoursesAPI,
+  getStudentsChartAPI,
+} from "../../services/revenueAPI";
+import toast from "../../utils/toast";
 
 const AdminRevenueReport = () => {
-  const [timeRange, setTimeRange] = useState("6months");
+  const navigate = useNavigate();
+  const [selectedYear, setSelectedYear] = useState(2026);
+  const [loading, setLoading] = useState(true);
+
+  // States for data
+  const [revenueStats, setRevenueStats] = useState({
+    total_revenue: 0,
+    total_sales: 0,
+    active_learners: 0,
+    growth: 0,
+  });
+  const [revenueChartData, setRevenueChartData] = useState([]);
+  const [studentsChartData, setStudentsChartData] = useState([]);
+  const [topCourses, setTopCourses] = useState([]);
+
+  // Fetch data khi component mount hoặc selectedYear thay đổi
+  useEffect(() => {
+    fetchAllData();
+  }, [selectedYear]);
+
+  const fetchAllData = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        toast.error("Vui lòng đăng nhập để xem báo cáo.");
+        navigate("/admin/login");
+        return;
+      }
+
+      // Fetch tất cả data song song
+      const [stats, revenueChart, studentsChart, courses] = await Promise.all([
+        getRevenueStatsAPI(selectedYear, token),
+        getRevenueChartAPI(selectedYear, token),
+        getStudentsChartAPI(selectedYear, token),
+        getTopCoursesAPI(4, token),
+      ]);
+
+      setRevenueStats(stats);
+      setRevenueChartData(revenueChart);
+      setStudentsChartData(studentsChart);
+      setTopCourses(courses);
+    } catch (error) {
+      console.error("Lỗi khi tải báo cáo doanh thu:", error);
+      toast.error("Không thể tải báo cáo doanh thu. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatMoney = (amount) => {
     return new Intl.NumberFormat("vi-VN", {
@@ -81,6 +78,10 @@ const AdminRevenueReport = () => {
       currency: "VND",
     }).format(amount);
   };
+
+  const maxRevenueValue =
+    revenueChartData.length > 0 ? Math.max(...revenueChartData.map((d) => d.revenue)) : 1;
+  const maxStudentsValue = 100;
 
   return (
     <div className="flex-1 p-6 sm:p-8 bg-slate-50 min-h-screen font-sans animate-fade-slide-up">
@@ -101,13 +102,17 @@ const AdminRevenueReport = () => {
               className="absolute left-4 top-3 text-slate-400"
             />
             <select
-              value={timeRange}
-              onChange={(e) => setTimeRange(e.target.value)}
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(parseInt(e.target.value))}
               className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-sm font-bold text-slate-700 outline-none cursor-pointer focus:ring-2 focus:ring-blue-500/20"
             >
-              <option value="thisMonth">Tháng này</option>
-              <option value="6months">6 tháng qua</option>
-              <option value="thisYear">Năm nay</option>
+              <option value={2026}>Năm 2026</option>
+              <option value={2025}>Năm 2025</option>
+              <option value={2024}>Năm 2024</option>
+              <option value={2023}>Năm 2023</option>
+              <option value={2022}>Năm 2022</option>
+              <option value={2021}>Năm 2021</option>
+              <option value={2020}>Năm 2020</option>
             </select>
           </div>
           <button className="px-5 py-2.5 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition shadow-sm shadow-blue-600/20 flex items-center gap-2 shrink-0 active:scale-95">
@@ -134,7 +139,7 @@ const AdminRevenueReport = () => {
               Tổng doanh thu nền tảng
             </p>
             <h3 className="text-3xl sm:text-4xl font-black text-white">
-              {formatMoney(revenueStats.totalRevenue)}
+              {formatMoney(revenueStats.total_revenue)}
             </h3>
           </div>
         </div>
@@ -151,7 +156,7 @@ const AdminRevenueReport = () => {
               Tổng lượt bán khóa học
             </p>
             <h3 className="text-3xl font-black text-slate-800">
-              {revenueStats.totalSales.toLocaleString()}{" "}
+              {revenueStats.total_sales.toLocaleString()}{" "}
               <span className="text-lg text-slate-500 font-bold">lượt</span>
             </h3>
           </div>
@@ -169,7 +174,7 @@ const AdminRevenueReport = () => {
               Học viên đang hoạt động
             </p>
             <h3 className="text-3xl font-black text-slate-800">
-              {revenueStats.activeLearners.toLocaleString()}{" "}
+              {revenueStats.active_learners.toLocaleString()}{" "}
               <span className="text-lg text-slate-500 font-bold">học viên</span>
             </h3>
           </div>
@@ -186,55 +191,61 @@ const AdminRevenueReport = () => {
                 Biểu đồ doanh thu
               </h2>
               <p className="text-sm text-slate-500 font-medium mt-1">
-                Xu hướng doanh thu trong 6 tháng gần nhất
+                Xu hướng doanh thu trong năm {selectedYear}
               </p>
             </div>
           </div>
 
           {/* KHU VỰC BIỂU ĐỒ CỘT BẰNG TAILWIND */}
-          <div className="h-72 w-full flex items-end justify-between gap-4 sm:gap-8 pt-6 border-b border-slate-200 relative">
-            <div className="absolute w-full h-full flex flex-col justify-between pb-6 pointer-events-none">
-              {[100, 75, 50, 25, 0].map((percent) => (
+          {loading ? (
+            <div className="h-72 w-full flex items-center justify-center">
+              <FontAwesomeIcon icon={faSpinner} className="text-4xl text-slate-400 animate-spin" />
+            </div>
+          ) : (
+            <div className="h-72 w-full flex items-end justify-between gap-4 sm:gap-8 pt-6 border-b border-slate-200 relative">
+              <div className="absolute w-full h-full flex flex-col justify-between pb-6 pointer-events-none">
+                {[100, 75, 50, 25, 0].map((percent) => (
+                  <div
+                    key={percent}
+                    className="w-full border-t border-slate-100/80 border-dashed flex items-center"
+                  >
+                    <span className="text-[10px] font-bold text-slate-400 -translate-y-1/2 bg-white pr-2">
+                      {formatMoney((maxRevenueValue * percent) / 100).replace(
+                        ".00",
+                        "",
+                      )}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {revenueChartData.map((data, index) => (
                 <div
-                  key={percent}
-                  className="w-full border-t border-slate-100/80 border-dashed flex items-center"
+                  key={index}
+                  className="flex-1 flex flex-col justify-end items-center group relative z-10 h-full pb-0.5"
                 >
-                  <span className="text-[10px] font-bold text-slate-400 -translate-y-1/2 bg-white pr-2">
-                    {formatMoney((maxRevenue * percent) / 100).replace(
-                      ".00",
-                      "",
-                    )}
+                  <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
+                    Doanh thu:{" "}
+                    <span className="text-emerald-400">
+                      {formatMoney(data.revenue)}
+                    </span>
+                    <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                  </div>
+
+                  <div className="w-full max-w-[40px] flex items-end h-full pt-6">
+                    {/* Cột Tổng doanh thu duy nhất */}
+                    <div
+                      className="w-full bg-emerald-500 rounded-t-md group-hover:bg-emerald-400 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
+                      style={{ height: `${(data.revenue / maxRevenueValue) * 100}%` }}
+                    ></div>
+                  </div>
+                  <span className="text-xs font-bold text-slate-500 mt-3">
+                    {data.month}
                   </span>
                 </div>
               ))}
             </div>
-
-            {chartData.map((data, index) => (
-              <div
-                key={index}
-                className="flex-1 flex flex-col justify-end items-center group relative z-10 h-full pb-0.5"
-              >
-                <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
-                  Doanh thu:{" "}
-                  <span className="text-emerald-400">
-                    {formatMoney(data.revenue)}
-                  </span>
-                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
-                </div>
-
-                <div className="w-full max-w-[40px] flex items-end h-full pt-6">
-                  {/* Cột Tổng doanh thu duy nhất */}
-                  <div
-                    className="w-full bg-emerald-500 rounded-t-md group-hover:bg-emerald-400 transition-colors shadow-[0_0_15px_rgba(16,185,129,0.3)]"
-                    style={{ height: `${(data.revenue / maxRevenue) * 100}%` }}
-                  ></div>
-                </div>
-                <span className="text-xs font-bold text-slate-500 mt-3">
-                  {data.month}
-                </span>
-              </div>
-            ))}
-          </div>
+          )}
         </div>
 
         {/* CỘT PHẢI (Top Khóa học - Chiếm 1/3) */}
@@ -247,50 +258,116 @@ const AdminRevenueReport = () => {
           </div>
 
           <div className="p-6 space-y-5 flex-1">
-            {topCourses.map((course, index) => (
+            {loading ? (
+              <div className="flex items-center justify-center h-full">
+                <FontAwesomeIcon icon={faSpinner} className="text-3xl text-slate-400 animate-spin" />
+              </div>
+            ) : (
+              topCourses.map((course, index) => (
+                <div
+                  key={course.id}
+                  className="flex items-center gap-4 group cursor-pointer"
+                >
+                  <div className="relative shrink-0">
+                    <img
+                      src={course.thumbnail}
+                      alt={course.title}
+                      className="w-16 h-12 object-cover rounded-lg border border-slate-200"
+                    />
+                    <div
+                      className={`absolute -top-2 -left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm
+                      ${index === 0 ? "bg-amber-400" : index === 1 ? "bg-slate-400" : index === 2 ? "bg-amber-700" : "bg-slate-800"}
+                    `}
+                    >
+                      {index + 1}
+                    </div>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p
+                      className="text-sm font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors"
+                      title={course.title}
+                    >
+                      {course.title}
+                    </p>
+                    <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
+                      <FontAwesomeIcon icon={faGraduationCap} className="w-3" />{" "}
+                      Giảng viên: {course.instructor}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs font-bold text-slate-500">
+                        {course.sales} lượt bán
+                      </span>
+                      <span className="w-1 h-1 rounded-full bg-slate-300"></span>
+                      <span className="text-xs font-black text-emerald-600">
+                        {formatMoney(course.total_revenue)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* BIỂU ĐỒ HỌC VIÊN THEO THÁNG */}
+      <div className="mt-8 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/60 shadow-sm">
+        <div className="flex justify-between items-end mb-8">
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-800">
+              Biểu đồ học viên
+            </h2>
+            <p className="text-sm text-slate-500 font-medium mt-1">
+              Số lượng học viên tham gia trong năm {selectedYear}
+            </p>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="h-72 w-full flex items-center justify-center">
+            <FontAwesomeIcon icon={faSpinner} className="text-4xl text-slate-400 animate-spin" />
+          </div>
+        ) : (
+          <div className="h-72 w-full flex items-end justify-between gap-4 sm:gap-8 pt-6 border-b border-slate-200 relative">
+            <div className="absolute w-full h-full flex flex-col justify-between pb-6 pointer-events-none">
+              {[100, 75, 50, 25, 0].map((percent) => (
+                <div
+                  key={percent}
+                  className="w-full border-t border-slate-100/80 border-dashed flex items-center"
+                >
+                  <span className="text-[10px] font-bold text-slate-400 -translate-y-1/2 bg-white pr-2">
+                    {Math.round((maxStudentsValue * percent) / 100)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            {studentsChartData.map((data, index) => (
               <div
-                key={course.id}
-                className="flex items-center gap-4 group cursor-pointer"
+                key={index}
+                className="flex-1 flex flex-col justify-end items-center group relative z-10 h-full pb-0.5"
               >
-                <div className="relative shrink-0">
-                  <img
-                    src={course.thumbnail}
-                    alt={course.title}
-                    className="w-16 h-12 object-cover rounded-lg border border-slate-200"
-                  />
+                <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
+                  Học viên:{" "}
+                  <span className="text-purple-400">
+                    {data.students} học viên
+                  </span>
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
+                </div>
+
+                <div className="w-full max-w-[40px] flex items-end h-full pt-6">
                   <div
-                    className={`absolute -top-2 -left-2 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black text-white shadow-sm
-                    ${index === 0 ? "bg-amber-400" : index === 1 ? "bg-slate-400" : index === 2 ? "bg-amber-700" : "bg-slate-800"}
-                  `}
-                  >
-                    {index + 1}
-                  </div>
+                    className="w-full bg-purple-500 rounded-t-md group-hover:bg-purple-400 transition-colors shadow-[0_0_15px_rgba(168,85,247,0.3)]"
+                    style={{ height: `${(data.students / maxStudentsValue) * 100}%` }}
+                  ></div>
                 </div>
-                <div className="min-w-0 flex-1">
-                  <p
-                    className="text-sm font-bold text-slate-800 truncate group-hover:text-blue-600 transition-colors"
-                    title={course.title}
-                  >
-                    {course.title}
-                  </p>
-                  <p className="text-xs font-medium text-slate-500 truncate mt-0.5">
-                    <FontAwesomeIcon icon={faGraduationCap} className="w-3" />{" "}
-                    Giảng viên: {course.instructor}
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs font-bold text-slate-500">
-                      {course.sales} lượt bán
-                    </span>
-                    <span className="w-1 h-1 rounded-full bg-slate-300"></span>
-                    <span className="text-xs font-black text-emerald-600">
-                      {formatMoney(course.totalEarned)}
-                    </span>
-                  </div>
-                </div>
+                <span className="text-xs font-bold text-slate-500 mt-3">
+                  {data.month}
+                </span>
               </div>
             ))}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

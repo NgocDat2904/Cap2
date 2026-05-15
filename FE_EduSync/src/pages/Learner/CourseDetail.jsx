@@ -221,7 +221,7 @@ const CourseDetailPage = () => {
         <div className="flex flex-col lg:flex-row relative z-10">
           <div className="w-full lg:w-2/3 lg:pr-12">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => navigate('/courses')}
               className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors mb-8 text-sm font-bold uppercase tracking-wider"
             >
               <FontAwesomeIcon icon={faArrowLeft} /> Quay lại

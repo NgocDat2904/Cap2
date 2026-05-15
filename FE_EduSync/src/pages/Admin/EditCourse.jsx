@@ -19,22 +19,39 @@ import {
   faTimes
 } from "@fortawesome/free-solid-svg-icons";
 
-import { fetchAdminCourseDetailAPI } from "../../services/adminCourseAPI";
+import {
+  fetchAdminCourseDetailAPI,
+  updateCourseAPI,
+  uploadCourseThumbnailAPI
+} from "../../services/adminCourseAPI";
 import toast from "../../utils/toast";
 
 const THUMB_FALLBACK =
   "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
 
-const CATEGORIES = [
-  "Phát triển Web Frontend",
-  "Phát triển Web Backend",
-  "Lập trình Di động",
-  "AI & Học máy",
-  "Phân tích Dữ liệu",
-  "Kỹ thuật Dữ liệu",
-  "Thiết kế UI/UX",
-  "Phân tích Nghiệp vụ"
-];
+const CATEGORY_MAP = {
+  "Frontend Web Development": "frontend",
+  "Backend Web Development": "backend",
+  "Mobile Programming": "mobile",
+  "AI & Machine Learning": "ai",
+  "Data Analysis": "data_analysis",
+  "Data Engineering": "data_engineer",
+  "UI/UX Design": "uiux",
+  "Business Analysis": "ba"
+};
+
+const CATEGORY_DISPLAY_MAP = {
+  "frontend": "Frontend Web Development",
+  "backend": "Backend Web Development",
+  "mobile": "Mobile Programming",
+  "ai": "AI & Machine Learning",
+  "data_analysis": "Data Analysis",
+  "data_engineer": "Data Engineering",
+  "uiux": "UI/UX Design",
+  "ba": "Business Analysis"
+};
+
+const CATEGORIES = Object.values(CATEGORY_DISPLAY_MAP);
 
 const AdminEditCourse = () => {
   const navigate = useNavigate();
@@ -72,10 +89,13 @@ const AdminEditCourse = () => {
 
         const data = await fetchAdminCourseDetailAPI(id, token);
         
+        // Map category ID từ backend sang display name cho frontend
+        const categoryDisplay = CATEGORY_DISPLAY_MAP[data.category] || CATEGORIES[0];
+
         setCourseData({
           title: data.title || "",
           description: data.description || "",
-          category: data.category || CATEGORIES[0],
+          category: categoryDisplay,
           price: data.price || 0,
           status: data.status || "published",
           thumbnail: data.thumbnail || "",
@@ -159,15 +179,51 @@ const AdminEditCourse = () => {
 
   const handleSave = async (e) => {
     e.preventDefault();
+
+    if (!courseData.title || !courseData.title.trim()) {
+      toast.warning("Vui lòng nhập tên khóa học.");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // Giả lập thời gian call API lưu dữ liệu
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        toast.error("Phiên đăng nhập đã hết hạn.");
+        return;
+      }
+
+      let thumbnailUrl = courseData.thumbnail;
+
+      // Upload thumbnail nếu có file mới
+      if (thumbnailFile) {
+        try {
+          const uploadResult = await uploadCourseThumbnailAPI(thumbnailFile, token);
+          thumbnailUrl = uploadResult.url;
+        } catch (uploadErr) {
+          toast.warning("Không thể tải ảnh thumbnail. Đang sử dụng ảnh cũ.");
+        }
+      }
+
+      // Map category display name sang category ID cho backend
+      const categoryId = CATEGORY_MAP[courseData.category] || "frontend";
+
+      // Chuẩn bị payload
+      const payload = {
+        title: courseData.title.trim(),
+        description: courseData.description.trim(),
+        category: categoryId,
+        price: parseFloat(courseData.price) || 0,
+        status: courseData.status,
+        image: thumbnailUrl,
+      };
+
+      await updateCourseAPI(id, payload, token);
+
       toast.success("Hệ thống: Cập nhật thông tin khóa học thành công.");
-      navigate(`/admin/courses/${id}`);
+      navigate(`/admin/courses/${id}`, { state: { refresh: Date.now() } });
     } catch (err) {
-      toast.error("Lỗi: Không thể lưu thay đổi. Vui lòng kiểm tra lại kết nối server.");
+      toast.error(err.message || "Lỗi: Không thể lưu thay đổi. Vui lòng kiểm tra lại kết nối server.");
     } finally {
       setIsSaving(false);
     }

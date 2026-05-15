@@ -13,6 +13,7 @@ import LearnerProfilePage from "../pages/Learner/ProfilePage";
 import LearnerNotifications from "../pages/Learner/Notifications";
 import InstructorPublicProfile from "../pages/Learner/InstructorProfile";
 import PaymentResult from "../pages/Learner/PaymentResult";
+import LearnerTransactionHistory from "../pages/Learner/TransactionHistory";
 
 const LearnerRoutes = () => {
   return (
@@ -39,6 +40,7 @@ const LearnerRoutes = () => {
           <Route path="my-courses" element={<LearnerMyCoursesPage />} />
           <Route path="checkout" element={<LearnerCheckoutPage />} />
           <Route path="profile" element={<LearnerProfilePage />} />
+          <Route path="transactions" element={<LearnerTransactionHistory />} />
           <Route
             path="courses/:courseId/lessons/:lessonId"
             element={<CourseLearningWorkspace />}

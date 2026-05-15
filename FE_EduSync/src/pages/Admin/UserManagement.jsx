@@ -27,7 +27,8 @@ import {
   faBookOpen,
   faBriefcase,
   faGraduationCap,
-  faGlobe
+  faGlobe,
+  faCopy
 } from "@fortawesome/free-solid-svg-icons";
 import { adminGetUsersAPI, adminToggleBlockAPI, adminGetUserDetailAPI, adminDeleteUserAPI, adminCreateUserAPI } from "../../services/userAPI";
 import toast from "../../utils/toast";
@@ -412,26 +413,23 @@ const AdminUserManagement = () => {
                   users.map((user) => (
                     <tr key={user.id} className="hover:bg-slate-50/80 transition-colors group">
                       <td className="p-5 text-center">
-                        <div className="relative group/id flex items-center justify-center">
-                          <span className="block w-24 truncate text-sm font-bold text-slate-400 cursor-pointer font-mono" title={user.id}>{user.id}</span>
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 hidden group-hover/id:flex flex-col items-center animate-fade-slide-up">
-                            <div className="bg-slate-900 text-white text-xs font-mono px-3 py-2 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-2 border border-slate-700">
-                              <span className="select-all">{user.id}</span>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(user.id);
-                                  e.currentTarget.innerText = "✓";
-                                  setTimeout(() => { e.currentTarget.innerText = "Chép"; }, 1500);
-                                }}
-                                className="ml-1 px-2 py-0.5 bg-blue-600 hover:bg-blue-500 text-white text-[10px] font-bold rounded-md transition-colors shrink-0"
-                              >
-                                Chép
-                              </button>
-                            </div>
-                            <div className="w-2 h-2 bg-slate-900 rotate-45 -mt-1 border-r border-b border-slate-700"></div>
-                          </div>
-                        </div>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(user.id);
+                            toast.success("Đã sao chép ID người dùng!");
+                          }}
+                          className="group/copy inline-flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+                          title="Click để sao chép ID"
+                        >
+                          <span className="block max-w-[80px] truncate text-sm font-bold text-slate-400 font-mono group-hover/copy:text-slate-600">
+                            {user.id}
+                          </span>
+                          <FontAwesomeIcon
+                            icon={faCopy}
+                            className="text-[10px] text-slate-300 group-hover/copy:text-blue-500 transition-colors"
+                          />
+                        </button>
                       </td>
                       <td className="p-5">
                         <div className="flex items-center gap-3">
