@@ -48,20 +48,40 @@ class QuestionService:
         })
 
         if course:
+            # Lấy thông tin học viên
+            student = db.users.find_one({"_id": ObjectId(user_id)})
+            student_name = student.get("fullName", "Một học viên") if student else "Một học viên"
+
+            # Lấy thông tin bài học
+            lesson = None
+            lesson_name = None
+            if data.lesson_id:
+                lesson = db.lessons.find_one({"_id": ObjectId(data.lesson_id)})
+                lesson_name = lesson.get("title") if lesson else None
+
+            course_name = course.get("title", "khóa học")
+
+            # Tạo message với lesson info nếu có
+            lesson_part = f' tại bài học "{lesson_name}"' if lesson_name else ''
+            message_text = f'{student_name} vừa đặt câu hỏi trong khóa học "{course_name}"{lesson_part}.'
 
             notification_repository.create({
 
                 "user_id": course["instructor_id"],
 
-                "title": "New question received",
+                "title": "Câu hỏi mới từ học viên",
 
-                "message": "A learner asked a new question.",
+                "message": message_text,
 
-                "type": "new_question",
+                "type": "qa",
 
                 "course_id": ObjectId(data.course_id),
 
+                "lesson_id": ObjectId(data.lesson_id) if data.lesson_id else None,
+
                 "question_id": ObjectId(question_id),
+
+                "student_id": ObjectId(user_id),
 
                 "is_read": False,
 

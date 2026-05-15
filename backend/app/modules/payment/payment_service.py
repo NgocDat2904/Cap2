@@ -149,7 +149,7 @@ class PaymentService:
                     "last_accessed_at": None
                 })
 
-                # Create success notification
+                # Create success notification for learner
                 course = db.courses.find_one({"_id": payment["course_id"]})
                 course_name = course.get("title", "khóa học") if course else "khóa học"
 
@@ -162,6 +162,22 @@ class PaymentService:
                     "is_read": False,
                     "created_at": datetime.utcnow()
                 })
+
+                # Notify instructor about new paid enrollment
+                if course and course.get("instructor_id"):
+                    student = db.users.find_one({"_id": payment["user_id"]})
+                    student_name = student.get("fullName", "Một học viên") if student else "Một học viên"
+
+                    notification_repository.create({
+                        "user_id": course["instructor_id"],
+                        "title": "Học viên mới đăng ký!",
+                        "message": f"{student_name} vừa mua và đăng ký khóa học \"{course_name}\". Chào đón và hỗ trợ họ trong hành trình học tập nhé!",
+                        "type": "new_enroll",
+                        "course_id": payment["course_id"],
+                        "student_id": payment["user_id"],
+                        "is_read": False,
+                        "created_at": datetime.utcnow()
+                    })
 
                 return {"status": "success", "message": "Payment successful"}
             else:
