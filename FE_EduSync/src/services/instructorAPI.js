@@ -131,3 +131,14 @@ export const deleteReplyAPI = async (questionId, replyId, token) => {
   });
   return res.data;
 };
+
+// ĐỔI MẬT KHẨU
+export const changePasswordAPI = async (oldPassword, newPassword, token) => {
+  const res = await axios.post(`${API_URL}/change-password`, {
+    old_password: oldPassword,
+    new_password: newPassword
+  }, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  return res.data;
+};

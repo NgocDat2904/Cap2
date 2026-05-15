@@ -1,9 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, File, UploadFile, Form
 
 from app.modules.course.course_service import course_service
-from .instructor_schema import InstructorProfileUpdate
+from .instructor_schema import InstructorProfileUpdate, ChangePasswordRequest
 from app.middleware.auth_middleware import get_current_user
 from app.modules.instructor.instructor_service import instructor_service
+from app.modules.user.user_service import user_service
 
 router = APIRouter(prefix="/instructor", tags=["Instructor"])
 
@@ -127,5 +128,23 @@ async def get_students(
         instructor_id=current_user["id"],
         search=search,
         course_id=course_id
+    )
+
+
+# =========================
+# 🔐 CHANGE PASSWORD
+# =========================
+@router.post("/change-password")
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user=Depends(get_current_user)
+):
+    if current_user.get("role") != "instructor":
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    return user_service.change_password(
+        current_user["id"],
+        data.old_password,
+        data.new_password
     )
 

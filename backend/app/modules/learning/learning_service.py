@@ -128,7 +128,8 @@ class LearningService:
 
                 "_id": {
                     "$in": course_ids
-                }
+                },
+                "is_deleted": {"$ne": True}
             })
         )
 

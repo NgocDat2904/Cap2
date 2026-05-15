@@ -91,7 +91,11 @@ const InstructorMyCourses = () => {
       await deleteCourseAPI(courseId, token);
       setAllCourses(prev => prev.filter(c => c.id !== courseId));
     } catch (err) {
-      setError("Lỗi xử lý: Thao tác xóa khóa học không thành công. " + (err.message || ""));
+      // Xử lý lỗi từ backend
+      setError(
+        err.response?.data?.detail ||
+        "Lỗi xử lý: Thao tác xóa khóa học không thành công. " + (err.message || "")
+      );
       console.error("Chi tiết lỗi deleteCourse:", err);
     } finally {
       setDeletingId(null);
@@ -264,7 +268,8 @@ const InstructorMyCourses = () => {
         {/* LƯỚI KHÓA HỌC (COURSES GRID) */}
         {!isLoading && !error && filteredCourses.length > 0 && (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredCourses.map((course) => (
+            {filteredCourses.map((course) => {
+              return (
               <div
                 key={course.id}
                 className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:border-slate-300 transition-all duration-300 overflow-hidden flex flex-col group relative"
@@ -326,22 +331,26 @@ const InstructorMyCourses = () => {
                       >
                         <FontAwesomeIcon icon={faEdit} className="text-sm" />
                       </Link>
-                      <button
-                        onClick={() => handleDeleteCourse(course.id)}
-                        disabled={deletingId === course.id}
-                        className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
-                        title="Xóa khóa học"
-                      >
-                        <FontAwesomeIcon
-                          icon={deletingId === course.id ? faSpinner : faTrash}
-                          className={`text-sm ${deletingId === course.id ? "animate-spin" : ""}`}
-                        />
-                      </button>
+                      {/* Instructor chỉ xóa được DRAFT, PENDING, REJECTED (chưa được duyệt) */}
+                      {['draft', 'pending', 'rejected'].includes(course.status?.toLowerCase()) && (
+                        <button
+                          onClick={() => handleDeleteCourse(course.id)}
+                          disabled={deletingId === course.id}
+                          className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-red-600 hover:bg-red-50 transition-colors disabled:opacity-50"
+                          title="Xóa khóa học"
+                        >
+                          <FontAwesomeIcon
+                            icon={deletingId === course.id ? faSpinner : faTrash}
+                            className={`text-sm ${deletingId === course.id ? "animate-spin" : ""}`}
+                          />
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
       </div>

@@ -171,14 +171,32 @@ class CourseRepository:
 
     # GET PUBLIC COURSE DETAIL
     async def get_public_by_id(self, course_id: str):
+        """
+        Lấy khóa học public (chưa mua) - phải filter archived
+        """
         try:
             return self.collection.find_one({
                 "_id": ObjectId(course_id),
                 "status": "APPROVED",
-                "is_deleted": {"$ne": True}
-        })
+                "is_deleted": {"$ne": True},
+                "is_archived": {"$ne": True}  # Public không thấy khóa archived
+            })
         except InvalidId:
-           return None
+            return None
+
+    async def get_enrolled_course_by_id(self, course_id: str):
+        """
+        Lấy khóa học đã mua - KHÔNG filter archived
+        Học viên đã mua vẫn được xem dù khóa bị archived
+        """
+        try:
+            return self.collection.find_one({
+                "_id": ObjectId(course_id),
+                "is_deleted": {"$ne": True}  # Chỉ filter deleted, KHÔNG filter archived
+                # Không check status vì học viên đã mua vẫn được học dù bị block
+            })
+        except InvalidId:
+            return None
         
     async def search_with_sort(self, filter, sort, page=1, limit=10):
         try:

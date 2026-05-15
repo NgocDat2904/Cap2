@@ -110,7 +110,18 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
 
   useEffect(() => {
     fetchQnA();
-  }, [fetchQnA]);
+
+    // ✅ AUTO-REFRESH: Tự động load comment mới mỗi 15 giây
+    const intervalId = setInterval(() => {
+      // Chỉ refresh khi user KHÔNG đang typing
+      if (!newQuestion.trim() && !replyText.trim() && !isSubmitting) {
+        fetchQnA();
+      }
+    }, 15000); // 15 giây
+
+    // Cleanup: Clear interval khi component unmount
+    return () => clearInterval(intervalId);
+  }, [fetchQnA, newQuestion, replyText, isSubmitting]);
 
   // =========================================================================
   // XỬ LÝ GỬI CÂU HỎI MỚI (POST)
@@ -132,10 +143,9 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       // Gọi API gửi câu hỏi lên server
       const response = await postQuestionAPI(courseId, lessonId, newQuestion, token);
 
-      // FIX LỖI: Lấy thông tin user từ token JWT thay vì dùng fallback "You"
-      // Trước đây: dùng response.user (nhưng API không trả về) → hiển thị "You"
-      // Bây giờ: decode token để lấy tên thật, avatar thật
-      const currentUser = getCurrentUserInfo();
+      // ✅ FIX: Dùng thông tin user từ API response (đầy đủ và chính xác)
+      // API giờ trả về đầy đủ: { question_id, user: { id, name, avatar, role } }
+      const userInfo = response.user || getCurrentUserInfo();
 
       // Tạo object câu hỏi mới với đầy đủ thông tin
       const newQuestionObj = {
@@ -143,9 +153,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
         content: newQuestion, // Nội dung câu hỏi
         created_at: new Date().toISOString(), // Thời gian tạo
         user: {
-          name: currentUser.name,     // Tên thật từ JWT (ví dụ: "Nguyễn Văn A")
-          avatar: currentUser.avatar, // Avatar URL từ JWT
-          role: currentUser.role      // Role từ JWT (learner/instructor)
+          id: userInfo.id,
+          name: userInfo.name,
+          avatar: userInfo.avatar,
+          role: userInfo.role
         },
         replies: [] // Mảng replies rỗng (câu hỏi mới chưa có ai trả lời)
       };
@@ -186,8 +197,8 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
       // Gọi API gửi reply (câu trả lời) lên server
       const response = await postReplyAPI(questionId, replyText, token);
 
-      // FIX LỖI: Lấy thông tin user từ token JWT
-      const currentUser = getCurrentUserInfo();
+      // ✅ FIX: Dùng thông tin user từ API response (đầy đủ và chính xác)
+      const userInfo = response.user || getCurrentUserInfo();
 
       // Tạo object reply mới với đầy đủ thông tin
       const newReply = {
@@ -195,9 +206,10 @@ const CourseDiscussion = ({ courseId, lessonId }) => {
         content: replyText, // Nội dung câu trả lời
         created_at: new Date().toISOString(), // Thời gian tạo
         user: {
-          name: currentUser.name,     // Tên thật từ JWT
-          avatar: currentUser.avatar, // Avatar từ JWT
-          role: currentUser.role      // Role từ JWT
+          id: userInfo.id,
+          name: userInfo.name,
+          avatar: userInfo.avatar,
+          role: userInfo.role
         }
       };
 

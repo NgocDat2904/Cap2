@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   faFilter,
   faUsers,
@@ -15,6 +15,8 @@ import {
 } from "../../services/learnerCourseAPI";
 
 const LearnerCoursesPage = () => {
+  const navigate = useNavigate();
+
   // State quản lý bộ lọc trên Mobile
   const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
 
@@ -260,6 +262,7 @@ const LearnerCoursesPage = () => {
               filteredCourses.map((course) => (
               <div
                 key={course.id}
+                onClick={() => navigate(`/courses/${course.id}`)}
                 className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col group cursor-pointer"
               >
                 {/* Ảnh bìa & Badge */}
@@ -349,13 +352,16 @@ const LearnerCoursesPage = () => {
                       </span>
                     </div>
 
-                    {/* Fake button Xem khóa học để trang trí */}
-                    <Link
-                      to={`/courses/${course.id}`}
+                    {/* Button Chi tiết */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/courses/${course.id}`);
+                      }}
                       className="text-sm font-bold text-blue-900 bg-blue-50 hover:bg-blue-900 hover:text-white px-4 py-2 rounded-lg transition-colors"
                     >
                       Chi tiết
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>

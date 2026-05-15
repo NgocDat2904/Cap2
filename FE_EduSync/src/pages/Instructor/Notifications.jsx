@@ -7,13 +7,13 @@ import {
   faCommentDots,
   faBullhorn,
   faBookOpen,
-  faTrophy,
+  faUserPlus,
   faCircle,
   faTrashCan,
   faFilter,
   faSpinner,
-  faCreditCard,
-  faExclamationTriangle,
+  faCheckCircle,
+  faTimesCircle,
 } from "@fortawesome/free-solid-svg-icons";
 import { getNotificationsAPI, markNotificationReadAPI, deleteNotificationAPI } from "../../services/notificationAPI";
 
@@ -61,7 +61,7 @@ const formatFullDateTime = (isoDateString) => {
   }
 };
 
-const LearnerNotifications = () => {
+const InstructorNotifications = () => {
   const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [filterType, setFilterType] = useState("all");
@@ -78,7 +78,7 @@ const LearnerNotifications = () => {
       try {
         const token = localStorage.getItem("access_token");
         if (!token) {
-          navigate("/login");
+          navigate("/instructor/login");
           return;
         }
 
@@ -158,47 +158,43 @@ const LearnerNotifications = () => {
 
   const renderNotificationIcon = (type) => {
     switch (type) {
-      case "question_reply":
-      case "qna_reply":
       case "qa":
+      case "qna":
         return (
           <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faCommentDots} />
           </div>
         );
       case "course_approved":
+      case "approval":
+        return (
+          <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xl">
+            <FontAwesomeIcon icon={faCheckCircle} />
+          </div>
+        );
       case "course_rejected":
-      case "system":
+      case "rejection":
         return (
           <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xl">
+            <FontAwesomeIcon icon={faTimesCircle} />
+          </div>
+        );
+      case "system":
+        return (
+          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faBullhorn} />
           </div>
         );
-      case "new_course":
       case "new_enroll":
-      case "course_update":
         return (
           <div className="w-12 h-12 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 text-xl">
+            <FontAwesomeIcon icon={faUserPlus} />
+          </div>
+        );
+      case "course_update":
+        return (
+          <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 text-xl">
             <FontAwesomeIcon icon={faBookOpen} />
-          </div>
-        );
-      case "achievement":
-      case "gamification":
-        return (
-          <div className="w-12 h-12 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 text-xl">
-            <FontAwesomeIcon icon={faTrophy} />
-          </div>
-        );
-      case "payment_success":
-        return (
-          <div className="w-12 h-12 rounded-full bg-green-100 text-green-600 flex items-center justify-center shrink-0 text-xl">
-            <FontAwesomeIcon icon={faCreditCard} />
-          </div>
-        );
-      case "payment_failed":
-        return (
-          <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 text-xl">
-            <FontAwesomeIcon icon={faExclamationTriangle} />
           </div>
         );
       default:
@@ -207,6 +203,31 @@ const LearnerNotifications = () => {
             <FontAwesomeIcon icon={faBell} />
           </div>
         );
+    }
+  };
+
+  const handleNotificationClick = (notif) => {
+    markAsRead(notif.id);
+
+    // Điều hướng dựa trên type
+    if ((notif.type === "qa" || notif.type === "qna") && notif.course_id) {
+      navigate(`/instructor/courses/${notif.course_id}`, { state: { activeTab: "qa" } });
+    } else if ((notif.type === "course_approved" || notif.type === "approval") && notif.course_id) {
+      navigate(`/instructor/courses/${notif.course_id}`);
+    } else if ((notif.type === "course_rejected" || notif.type === "rejection") && notif.course_id) {
+      navigate(`/instructor/courses/${notif.course_id}/edit`, {
+        state: {
+          notificationType: "rejected",
+          showRejectionReason: true,
+          rejectionReason: notif.rejection_reason
+        }
+      });
+    } else if (notif.type === "new_enroll" && notif.course_id) {
+      navigate(`/instructor/courses/${notif.course_id}`, {
+        state: { activeTab: "students", highlightNewStudent: notif.student_id }
+      });
+    } else if (notif.course_id) {
+      navigate(`/instructor/courses/${notif.course_id}`);
     }
   };
 
@@ -220,7 +241,7 @@ const LearnerNotifications = () => {
             Hộp thư thông báo
           </h1>
           <p className="text-slate-500 font-medium mt-1 text-sm">
-            Cập nhật những tin tức mới nhất từ giảng viên và nền tảng EduSync.
+            Cập nhật những tin tức mới nhất từ học viên và hệ thống EduSync.
           </p>
         </div>
 
@@ -251,9 +272,9 @@ const LearnerNotifications = () => {
                 count: unreadCount,
                 isRed: true,
               },
-              { id: "qa", label: "Hỏi đáp (Q&A)" },
-              { id: "course_update", label: "Cập nhật khóa học" },
-              { id: "payment_success", label: "Thanh toán" },
+              { id: "qa", label: "Câu hỏi học viên" },
+              { id: "new_enroll", label: "Học viên mới" },
+              { id: "approval", label: "Phê duyệt khóa học" },
               { id: "system", label: "Hệ thống" },
             ].map((filter) => (
               <button
@@ -298,16 +319,8 @@ const LearnerNotifications = () => {
               {filteredNotifications.map((notif) => (
                 <div
                   key={notif.id}
-                  onClick={() => {
-                    markAsRead(notif.id);
-                    // Điều hướng nếu có course_id hoặc question_id
-                    if (notif.type === "question_reply" && notif.course_id) {
-                      navigate(`/courses/${notif.course_id}`, { state: { activeLeftTab: "q&a" } });
-                    } else if ((notif.type === "new_course" || notif.type === "course_approved") && notif.course_id) {
-                      navigate(`/courses/${notif.course_id}`);
-                    }
-                  }}
-                  className={`p-5 sm:p-6 flex gap-4 sm:gap-5 cursor-pointer transition-all group ${
+                  onClick={() => handleNotificationClick(notif)}
+                  className={`group p-5 sm:p-6 flex gap-4 sm:gap-5 cursor-pointer transition-all ${
                     !notif.is_read
                       ? "bg-blue-50/40 hover:bg-blue-50/80"
                       : "bg-white hover:bg-slate-50"
@@ -369,7 +382,7 @@ const LearnerNotifications = () => {
                 Không có thông báo nào
               </h3>
               <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed">
-                Hộp thư của bạn hiện đang trống. Các thông báo cập nhật từ hệ thống hoặc giảng viên sẽ xuất hiện tại đây.
+                Hộp thư của bạn hiện đang trống. Các thông báo cập nhật từ hệ thống hoặc học viên sẽ xuất hiện tại đây.
               </p>
             </div>
           )}
@@ -388,4 +401,4 @@ const LearnerNotifications = () => {
   );
 };
 
-export default LearnerNotifications;
+export default InstructorNotifications;

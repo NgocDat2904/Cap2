@@ -12,7 +12,8 @@ class DashboardService:
         # ======================
         active_courses = list(db.courses.find({
             "instructor_id": ObjectId(instructor_id),
-            "status": "APPROVED"
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True}  # 🔥 FIX: Loại bỏ khóa đã xóa
         }))
 
         active_course_count = len(active_courses)
@@ -67,15 +68,20 @@ class DashboardService:
         # ======================
         latest_questions = list(
             db.questions.find({
-                "course_id": {"$in": course_ids}
+                "course_id": {"$in": course_ids},
+                "type": "question"  # Chỉ lấy câu hỏi, không lấy reply
             })
             .sort("created_at", -1)
-            .limit(5)
+            .limit(3)  # 🔥 Chỉ lấy 3 câu mới nhất
         )
 
         latest_qa = []
 
         for q in latest_questions:
+            # Skip nếu không có content
+            content = q.get("content")
+            if not content or not content.strip():
+                continue
 
             learner = get_user_by_id(str(q.get("user_id")))
 
@@ -83,12 +89,26 @@ class DashboardService:
                 "_id": q.get("course_id")
             })
 
+            # Format date to ISO string (frontend sẽ tự format)
+            created_at = q.get("created_at")
+            date_str = ""
+            if created_at:
+                try:
+                    # Trả về ISO 8601 string với Z (UTC)
+                    if hasattr(created_at, 'isoformat'):
+                        date_str = created_at.isoformat() + "Z"
+                    else:
+                        date_str = str(created_at)
+                except:
+                    date_str = str(created_at)
+
             latest_qa.append({
                 "id": str(q["_id"]),
-                "question": q.get("question"),
-                "course": course.get("title") if course else "",
-                "learner": learner.get("fullName") if learner else "Learner",
-                "created_at": q.get("created_at")
+                "question": content.strip(),
+                "course": course.get("title") if course else "Khóa học chưa xác định",
+                "name": learner.get("fullName") if learner else "Học viên ẩn danh",
+                "date": date_str,
+                "avatar": learner.get("avatar_url") if learner else None
             })
 
         # ======================

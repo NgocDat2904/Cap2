@@ -129,7 +129,7 @@ class UserService:
         limit = min(max(limit, 1), 50)
         skip = (page - 1) * limit
 
-        cursor = db.users.find(filter_query).skip(skip).limit(limit)
+        cursor = db.users.find(filter_query).sort("created_at", -1).skip(skip).limit(limit)
         users = list(cursor)
 
         total_count = db.users.count_documents(filter_query)

@@ -130,10 +130,19 @@ const LessonCard = ({ lesson, lessonQna, onOpenVideo }) => {
 
 const parseDuration = (duration) => {
   if (!duration) return 0;
-  const parts = duration.replace('s', '').replace('m', '').split(':').map(Number);
-  if (parts.length === 1) return parts[0]; 
-  if (parts.length === 2) return parts[0] * 60 + parts[1];
-  return 0;
+
+  let totalSeconds = 0;
+
+  // Format: "Xh Ym", "Xm", "Xs", "X giờ Y phút", etc.
+  const hourMatch = duration.match(/(\d+)\s*(?:h|giờ)/i);
+  const minuteMatch = duration.match(/(\d+)\s*(?:m|phút)/i);
+  const secondMatch = duration.match(/(\d+)\s*(?:s|giây)/i);
+
+  if (hourMatch) totalSeconds += parseInt(hourMatch[1]) * 3600;
+  if (minuteMatch) totalSeconds += parseInt(minuteMatch[1]) * 60;
+  if (secondMatch) totalSeconds += parseInt(secondMatch[1]);
+
+  return totalSeconds;
 };
 
 const formatDuration = (seconds) => {
@@ -223,8 +232,22 @@ const InstructorCourseDetailPage = () => {
   }, [courseId]);
 
   useEffect(() => {
-    if (courseId) fetchQnA();
-  }, [fetchQnA, courseId]);
+    if (courseId) {
+      fetchQnA();
+
+      // ✅ AUTO-REFRESH: Tự động load comment mới mỗi 15 giây
+      const intervalId = setInterval(() => {
+        // Chỉ refresh khi instructor KHÔNG đang typing
+        const hasActiveInput = Object.values(replyInputs).some(val => val && val.trim());
+        if (!hasActiveInput && !isReplying) {
+          fetchQnA();
+        }
+      }, 15000); // 15 giây
+
+      // Cleanup: Clear interval khi component unmount hoặc courseId thay đổi
+      return () => clearInterval(intervalId);
+    }
+  }, [fetchQnA, courseId, replyInputs, isReplying]);
 
   // GỬI PHẢN HỒI LÊN API
   const handleSendReply = async (questionId) => {
@@ -235,16 +258,19 @@ const InstructorCourseDetailPage = () => {
     try {
       const token = localStorage.getItem("access_token");
       const response = await postReplyAPI(questionId, replyText, token);
-      const currentUser = getCurrentUserInfo();
+
+      // ✅ Dùng thông tin user từ API response thay vì JWT token
+      const userInfo = response.user || getCurrentUserInfo();
 
       const newReply = {
-        id: response.reply_id || response.id || Date.now().toString(), 
+        id: response.reply_id || response.id || Date.now().toString(),
         content: replyText,
         created_at: new Date().toISOString(),
         user: {
-          name: currentUser.name,
-          avatar: currentUser.avatar,
-          role: currentUser.role
+          id: userInfo.id,
+          name: userInfo.name,
+          avatar: userInfo.avatar,
+          role: userInfo.role
         }
       };
 
@@ -262,6 +288,14 @@ const InstructorCourseDetailPage = () => {
       toast.error("Lỗi hệ thống: Gửi phản hồi không thành công. Vui lòng thử lại.");
     } finally {
       setIsReplying(false);
+    }
+  };
+
+  // XỬ LÝ NHẤN ENTER ĐỂ GỬI PHẢN HỒI
+  const handleKeyDownReply = (e, questionId) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault(); // Ngăn xuống dòng
+      handleSendReply(questionId);
     }
   };
 
@@ -447,11 +481,12 @@ const InstructorCourseDetailPage = () => {
                     )}
 
                     <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-slate-200">
-                      <textarea 
-                        rows="2" 
-                        placeholder="Nhập nội dung phản hồi..." 
-                        value={replyInputs[q.id] || ""} 
-                        onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })} 
+                      <textarea
+                        rows="2"
+                        placeholder="Nhập nội dung phản hồi... (Enter để gửi, Shift+Enter để xuống dòng)"
+                        value={replyInputs[q.id] || ""}
+                        onChange={(e) => setReplyInputs({ ...replyInputs, [q.id]: e.target.value })}
+                        onKeyDown={(e) => handleKeyDownReply(e, q.id)}
                         className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 outline-none font-medium bg-white resize-y" 
                       />
                       <button 
