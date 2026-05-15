@@ -15,3 +15,12 @@ async def create_lesson(
     return await service.create_lesson(data, user["id"])
 
 
+@router.delete("/lessons/{lesson_id}")
+async def delete_lesson(
+    lesson_id: str,
+    user=Depends(require_role(["instructor", "admin"]))
+):
+    """
+    Xóa lesson (cho cả instructor và admin)
+    """
+    return await service.delete_lesson(lesson_id, user["id"], user["role"])

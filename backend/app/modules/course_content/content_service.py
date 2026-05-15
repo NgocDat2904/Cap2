@@ -131,3 +131,80 @@ class ContentService:
 
     # ❌ REMOVE create_video
     # dùng VideoService
+
+    # ===================== DELETE LESSON =====================
+
+    async def delete_lesson(self, lesson_id: str, user_id: str, user_role: str):
+        """
+        Xóa lesson (soft delete hoặc hard delete)
+
+        - Instructor: Chỉ xóa được lesson của khóa học mình
+        - Admin: Xóa được tất cả lessons
+        """
+
+        # =====================
+        # VALIDATE LESSON ID
+        # =====================
+        if not ObjectId.is_valid(lesson_id):
+            raise HTTPException(400, "Invalid lesson_id")
+
+        # =====================
+        # CHECK LESSON TỒN TẠI
+        # =====================
+        lesson = db.lessons.find_one({"_id": ObjectId(lesson_id)})
+
+        if not lesson:
+            raise HTTPException(404, "Lesson not found")
+
+        course_id = lesson.get("course_id")
+
+        if not course_id:
+            raise HTTPException(400, "Lesson không có course_id")
+
+        # =====================
+        # CHECK PERMISSION
+        # =====================
+        course = db.courses.find_one({"_id": course_id})
+
+        if not course:
+            raise HTTPException(404, "Course not found")
+
+        # Instructor chỉ xóa được lesson của khóa học mình
+        if user_role == "instructor":
+            if str(course.get("instructor_id")) != user_id:
+                raise HTTPException(403, "Not your course")
+
+        # Admin có thể xóa tất cả lessons (không cần check)
+
+        # =====================
+        # XÓA LESSON
+        # =====================
+
+        # 🔥 HARD DELETE lesson
+        result = db.lessons.delete_one({"_id": ObjectId(lesson_id)})
+
+        if result.deleted_count == 0:
+            raise HTTPException(500, "Failed to delete lesson")
+
+        # =====================
+        # XÓA TẤT CẢ VIDEOS THUỘC LESSON
+        # =====================
+        db.videos.delete_many({"lesson_id": ObjectId(lesson_id)})
+
+        # =====================
+        # XÓA PROGRESS CỦA HỌC VIÊN
+        # =====================
+        db.lesson_progress.delete_many({"lesson_id": ObjectId(lesson_id)})
+
+        # =====================
+        # RECALCULATE COURSE DURATION
+        # =====================
+        await course_service.recalculate_course_duration(str(course_id))
+
+        # =====================
+        # RESPONSE
+        # =====================
+        return {
+            "message": "Lesson deleted successfully",
+            "lesson_id": lesson_id
+        }

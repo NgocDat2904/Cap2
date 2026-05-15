@@ -465,3 +465,283 @@ db.courses.updateMany(
 **Tài liệu này được tạo ngày**: 2026-05-15  
 **Áp dụng cho**: EduSync Platform - Learning Management System  
 **Phiên bản**: 1.0
+
+
+ CÁC CÂU HỎI PHẢN BIỆN VỀ NGHIỆP VỤ KÈM CÂU TRẢ LỜI
+
+  ---
+  1. QUẢN LÝ TRẠNG THÁI KHÓA HỌC
+
+  ❓ Câu hỏi: Khi khóa học đã APPROVED (đã duyệt), instructor cập nhật nội dung thì có cờ has_pending_update=True. Vậy
+  trong lúc chờ admin duyệt lại, học viên đã mua có nhìn thấy nội dung mới chưa được duyệt không? Hay vẫn thấy bản cũ?
+
+  ✅ Trả lời:
+  - Học viên VẪN THẤY BẢN CŨ đã được duyệt trước đó
+  - Chỉ khi admin phê duyệt cập nhật (set has_pending_update=False), nội dung mới mới được hiển thị
+  - Code trong course_service.py:871-874 cho thấy khi status=APPROVED mà có update thì chỉ đánh dấu cờ, không thay đổi
+  status
+  - Đây là cơ chế Two-layer State Management để bảo vệ chất lượng khóa học đã public
+
+  ---
+  2. XÓA KHÓA HỌC & HỌC VIÊN ĐÃ MUA
+
+  ❓ Câu hỏi: Admin có thể xóa khóa học đã có học viên mua không? Nếu xóa thì học viên có mất quyền truy cập không? Điều
+   này có vi phạm cam kết "Học trọn đời" không?
+
+  ✅ Trả lời:
+  - HIỆN TẠI Ở CHẾ ĐỘ TEST: Admin CÓ THỂ xóa khóa đã có học viên (code line 1034-1046 đang bị comment)
+  - KHI PRODUCTION: Code có logic kiểm tra successful_payments > 0 → KHÔNG CHO XÓA, bắt buộc dùng ARCHIVE thay thế
+  - Archive (line 1073-1113):
+    - Khóa học biến mất khỏi marketplace (không bán nữa)
+    - Nhưng học viên đã mua VẪN TRUY CẬP ĐƯỢC (giữ cam kết "Học trọn đời")
+    - Filter is_archived: {$ne: True} loại khóa archive khỏi danh sách public
+  - Đây là thiết kế tốt để cân bằng giữa quản lý nội dung và quyền lợi học viên
+
+  ---
+  3. THANH TOÁN & ĐĂNG KÝ KHÓA HỌC
+
+  ❓ Câu hỏi: Nếu học viên tạo payment nhưng không hoàn tất thanh toán (status=pending), sau đó quay lại thanh toán lại
+  có bị tạo payment trùng không? Có cơ chế nào ngăn học viên tạo nhiều giao dịch pending cho cùng 1 khóa?
+
+  ✅ Trả lời:
+  - CHƯA CÓ CƠ CHẾ NGĂN CHẶN giao dịch pending trùng lặp
+  - Code payment_service.py:44-54 chỉ kiểm tra enrolled (đã đăng ký thành công)
+  - Nếu có payment pending, vẫn có thể tạo payment mới → Dẫn đến nhiều transaction_id cho 1 khóa
+  - Giải pháp nên có:
+    - Kiểm tra db.payments.find_one({"user_id": X, "course_id": Y, "status": "pending"})
+    - Nếu có pending < 15 phút → trả về URL cũ thay vì tạo mới
+    - Hoặc hủy pending cũ khi tạo mới
+
+  ---
+  4. PROGRESS TRACKING & HOÀN THÀNH KHÓA HỌC
+
+  ❓ Câu hỏi: Học viên được tính hoàn thành bài học (is_completed=True) khi progress_percent >= 90% (line 365). Nếu học
+  viên tua nhanh video đến 90% rồi thoát ra thì có được tính hoàn thành không? Có rủi ro gian lận không?
+
+  ✅ Trả lời:
+  - CÓ RỦI RO GIAN LẬN vì chỉ dựa vào progress_seconds / duration
+  - Không có cơ chế kiểm tra:
+    - Học viên có thực sự xem video không (có thể chỉ tua)
+    - Tốc độ xem có bất thường không (xem 10 phút trong 2 phút)
+    - Có tương tác với nội dung không
+  - Code video_service.py:401-509 tracking views chỉ yêu cầu xem >= 10 giây để đếm lượt xem đầu tiên
+  - Giải pháp nên có:
+    - Track các segment đã xem (không liên tục)
+    - Yêu cầu xem tối thiểu X% theo thứ tự
+    - Kết hợp quiz/bài tập để xác nhận hiểu bài
+
+  ---
+  5. NOTIFICATION SPAM
+
+  ❓ Câu hỏi: Mỗi khi học viên đặt câu hỏi, giảng viên nhận notification (line 68-89 question_service.py). Nếu có 100
+  học viên cùng hỏi trong 1 giờ thì giảng viên có nhận 100 thông báo không? Có cơ chế gộp notification không?
+
+  ✅ Trả lời:
+  - HIỆN TẠI CHƯA CÓ CƠ CHẾ GỘP, mỗi câu hỏi = 1 notification riêng
+  - Instructor có thể bị spam nếu khóa học có nhiều học viên active
+  - Vấn đề tương tự với:
+    - Enrollment notification (mỗi học viên đăng ký = 1 thông báo)
+    - Reply notification (mỗi reply = 1 thông báo)
+  - Giải pháp nên có:
+    - Gộp notification theo khoảng thời gian (VD: "5 học viên mới trong 1 giờ qua")
+    - Notification digest hàng ngày cho instructor
+    - Setting cho phép tắt một số loại notification
+    - Real-time notification chỉ cho câu hỏi "urgent" hoặc từ VIP student
+
+  ---
+  6. REVENUE CALCULATION
+
+  ❓ Câu hỏi: Trong revenue_service.py, doanh thu được tính từ payments với status="success". Vậy nếu có chính sách hoàn
+   tiền (refund) thì có được trừ vào doanh thu không? Hiện tại có hỗ trợ refund không?
+
+  ✅ Trả lời:
+  - CHƯA CÓ TÍNH NĂNG REFUND trong code hiện tại
+  - Doanh thu chỉ cộng dồn từ $sum: "$amount" (line 24 revenue_service.py)
+  - Không có trạng thái "refunded" trong payment status
+  - Không có bảng/collection lưu lịch sử refund
+  - Rủi ro: Nếu sau này có refund mà không update logic này → BÁO CÁO SAI
+  - Giải pháp nên có:
+    - Thêm status "refunded" vào payment
+    - Field refunded_at, refund_amount, refund_reason
+    - Revenue = SUM(success) - SUM(refunded)
+    - Hoặc dùng bảng riêng refunds để audit trail
+
+  ---
+  7. INSTRUCTOR STUDENTS STATISTICS
+
+  ❓ Câu hỏi: Trong instructor_service.py:506-513, hệ thống đếm total_students bằng cách lấy unique user_id từ
+  enrollments của TẤT CẢ khóa học. Vậy nếu 1 học viên mua 3 khóa của cùng 1 instructor thì chỉ đếm là 1 student phải
+  không? Điều này có hợp lý không?
+
+  ✅ Trả lời:
+  - ĐÚNG, 1 học viên mua nhiều khóa chỉ đếm 1 lần (line 67: unique_students = set(...))
+  - HỢP LÝ nếu mục đích là đếm "Số học viên duy nhất tiếp cận được"
+  - KHÔNG HỢP LÝ nếu muốn đếm "Tổng lượt đăng ký khóa học"
+  - Nên có 2 metrics:
+    - unique_students: Số học viên duy nhất (hiện tại)
+    - total_enrollments: Tổng lượt đăng ký (chưa có)
+  - Code dashboard (line 142-148) cho thấy enrolled_students đếm theo enrollment → KHÁC với total_students trong profile
+  - → Có sự mâu thuẫn giữa 2 cách tính
+
+  ---
+  8. ACTIVE LEARNERS DEFINITION
+
+  ❓ Câu hỏi: "Active learners" được định nghĩa là học viên có lesson_progress trong 30 ngày (line 519-551
+  instructor_service.py). Nhưng nếu học viên chỉ login vào xem thông tin khóa học mà không xem video thì có được tính
+  không?
+
+  ✅ Trả lời:
+  - KHÔNG ĐƯỢC TÍNH vì chỉ check lesson_progress collection
+  - Login hoặc xem course detail không tạo progress record
+  - Ý nghĩa: Active learners = "Học viên thực sự học" (xem video, làm bài)
+  - Vấn đề:
+    - Enrollment có last_accessed_at (line 439-450) dựa trên thời gian truy cập
+    - Nhưng không đồng bộ với updated_at của lesson_progress
+    - Nếu học viên vào course page nhưng không xem video → last_accessed_at update nhưng không tạo progress
+  - Status logic (line 434-450):
+    - active: last_accessed <= 7 ngày
+    - idle: 7-30 ngày
+    - inactive: > 30 ngày
+  - → 2 định nghĩa "active" khác nhau: enrollment-based vs progress-based
+
+  ---
+  9. VIDEO TRANSCRIPT & AI FEATURES
+
+  ❓ Câu hỏi: Khi upload video, hệ thống tự động tạo transcript (STT), mindmap, summary, timeline (line 119-271
+  video_service.py). Nếu quá trình này thất bại hoặc Gemini API hết quota thì video có bị block không? Học viên có xem
+  được video không?
+
+  ✅ Trả lời:
+  - VIDEO VẪN XEM ĐƯỢC BÌNH THƯỜNG vì AI features chạy background (line 123-135)
+  - ai_status có 3 trạng thái: pending, processing, ready, failed
+  - Nếu STT thất bại → set ai_status="failed" và ai_error (line 275-284)
+  - Nhưng KHÔNG ẢNH HƯỞNG đến video playback
+  - Mindmap/Summary/Timeline thất bại chỉ in log warning (line 221, 247, 269) → KHÔNG BREAK VIDEO
+  - Tốt: Separate concerns, AI là enhancement không phải requirement
+  - Vấn đề:
+    - Không có retry mechanism cho failed transcript
+    - Không có notification cho instructor khi AI failed
+    - Không có dashboard để xem AI processing status
+
+  ---
+  10. COURSE APPROVAL WORKFLOW
+
+  ❓ Câu hỏi: Khi instructor submit khóa học (status DRAFT → PENDING), field is_locked=True (line 838). Vậy instructor
+  có thể rút lại submission để chỉnh sửa không? Hay phải chờ admin reject mới được sửa?
+
+  ✅ Trả lời:
+  - KHÔNG CÓ CHỨC NĂNG RÚT LẠI submission trong code hiện tại
+  - is_locked=True có nghĩa instructor KHÔNG THỂ EDIT khóa học khi đang pending
+  - Các trường hợp unlock:
+    - Admin approve → is_locked=False (line 1360)
+    - Admin reject → is_locked=False (line 1371)
+  - Vấn đề:
+    - Nếu instructor nhận ra lỗi sau khi submit → phải chờ admin reject
+    - Không linh hoạt, tốn thời gian
+  - Giải pháp nên có:
+    - Thêm endpoint /courses/{id}/withdraw để instructor tự rút về DRAFT
+    - Chỉ cho phép withdraw khi status=PENDING (chưa được admin xem)
+    - Track số lần withdraw để phát hiện abuse
+
+  ---
+  11. PAYMENT & ENROLLMENT RACE CONDITION
+
+  ❓ Câu hỏi: Trong payment_service.py:136-150, khi payment success, hệ thống auto enroll. Nhưng nếu 2 request VNPay
+  return cùng lúc (network retry) thì có tạo 2 enrollment không?
+
+  ✅ Trả lời:
+  - CÓ RỦI RO RACE CONDITION nhưng đã có phần check:
+    - Line 134: Kiểm tra payment.status == "success" → return early nếu đã process
+  - NHƯNG VẪN CÓ GAP giữa check và update:
+    - T1: Request A check status=pending → OK
+    - T2: Request B check status=pending → OK
+    - T3: Request A update status=success, insert enrollment
+    - T4: Request B update status=success, insert enrollment
+    - → Tạo 2 enrollment records
+  - Giải pháp nên có:
+    - Dùng MongoDB transaction (session)
+    - Hoặc unique index trên (user_id, course_id) trong enrollments collection
+    - Update payment status bằng findOneAndUpdate với filter status=pending
+
+  ---
+  12. LESSON ORDER & VIDEO MAPPING
+
+  ❓ Câu hỏi: Khóa học có lessons collection và videos collection. Mỗi lesson có field order_index, mỗi video cũng có
+  order_index. Nếu instructor xóa 1 lesson ở giữa thì các lesson sau có tự động update order_index không?
+
+  ✅ Trả lời:
+  - KHÔNG TỰ ĐỘNG UPDATE ORDER trong code hiện tại
+  - Code chỉ sort theo order_index khi query (line 359, 386)
+  - Nếu xóa lesson order=2, các lesson còn lại vẫn giữ order cũ (1, 3, 4, 5...)
+  - Không ảnh hưởng logic vì sort vẫn đúng
+  - NHƯNG CÓ VẤN ĐỀ:
+    - Order_index không liên tục → khó maintain
+    - Frontend reorder (drag-drop) cần update order cho tất cả lessons
+  - Vấn đề thực tế:
+    - Không thấy code DELETE lesson/video trong các file đã đọc
+    - Chỉ có delete course (soft delete)
+    - → Có thể chưa implement delete lesson/video
+
+  ---
+  13. COMPLETION RATE CALCULATION
+
+  ❓ Câu hỏi: avg_completion_rate trong instructor dashboard (line 564-570) được tính bằng trung bình progress của TẤT
+  CẢ enrollments. Nếu có học viên mới đăng ký (0% progress) thì sẽ kéo thấp completion rate. Điều này có công bằng
+  không?
+
+  ✅ Trả lời:
+  - KHÔNG HOÀN TOÀN CÔNG BẰNG nhưng phản ánh thực tế:
+    - Khóa học tốt → học viên hoàn thành nhiều → rate cao
+    - Khóa học kém → học viên bỏ học sớm → rate thấp
+  - Vấn đề:
+    - Học viên mới đăng ký < 24h chưa kịp học → kéo rate xuống
+    - Học viên đăng ký nhầm hoặc không có thời gian → 0% vĩnh viễn
+  - Giải pháp nên có:
+    - avg_completion_rate CHỈ tính học viên đã học >= 1 tuần
+    - Thêm metric completion_rate_active (chỉ tính active learners)
+    - Thêm dropout_rate (% học viên bỏ học ở mỗi milestone)
+
+  ---
+  14. NOTIFICATION TYPE & ROUTING
+
+  ❓ Câu hỏi: Notification có nhiều type: qa, question_reply, course_approved, new_enroll, payment_success... Nhưng code
+   notification_service.py:66-145 dùng nhiều if-else để generate title/message. Nếu thêm 10 notification types nữa thì
+  code có bị phình to không?
+
+  ✅ Trả lời:
+  - ĐÚNG, CODE SẼ BỊ PHÌNH TO và khó maintain
+  - Hiện tại đã có 16+ types trong dict (line 98-116)
+  - Vấn đề thiết kế:
+    - Mixing business logic (generate message) với data formatting
+    - Mỗi type có logic riêng nhưng viết trong 1 function
+  - Giải pháp nên có:
+    - Strategy Pattern: Mỗi notification type = 1 class xử lý riêng
+    - Template System: Dùng template string với placeholders
+    - Database-driven: Lưu template trong DB, render động
+  - Ví dụ template:
+  templates = {
+    "qa": "{student_name} vừa đặt câu hỏi trong {course_name} tại {lesson_name}",
+    "new_enroll": "{student_name} vừa đăng ký {course_name}"
+  }
+
+  ---
+  15. SOFT DELETE & DATA CONSISTENCY
+
+  ❓ Câu hỏi: Hệ thống dùng soft delete (is_deleted=True) cho course. Vậy khi xóa course, các lesson, video, enrollment,
+   payment có được đánh dấu xóa theo không? Hay vẫn tồn tại orphan records?
+
+  ✅ Trả lời:
+  - KHÔNG CASCADE DELETE trong code hiện tại
+  - Khi delete course (line 991-1001), chỉ update course document
+  - Lessons, videos, enrollments, payments VẪN TỒN TẠI
+  - Ưu điểm:
+    - Giữ lại data để audit, report
+    - Có thể restore course sau này
+  - Nhược điểm:
+    - Orphan records làm DB phình to
+    - Query phải filter is_deleted ở nhiều nơi → dễ quên
+    - Enrollment của khóa đã xóa vẫn active → học viên có học được không?
+  - Giải pháp:
+    - Cascade soft delete: lesson, video cũng set is_deleted=True
+    - Hoặc dùng reference check: course.is_deleted=True → block access
+    - Hard delete chỉ dùng cho permanent deletion (line 1115-1136)

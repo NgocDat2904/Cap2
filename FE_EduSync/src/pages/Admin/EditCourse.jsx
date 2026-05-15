@@ -22,7 +22,8 @@ import {
 import {
   fetchAdminCourseDetailAPI,
   updateCourseAPI,
-  uploadCourseThumbnailAPI
+  uploadCourseThumbnailAPI,
+  deleteVideoAPI
 } from "../../services/adminCourseAPI";
 import toast from "../../utils/toast";
 
@@ -171,9 +172,28 @@ const AdminEditCourse = () => {
     );
   };
 
-  const removeVideo = (videoId) => {
-    if (window.confirm("Xác nhận gỡ bỏ bài giảng này khỏi giáo trình?")) {
+  const removeVideo = async (videoId) => {
+    if (!window.confirm("Xác nhận gỡ bỏ video này khỏi giáo trình?")) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("access_token");
+      if (!token) {
+        toast.error("Phiên đăng nhập đã hết hạn.");
+        return;
+      }
+
+      // 🔥 FIX: Gọi API xóa VIDEO từ database (không phải lesson)
+      await deleteVideoAPI(videoId, token);
+
+      // Xóa khỏi UI sau khi xóa thành công
       setUploadedVideos((prev) => prev.filter((video) => video.id !== videoId));
+
+      toast.success("Đã xóa video thành công!");
+    } catch (error) {
+      console.error("Delete video error:", error);
+      toast.error(error.message || "Không thể xóa video. Vui lòng thử lại!");
     }
   };
 
