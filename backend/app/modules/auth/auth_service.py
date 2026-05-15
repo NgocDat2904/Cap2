@@ -64,11 +64,15 @@ def login(user, role=None):
         )
 
     if not verify_password(password, hashed_password):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(status_code=401, detail="Thông tin đăng nhập không hợp lệ")
 
     # check role
     if role and db_user.get("role") != role:
-        raise HTTPException(status_code=403, detail="Unauthorized role")
+        raise HTTPException(status_code=403, detail="Bạn không có quyền truy cập")
+
+    # check if user is blocked
+    if db_user.get("is_blocked", False):
+        raise HTTPException(status_code=403, detail="Tài khoản đã bị chặn")
 
     token = create_access_token({
         "user_id": str(db_user["_id"]),
