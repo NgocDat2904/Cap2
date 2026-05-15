@@ -32,6 +32,7 @@ import {
   uploadVideoToGCS,
   saveVideoToDBAPI,
 } from "../../services/courseAPI";
+import { deleteLessonAPI } from "../../services/adminCourseAPI";
 import toast from "../../utils/toast";
 
 const COURSE_CATEGORIES = [
@@ -325,7 +326,7 @@ const InstructorCourseEditPage = () => {
     }
   };
 
-  const handleDeleteLesson = (lessonId) => {
+  const handleDeleteLesson = async (lessonId) => {
     if (courseData.status === "PUBLISHED" && courseData.studentsEnrolled > 0) {
       const confirmHide = window.confirm(
         `CẢNH BÁO BẢO VỆ DỮ LIỆU:\n\n` +
@@ -355,7 +356,16 @@ const InstructorCourseEditPage = () => {
       const confirmDelete = window.confirm("Xác nhận: Bạn có chắc chắn muốn xóa vĩnh viễn bài học này?");
 
       if (confirmDelete) {
-        setLessons(lessons.filter((lesson) => lesson.id !== lessonId));
+        try {
+          const token = localStorage.getItem("access_token");
+          await deleteLessonAPI(lessonId, token);
+
+          setLessons(lessons.filter((lesson) => lesson.id !== lessonId));
+          toast.success("Đã xóa bài học thành công!");
+        } catch (error) {
+          console.error("Lỗi khi xóa bài học:", error);
+          toast.error(error.message || "Không thể xóa bài học!");
+        }
       }
     }
   };
@@ -376,12 +386,12 @@ const InstructorCourseEditPage = () => {
     { id: "basic", label: "Thông tin cơ bản", icon: faInfoCircle },
     { id: "media", label: "Hình ảnh & Video", icon: faImage },
     { id: "curriculum", label: "Giáo trình khóa học", icon: faList },
-    {
-      id: "danger",
-      label: "Khu vực nguy hiểm",
-      icon: faExclamationTriangle,
-      isDanger: true,
-    },
+    // {
+    //   id: "danger",
+    //   label: "Khu vực nguy hiểm",
+    //   icon: faExclamationTriangle,
+    //   isDanger: true,
+    // },
   ];
 
   return (
@@ -652,7 +662,7 @@ const InstructorCourseEditPage = () => {
           )}
 
           {/* TAB 4: KHU VỰC NGUY HIỂM */}
-          {activeTab === "danger" && (
+          {/* {activeTab === "danger" && (
             <div className="bg-white rounded-3xl border border-red-200 shadow-sm p-6 sm:p-8 animate-fade-slide-up">
               <div className="flex items-center gap-3 mb-6">
                 <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-lg">
@@ -694,7 +704,7 @@ const InstructorCourseEditPage = () => {
                 </div>
               </div>
             </div>
-          )}
+          )} */}
         </main>
       </div>
 
