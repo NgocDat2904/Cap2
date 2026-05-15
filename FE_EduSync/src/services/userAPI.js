@@ -27,7 +27,7 @@ export const updateProfileAPI = async (profileData, token) => {
 export const uploadAvatarAPI = async (file, token) => {
   // Đóng gói file vào FormData
   const formData = new FormData();
-  formData.append("file", file); 
+  formData.append("file", file);
 
   const response = await axios.post(`${API_URL}/upload-avatar`, formData, {
     headers: {
@@ -43,6 +43,24 @@ export const uploadAvatarAPI = async (file, token) => {
 
   // Trả về dữ liệu JSON (chứa cái URL ảnh mới)
   return await response.json();
+};
+
+// API ĐỔI MẬT KHẨU
+export const changePasswordAPI = async (oldPassword, newPassword, token) => {
+  const response = await axios.put(
+    `${API_URL}/change-password`,
+    null,
+    {
+      params: {
+        old_password: oldPassword,
+        new_password: newPassword,
+      },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
 };
 
 // =========================================================================

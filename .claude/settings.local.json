@@ -5,7 +5,10 @@
       "Bash(grep -E \"\\\\.\\(jsx|js\\)$\")",
       "Bash(xargs grep -l \"Q&A\\\\|QnA\\\\|Question\\\\|Discussion\")",
       "Bash(npm list *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(python *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
     ]
   }
 }

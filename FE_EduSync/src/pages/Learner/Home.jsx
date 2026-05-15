@@ -219,6 +219,7 @@ const EduSyncHome = () => {
             featuredCourses.map((course) => (
               <div
                 key={course.id}
+                onClick={() => navigate(`/courses/${course.id}`)}
                 className="bg-white rounded-2xl border border-slate-200/60 shadow-sm hover:shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] hover:border-blue-200 hover:-translate-y-2 transition-all duration-400 overflow-hidden flex flex-col group cursor-pointer relative"
               >
                 {/* Thumbnail Area */}
@@ -235,7 +236,7 @@ const EduSyncHome = () => {
                   </div>
                   {/* Glassmorphism Lesson Tag */}
                   <div className="absolute bottom-3 right-3 px-2.5 py-1.5 bg-slate-900/60 backdrop-blur-md text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
-                    <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.lesson_count || 0} Bài giảng
+                    <FontAwesomeIcon icon={faPlayCircle} className="text-[10px]" /> {course.lesson_count || 0} 
                   </div>
                 </div>
 
@@ -243,9 +244,9 @@ const EduSyncHome = () => {
                 <div className="p-5 flex-1 flex flex-col">
                   {/* Category & Students */}
                   <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                    {/* <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
                       {course.category}
-                    </span>
+                    </span> */}
                     <div className="flex items-center gap-1.5 text-slate-400 font-medium text-xs">
                       <FontAwesomeIcon icon={faUsers} />
                       {course.students || 0}
@@ -276,12 +277,15 @@ const EduSyncHome = () => {
                     <span className={`font-extrabold text-xl tracking-tight ${!course.price || course.price === 0 ? "text-green-600" : "text-slate-900"}`}>
                       {!course.price || course.price === 0 ? "Miễn phí" : formatCurrency(course.price)}
                     </span>
-                    <Link
-                      to={`/courses/${course.id}`}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/courses/${course.id}`);
+                      }}
                       className="text-sm font-bold text-blue-600 bg-blue-50/50 hover:bg-blue-600 hover:text-white px-4 py-2 rounded-xl transition-all duration-300"
                     >
                       Chi tiết
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </div>

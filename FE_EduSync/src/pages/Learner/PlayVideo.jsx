@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlayCircle,
@@ -7,6 +7,7 @@ import {
   faClockRotateLeft,
   faPlay,
   faHeart,
+  faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { getCourseDetailAPI, getCourseProgressAPI, completeLessonAPI } from "../../services/learnerCourseAPI";
 
@@ -20,6 +21,7 @@ import { trackViewAPI } from "../../services/courseAPI";
 
 const CourseLearningWorkspace = () => {
   const { courseId, lessonId } = useParams();
+  const navigate = useNavigate();
 
   const [activeLeftTab, setActiveLeftTab] = useState("summary");
   const [activeRightTab, setActiveRightTab] = useState("videos");
@@ -297,6 +299,15 @@ const CourseLearningWorkspace = () => {
     <div className="w-full max-w-[1400px] mx-auto p-4 sm:p-6 lg:p-8 animate-fade-slide-up pb-20">
       <div className="flex flex-col lg:flex-row gap-6 lg:gap-8 items-start">
         <div className="w-full lg:flex-1 flex flex-col min-w-0">
+          {/* Nút quay lại trang chi tiết khóa học */}
+          <button
+            onClick={() => navigate(`/courses/${courseId}`)}
+            className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors mb-4 text-sm font-bold group w-fit"
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="group-hover:-translate-x-1 transition-transform" />
+            <span>Quay lại trang khóa học</span>
+          </button>
+
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
             {activeLesson.videoUrl ? (
               <video

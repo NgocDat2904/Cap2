@@ -16,6 +16,7 @@ import {
   getProfileAPI,
   updateProfileAPI,
   uploadAvatarAPI,
+  changePasswordAPI,
 } from "../../services/userAPI";
 import toast from "../../utils/toast";
 
@@ -34,6 +35,12 @@ const LearnerProfilePage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -75,7 +82,72 @@ const LearnerProfilePage = () => {
   const handleAvatarClick = () => fileInputRef.current.click();
 
   // =========================================================================
-  //  HÀM UPLOAD AVATAR 
+  //  HÀM ĐỔI MẬT KHẨU
+  // =========================================================================
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+
+    // Validation
+    if (!passwordData.oldPassword.trim()) {
+      toast.warning("Vui lòng nhập mật khẩu hiện tại.");
+      return;
+    }
+
+    if (!passwordData.newPassword.trim()) {
+      toast.warning("Vui lòng nhập mật khẩu mới.");
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast.warning("Mật khẩu mới phải có ít nhất 6 ký tự.");
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error("Mật khẩu xác nhận không khớp. Vui lòng kiểm tra lại.");
+      return;
+    }
+
+    if (passwordData.oldPassword === passwordData.newPassword) {
+      toast.warning("Mật khẩu mới không được trùng với mật khẩu hiện tại.");
+      return;
+    }
+
+    setIsChangingPassword(true);
+    try {
+      const token = localStorage.getItem("access_token");
+      await changePasswordAPI(passwordData.oldPassword, passwordData.newPassword, token);
+
+      toast.success("Cập nhật mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.");
+
+      // Reset form
+      setPasswordData({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+      });
+    } catch (error) {
+      console.error("Lỗi khi đổi mật khẩu:", error);
+
+      if (error.response?.data?.detail) {
+        toast.error(error.response.data.detail);
+      } else if (error.response?.status === 400) {
+        toast.error("Mật khẩu hiện tại không đúng. Vui lòng kiểm tra lại.");
+      } else {
+        toast.error("Không thể cập nhật mật khẩu. Vui lòng thử lại sau.");
+      }
+    } finally {
+      setIsChangingPassword(false);
+    }
+  };
+
+  const handlePasswordInputChange = (e) => {
+    const { name, value } = e.target;
+    setPasswordData({ ...passwordData, [name]: value });
+  };
+
+  // =========================================================================
+  //  HÀM UPLOAD AVATAR
   // =========================================================================
   const handleFileChange = async (event) => {
     const file = event.target.files[0];
@@ -317,43 +389,66 @@ const LearnerProfilePage = () => {
                         />{" "}
                         Thay đổi mật khẩu
                       </h3>
-                      <form className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
+                      <form onSubmit={handleChangePassword} className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-end">
                         <div className="sm:col-span-2 relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Mật khẩu hiện tại
+                            Mật khẩu hiện tại <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="password"
-                            placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
+                            name="oldPassword"
+                            value={passwordData.oldPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Nhập mật khẩu hiện tại"
+                            disabled={isChangingPassword}
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Mật khẩu mới
+                            Mật khẩu mới <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="password"
-                            placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
+                            name="newPassword"
+                            value={passwordData.newPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                            disabled={isChangingPassword}
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="relative">
                           <label className="block text-xs font-bold text-slate-700 mb-2 uppercase tracking-wider">
-                            Xác nhận mật khẩu mới
+                            Xác nhận mật khẩu mới <span className="text-red-500">*</span>
                           </label>
                           <input
                             type="password"
-                            placeholder="••••••••"
-                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none"
+                            name="confirmPassword"
+                            value={passwordData.confirmPassword}
+                            onChange={handlePasswordInputChange}
+                            placeholder="Nhập lại mật khẩu mới"
+                            disabled={isChangingPassword}
+                            className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-amber-500 transition-colors outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="sm:col-span-2 flex justify-end">
                           <button
-                            type="button"
-                            className="px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 transition-all active:scale-95 flex items-center gap-2.5"
+                            type="submit"
+                            disabled={isChangingPassword}
+                            className={`px-6 py-3 bg-white text-amber-600 border border-amber-300 font-bold rounded-xl hover:bg-amber-50 hover:border-amber-400 transition-all active:scale-95 flex items-center gap-2.5 ${isChangingPassword ? "opacity-75 cursor-not-allowed" : ""}`}
                           >
-                            Cập nhật mật khẩu
+                            {isChangingPassword ? (
+                              <>
+                                <FontAwesomeIcon icon={faSpinner} className="animate-spin" />
+                                Đang xử lý...
+                              </>
+                            ) : (
+                              <>
+                                <FontAwesomeIcon icon={faLock} />
+                                Cập nhật mật khẩu
+                              </>
+                            )}
                           </button>
                         </div>
                       </form>

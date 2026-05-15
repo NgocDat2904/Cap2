@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faArrowLeft,
@@ -41,6 +41,7 @@ function formatUpdatedDate(iso) {
 
 const AdminCourseDetail = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { id } = useParams();
 
   const [course, setCourse] = useState(null);
@@ -85,7 +86,7 @@ const AdminCourseDetail = () => {
 
   useEffect(() => {
     loadCourse();
-  }, [loadCourse]);
+  }, [loadCourse, location.state?.refresh]);
 
   if (loadState.loading) {
     return (
@@ -254,20 +255,20 @@ const AdminCourseDetail = () => {
           <p className="text-blue-200 text-xs font-medium mb-5 relative z-10">
             Nội dung đã đạt yêu cầu kiểm duyệt? Hãy đặt giá để xuất bản lên nền tảng.
           </p>
-          <div className="relative z-10 mb-6">
-            <div className="relative">
-              <FontAwesomeIcon icon={faDollarSign} className="absolute left-4 top-3.5 text-slate-400" />
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                placeholder="Ví dụ: 500000 (0 là miễn phí)"
-                value={adminPrice}
-                onChange={(e) => setAdminPrice(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 bg-white border-0 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-emerald-500/30 outline-none"
-              />
-            </div>
-          </div>
+         <div className="relative z-10 mb-6">
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="Ví dụ: 500000 (0 là miễn phí)"
+            value={adminPrice}
+            onChange={(e) => setAdminPrice(e.target.value)}
+            className="w-full pl-4 pr-14 py-3 bg-white border-0 rounded-xl text-slate-800 font-black text-lg focus:ring-4 focus:ring-emerald-500/30 outline-none"
+          />
+          <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 font-bold select-none text-sm">
+            VNĐ
+          </span>
+        </div>
           <div className="flex flex-col gap-3 relative z-10">
             <button
               type="button"
@@ -459,6 +460,14 @@ const AdminCourseDetail = () => {
               <li className="flex items-center justify-between">
                 <span className="text-sm font-bold text-slate-500 flex items-center gap-2"><FontAwesomeIcon icon={faTag} className="w-4" /> Danh mục</span>
                 <span className="text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-md">{course.category}</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="text-sm font-bold text-slate-500 flex items-center gap-2"><FontAwesomeIcon icon={faDollarSign} className="w-4" /> Giá niêm yết</span>
+                <span className="text-sm font-black text-emerald-700">
+                  {course.price === 0 || !course.price
+                    ? "Miễn phí"
+                    : new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(course.price)}
+                </span>
               </li>
             </ul>
           </div>

@@ -141,5 +141,53 @@ export async function moderateCourseAPI(courseId, status, token) {
   }
 }
 
+export async function deleteCourseAPI(courseId, token) {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/admin/courses/${courseId}`,
+      {
+        headers: authHeaders(token),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Xóa khóa học thất bại"));
+  }
+}
 
+export async function updateCourseAPI(courseId, data, token) {
+  try {
+    const response = await axios.put(
+      `${BASE_URL}/admin/courses/${courseId}`,
+      data,
+      {
+        headers: authHeaders(token),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Cập nhật khóa học thất bại"));
+  }
+}
+
+export async function uploadCourseThumbnailAPI(file, token) {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await axios.post(
+      `${BASE_URL}/admin/courses/thumbnail`,
+      formData,
+      {
+        headers: {
+          ...authHeaders(token),
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Tải lên thumbnail thất bại"));
+  }
+}
 

@@ -177,11 +177,17 @@ async def delete_course(
     course_id: str,
     user=Depends(require_role(["instructor"]))
 ):
+    """
+    Instructor KHÔNG có quyền xóa khóa học.
+    Route này sẽ luôn trả về 403 Forbidden.
+    """
     try:
         return await course_service.delete_course(
             course_id,
             user["id"]
         )
+    except HTTPException:
+        raise  # Re-raise HTTPException để giữ nguyên status code
     except Exception as e:
         raise HTTPException(400, str(e))
     
@@ -309,6 +315,47 @@ async def moderate_course(
 
 
 
+@router.delete("/admin/courses/{course_id}")
+async def delete_course(
+    course_id: str,
+    user=Depends(require_role(["admin"]))
+):
+    """
+    Admin xóa khóa học (Soft Delete)
+
+    Chỉ xóa được nếu chưa có giao dịch thành công.
+    Nếu đã có người mua → Phải dùng Archive thay vì Delete.
+    """
+    try:
+        result = await course_service.admin_delete_course(course_id, user["id"])
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/admin/courses/{course_id}/archive")
+async def archive_course(
+    course_id: str,
+    reason: str = None,
+    user=Depends(require_role(["admin"]))
+):
+    """
+    Admin lưu trữ khóa học
+
+    Archive = Ngừng bán nhưng học viên đã mua vẫn học được.
+    Dùng khi: Khóa học đã có người mua, muốn ngừng kinh doanh.
+    """
+    try:
+        result = await course_service.archive_course(course_id, user["id"], reason)
+        return result
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.put("/admin/courses/{course_id}/resolve-update")
 async def resolve_pending_update(
     course_id: str,
@@ -331,5 +378,36 @@ async def resolve_pending_update(
         raise _http_from_exc(e)
 
 
+@router.put("/admin/courses/{course_id}")
+async def admin_update_course(
+    course_id: str,
+    data: dict,
+    user=Depends(require_role(["admin"]))
+):
+    """
+    Admin cập nhật thông tin khóa học (title, description, category, price, status, image)
+    """
+    try:
+        result = await course_service.admin_update_course(course_id, data)
+        return result
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
-    
+
+@router.post("/admin/courses/thumbnail")
+async def admin_upload_thumbnail(
+    file: UploadFile = File(...),
+    user=Depends(require_role(["admin"]))
+):
+    """
+    Admin upload thumbnail cho khóa học
+    """
+    try:
+        url = upload_image(file.file)
+        return {"url": url}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
