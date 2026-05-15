@@ -147,6 +147,12 @@ class RevenueService:
             },
             {"$unwind": "$course"},
             {
+                "$match": {
+                    "course.is_deleted": {"$ne": True},
+                    "course.is_archived": {"$ne": True}
+                }
+            },
+            {
                 "$lookup": {
                     "from": "users",
                     "localField": "course.instructor_id",

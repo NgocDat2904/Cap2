@@ -191,3 +191,30 @@ export async function uploadCourseThumbnailAPI(file, token) {
   }
 }
 
+export async function deleteLessonAPI(lessonId, token) {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/instructor/lessons/${lessonId}`,
+      {
+        headers: authHeaders(token),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Xóa bài học thất bại"));
+  }
+}
+
+export async function deleteVideoAPI(videoId, token) {
+  try {
+    const response = await axios.delete(
+      `${BASE_URL}/instructor/videos/${videoId}`,
+      {
+        headers: authHeaders(token),
+      }
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(parseAxiosError(error, "Xóa video thất bại"));
+  }
+}

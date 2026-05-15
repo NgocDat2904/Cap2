@@ -54,3 +54,16 @@ async def track_view(
         user_id=user["id"],
         payload=payload
     )
+
+
+# ===================== DELETE VIDEO =====================
+
+@router.delete("/instructor/videos/{video_id}")
+async def delete_video(
+    video_id: str,
+    user=Depends(require_role(["instructor", "admin"]))
+):
+    """
+    Xóa video (cho instructor và admin)
+    """
+    return await video_service.delete_video(video_id, user["id"], user["role"])

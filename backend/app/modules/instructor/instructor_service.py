@@ -40,7 +40,9 @@ class InstructorService:
         # ====================================
         total_courses = db.courses.count_documents({
             "instructor_id": ObjectId(user_id),
-            "status": "APPROVED"  # Chỉ đếm khóa học đã được duyệt
+            "status": "APPROVED",  # Chỉ đếm khóa học đã được duyệt
+            "is_deleted": {"$ne": True},
+            "is_archived": {"$ne": True}
         })
 
         # ====================================
@@ -239,7 +241,9 @@ class InstructorService:
 
         course_filter = {
             "instructor_id": ObjectId(instructor_id),
-            "status": "APPROVED"
+            "status": "APPROVED",
+            "is_deleted": {"$ne": True},
+            "is_archived": {"$ne": True}
         }
 
         print("INSTRUCTOR ID:", instructor_id)
@@ -650,7 +654,9 @@ class InstructorService:
         {
             "$match": {
                 "instructor_id": ObjectId(instructor_id),
-                "status": "APPROVED"
+                "status": "APPROVED",
+                "is_deleted": {"$ne": True},
+                "is_archived": {"$ne": True}
             }
         },
         {

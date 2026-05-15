@@ -507,5 +507,84 @@ class VideoService:
                 "Tracking..."
         }
 
+    # ===================== DELETE VIDEO =====================
 
-    
+    async def delete_video(self, video_id: str, user_id: str, user_role: str):
+        """
+        Xóa video (hard delete)
+
+        - Instructor: Chỉ xóa được video của khóa học mình
+        - Admin: Xóa được tất cả videos
+        """
+        from fastapi import HTTPException
+
+        # =====================
+        # VALIDATE VIDEO ID
+        # =====================
+        if not ObjectId.is_valid(video_id):
+            raise HTTPException(400, "Invalid video_id")
+
+        # =====================
+        # CHECK VIDEO TỒN TẠI
+        # =====================
+        video = db.videos.find_one({"_id": ObjectId(video_id)})
+
+        if not video:
+            raise HTTPException(404, "Video not found")
+
+        course_id = video.get("course_id")
+
+        if not course_id:
+            raise HTTPException(400, "Video không có course_id")
+
+        # =====================
+        # CHECK PERMISSION
+        # =====================
+        course = db.courses.find_one({"_id": course_id})
+
+        if not course:
+            raise HTTPException(404, "Course not found")
+
+        # Instructor chỉ xóa được video của khóa học mình
+        if user_role == "instructor":
+            if str(course.get("instructor_id")) != user_id:
+                raise HTTPException(403, "Not your course")
+
+        # Admin có thể xóa tất cả videos (không cần check)
+
+        # =====================
+        # XÓA VIDEO
+        # =====================
+
+        # 🔥 HARD DELETE video
+        result = db.videos.delete_one({"_id": ObjectId(video_id)})
+
+        if result.deleted_count == 0:
+            raise HTTPException(500, "Failed to delete video")
+
+        # =====================
+        # XÓA VIDEO VIEWS
+        # =====================
+        db.video_views.delete_many({"video_id": ObjectId(video_id)})
+
+        # =====================
+        # XÓA AI CACHE (nếu có)
+        # =====================
+        db.ai_summaries.delete_many({"video_id": ObjectId(video_id)})
+        db.ai_mindmaps.delete_many({"video_id": ObjectId(video_id)})
+
+        # =====================
+        # RECALCULATE COURSE DURATION
+        # =====================
+        # Import course_service để tránh circular import
+        from app.modules.course.course_service import course_service
+        await course_service.recalculate_course_duration(str(course_id))
+
+        # =====================
+        # RESPONSE
+        # =====================
+        return {
+            "message": "Video deleted successfully",
+            "video_id": video_id
+        }
+

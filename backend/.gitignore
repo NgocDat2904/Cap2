@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+*.egg-info/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Backups - NEVER COMMIT TO GIT
+backups/
+*.backup.json
+*_backup_*.json
+
+# Logs
+*.log
+logs/
+
+# Test data
+test_data/
+temp/
