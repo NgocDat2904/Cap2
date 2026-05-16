@@ -147,7 +147,7 @@ const CourseLearningWorkspace = () => {
       activeLesson?.transcript,
       activeLesson?.duration,
     ]);
-  const activeVideoId = activeLesson?.video_id || activeLesson?.videoId;
+    const activeVideoId = activeLesson?.videoId;
 
   useEffect(() => {
     if (!activeLesson) return;
@@ -248,7 +248,11 @@ const CourseLearningWorkspace = () => {
 
   const handleSelectLesson = (lesson) => {
     countedRef.current = false;
-    setActiveLesson(lesson);
+  
+    navigate(
+      `/courses/${courseId}/lessons/${lesson.id}`
+    );
+  
     setActiveRightTab("timeline");
     setIsPlaying(true);
   };
@@ -316,6 +320,7 @@ const CourseLearningWorkspace = () => {
           <div className="w-full bg-black aspect-video rounded-2xl overflow-hidden shadow-lg border border-slate-800 relative">
             {activeLesson.videoUrl ? (
               <video
+                key={activeLesson?.id}
                 ref={videoRef}
                 src={activeLesson.videoUrl}
                 controls
