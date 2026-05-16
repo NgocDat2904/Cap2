@@ -129,7 +129,7 @@ const CourseLearningWorkspace = () => {
 
   const lessonContext = useMemo(
     () => {
-      console.log("ACTIVE LESSON:", activeLesson);
+      // console.log("ACTIVE LESSON:", activeLesson);
     const context = {
       title: activeLesson?.title || "",
       description: activeLesson?.description || "",
@@ -137,8 +137,8 @@ const CourseLearningWorkspace = () => {
       duration: activeLesson?.duration || "0",
     };
     
-    console.log("LESSON CONTEXT:", context);
-    console.log("TRANSCRIPT", context.transcript);
+    // console.log("LESSON CONTEXT:", context);
+    // console.log("TRANSCRIPT", context.transcript);
 
     return context;
   },[
@@ -286,15 +286,6 @@ const CourseLearningWorkspace = () => {
       </div>
     );
   }
-
-  const handleToggleLike = (e, lessonId) => {
-    e.stopPropagation();
-    setLikedVideos((prev) =>
-      prev.includes(lessonId)
-        ? prev.filter((id) => id !== lessonId)
-        : [...prev, lessonId],
-    );
-  };
 
   const handleSeekVideo = (seconds) => {
     if (videoRef.current) {

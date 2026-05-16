@@ -47,7 +47,7 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
         }
         const data = await getMindmapByVideoAPI(token, videoId, "vi");
 
-          console.log("data", data);
+          // console.log("data", data);
 
         if (!cancelled) {
           const code = data.markmap_code || "";

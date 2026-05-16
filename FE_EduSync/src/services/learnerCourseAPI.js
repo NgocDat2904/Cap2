@@ -40,7 +40,7 @@ export async function getCourseDetailAPI(courseId) {
   try {
     const res = await axios.get(`http://localhost:8000/courses/detail/${courseId}`);
     const data = res.data;
-    console.log("learner API FIXED:", data);
+    // console.log("learner API FIXED:", data);
     return data;
   } catch (error) {
     if (error.response && error.response.status === 404) {
@@ -189,4 +189,4 @@ export const completeLessonAPI = async (courseId, lessonId) => {
   } catch (error) {
     throw new Error(await parseError(error, "Failed to mark lesson as completed"));
   }
-};
+};
