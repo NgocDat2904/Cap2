@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faRobot,
@@ -21,6 +21,30 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
 
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
+  const messagesEndRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
+
+  const handleKeyDown = (e) => {
+    // SHIFT + ENTER => xuống dòng
+    if (e.key === "Enter" && e.shiftKey) {
+      return;
+    }
+  
+    // ENTER => gửi tin nhắn
+    if (e.key === "Enter") {
+      e.preventDefault();
+  
+      if (!sending) {
+        e.target.form.requestSubmit();
+      }
+    }
+  };
 
   const handleSendChat = async (e) => {
     e.preventDefault();
@@ -124,7 +148,10 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
       )}
 
       {/* CHAT AREA */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+      <div
+        ref={chatContainerRef}
+        className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+      >
         {chatMessages.map((msg, idx) => (
           <div
             key={idx}
@@ -157,6 +184,8 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
             </div>
           </div>
         ))}
+
+        
       </div>
 
       {/* INPUT */}
@@ -164,14 +193,15 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
         onSubmit={handleSendChat}
         className="p-3 bg-white border-t border-slate-200 flex gap-2 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]"
       >
-        <input
+        <textarea
           name="chatInput"
           type="text"
           placeholder="Hỏi AI về nội dung bài giảng..."
           className="flex-1 bg-slate-100 border-transparent focus:border-blue-400 focus:bg-white focus:ring-1 focus:ring-blue-400 rounded-lg px-4 py-2 text-sm outline-none transition-all"
           autoComplete="off"
           disabled={sending}
-        />
+          onKeyDown={handleKeyDown}
+        ></textarea>
 
         <button
           type="submit"
