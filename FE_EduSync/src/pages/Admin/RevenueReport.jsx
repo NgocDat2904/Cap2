@@ -83,7 +83,7 @@ const AdminRevenueReport = () => {
     revenueChartData.length > 0 ? Math.max(...revenueChartData.map((d) => d.revenue)) : 1;
     console.log("maxRevenueValue",maxRevenueValue);
     
-  const maxStudentsValue = 100;
+  const maxStudentsValue = 50;
 
   return (
     <div className="flex-1 p-6 sm:p-8 bg-slate-50 min-h-screen font-sans animate-fade-slide-up">
@@ -352,7 +352,7 @@ const AdminRevenueReport = () => {
                 <div className="absolute -top-10 bg-slate-800 text-white text-xs font-bold px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap shadow-xl z-20">
                   Học viên:{" "}
                   <span className="text-purple-400">
-                    {data.students} học viên
+                    {data.users} học viên
                   </span>
                   <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-800"></div>
                 </div>
@@ -360,7 +360,7 @@ const AdminRevenueReport = () => {
                 <div className="w-full max-w-[40px] flex items-end h-full pt-6">
                   <div
                     className="w-full bg-purple-500 rounded-t-md group-hover:bg-purple-400 transition-colors shadow-[0_0_15px_rgba(168,85,247,0.3)]"
-                    style={{ height: `${(data.students / maxStudentsValue) * 100}%` }}
+                    style={{ height: `${(data.users / maxStudentsValue) * 100}%` }}
                   ></div>
                 </div>
                 <span className="text-xs font-bold text-slate-500 mt-3">
