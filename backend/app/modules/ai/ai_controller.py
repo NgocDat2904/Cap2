@@ -289,11 +289,13 @@ async def ai_quiz_by_video(
 ):
     video = await _video_doc(body.video_id)
 
-    quiz_cache = _cache_get(video, "quiz") or {}
+    # quiz_cache = _cache_get(video, "quiz") or {}
+    quiz_cache = {}
     cache_key = f"{body.language}:{body.num_questions}"
 
     if cache_key in quiz_cache:
         return {"questions": quiz_cache[cache_key]}
+        
 
     context = await _context_from_video(body.video_id)
 
