@@ -116,14 +116,7 @@ const PublicPage = () => {
 
         {/* Cột phải: Video Demo (YouTube Embed) */}
         <div className="rounded-2xl aspect-video relative overflow-hidden shadow-2xl border border-slate-200">
-          <iframe
-            className="absolute top-0 left-0 w-full h-full"
-            src="https://www.youtube.com/embed/rO1ANdXvdTg"
-            title="EduSync Demo Video"
-            frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            allowFullScreen
-          ></iframe>
+          <iframe width="560" height="315" src="https://www.youtube.com/embed/SoOmth8OUh4?si=mIoGEPTMXxSE08ZE" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
       </section>
 
