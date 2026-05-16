@@ -16,7 +16,7 @@ import CourseSummary from "../../components/CourseSummary";
 import CourseQuiz from "../../components/CourseQuiz";
 import CourseChatbot from "../../components/CourseChatbot";
 import CourseDiscussion from "../../components/CourseDiscussion";
-import { aiTimelineAPI, aiTimelineByVideoAPI } from "../../services/aiAPI";
+import { aiTimelineAPI, aiTimelineByVideoAPI, getTimelineByVideoAPI } from "../../services/aiAPI";
 import { trackViewAPI } from "../../services/courseAPI";
 
 const CourseLearningWorkspace = () => {
@@ -161,9 +161,18 @@ const CourseLearningWorkspace = () => {
       setAiTimeline([]);
 
       try {
-        const data = activeVideoId
-          ? await aiTimelineByVideoAPI(token, activeVideoId, "vi")
-          : await aiTimelineAPI(token, lessonContext, "vi");
+        let data;
+        if (activeVideoId) {
+          // Ưu tiên GET (nhanh, có cache)
+          try {
+            data = await getTimelineByVideoAPI(token, activeVideoId, "vi");
+          } catch {
+            // fallback sang POST nếu GET lỗi
+            data = await aiTimelineByVideoAPI(token, activeVideoId, "vi");
+          }
+        } else {
+          data = await aiTimelineAPI(token, lessonContext, "vi");
+        }
 
         if (!cancelled) setAiTimeline(data.timeline || []);
       } catch (err) {
@@ -285,11 +294,7 @@ const CourseLearningWorkspace = () => {
 
   const handleSeekVideo = (seconds) => {
     if (videoRef.current) {
-      const maxDuration = videoRef.current.duration;
-      // Clamp to maxDuration - 1s if AI hallucinates timestamp beyond video length
-      const safeSeconds = maxDuration && seconds > maxDuration ? maxDuration - 1 : seconds;
-      
-      videoRef.current.currentTime = safeSeconds;
+      videoRef.current.currentTime = seconds;
       videoRef.current.play().catch(err => console.log("Play interrupted:", err));
       setIsPlaying(true);
     }
@@ -461,7 +466,7 @@ const CourseLearningWorkspace = () => {
                     icon={faClockRotateLeft}
                     className="text-blue-600"
                   />{" "}
-                  Các mốc quan trọng (AI)
+                  Các mốc quan trọng
                 </h4>
                 {loadingTimeline && (
                   <p className="text-sm text-slate-500 italic text-center mt-6">

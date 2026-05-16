@@ -1,7 +1,7 @@
 import React, { useRef, useEffect, useState, useCallback } from "react";
 import { Transformer } from "markmap-lib";
 import { Markmap } from "markmap-view";
-import { aiMindmapAPI, aiMindmapByVideoAPI, getMindmapByVideoAPI } from "../services/aiAPI";
+import { getMindmapByVideoAPI } from "../services/aiAPI";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faSpinner,
@@ -29,7 +29,7 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
     const run = async () => {
       const token = localStorage.getItem("access_token");
       if (!token) {
-        setError("Vui lòng đăng nhập để xem mindmap AI.");
+        setError("Vui lòng đăng nhập để xem mindmap.");
         setStatus("error");
         setLoading(false);
         return;
@@ -131,7 +131,8 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
     }
   }, [isFullscreen, status, isActive]);
 
-  const handleRetry = useCallback(() => {
+  // Re-fetch từ DB (không gọi AI)
+  const handleRefresh = useCallback(() => {
     setMarkmapCode("");
     setLoading(true);
     setError("");
@@ -143,13 +144,11 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
     }
 
     const token = localStorage.getItem("access_token");
-    if (!token) return;
+    if (!token || !videoId) return;
 
     const run = async () => {
       try {
-        const data = videoId
-          ? await aiMindmapByVideoAPI(token, videoId, "vi")
-          : await aiMindmapAPI(token, lessonContext, "vi");
+        const data = await getMindmapByVideoAPI(token, videoId, "vi");
         const code = data.markmap_code || "";
         if (code) {
           setMarkmapCode(code);
@@ -165,7 +164,7 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
       }
     };
     run();
-  }, [videoId, lessonContext]);
+  }, [videoId]);
 
   const toggleFullscreen = () => setIsFullscreen((prev) => !prev);
 
@@ -192,7 +191,7 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
             Đang tạo mindmap từ nội dung bài giảng...
           </p>
           <p className="text-xs text-slate-400 mt-1 font-medium">
-            AI đang phân tích và tổ chức ý chính
+            Đang tổ chức ý chính từ nội dung bài giảng...
           </p>
         </div>
         <div className="flex gap-1 mt-2">
@@ -228,11 +227,11 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
           </p>
         </div>
         <button
-          onClick={handleRetry}
-          className="mt-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold rounded-xl hover:bg-amber-600 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
+          onClick={handleRefresh}
+          className="mt-2 px-5 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-300 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
         >
           <FontAwesomeIcon icon={faRotateRight} />
-          Thử lại
+          Kiểm tra lại
         </button>
       </div>
     );
@@ -254,7 +253,7 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
           </p>
         </div>
         <button
-          onClick={handleRetry}
+          onClick={handleRefresh}
           className="mt-2 px-5 py-2 bg-red-500 text-white text-xs font-bold rounded-xl hover:bg-red-600 transition-all active:scale-95 flex items-center gap-2 shadow-sm"
         >
           <FontAwesomeIcon icon={faRotateRight} />
@@ -273,13 +272,6 @@ const CourseMindmap = ({ lessonContext, videoId, isActive = true }) => {
         } bg-gradient-to-br from-white to-indigo-50/20 rounded-2xl border border-slate-200 overflow-hidden shadow-sm transition-all`}
     >
       <div className="absolute top-3 right-3 z-20 flex items-center gap-2">
-        <button
-          onClick={handleRetry}
-          title="Tạo lại mindmap"
-          className="w-8 h-8 bg-white/90 backdrop-blur-sm border border-slate-200 rounded-lg flex items-center justify-center text-slate-500 hover:text-indigo-600 hover:border-indigo-300 transition-all active:scale-90 shadow-sm"
-        >
-          <FontAwesomeIcon icon={faRotateRight} className="text-xs" />
-        </button>
         <button
           onClick={toggleFullscreen}
           title={isFullscreen ? "Thu nhỏ" : "Phóng to"}

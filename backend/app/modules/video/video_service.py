@@ -174,6 +174,21 @@ class VideoService:
                 raise RuntimeError("Không có URL nào để tải video")
 
             transcript, segments = transcribe_from_video_url(download_url, language=language)
+
+            # ===================== BUILD TIMELINE TỪ SEGMENTS (không dùng AI) =====================
+            from app.modules.ai.timeline_service import build_timeline_from_segments
+            timeline_raw = build_timeline_from_segments(segments, include_raw=True)
+
+            # ===================== ENHANCE LABELS QUA GEMINI (chỉ tên chapter, timestamp không đổi) =====================
+            try:
+                from app.modules.ai.gemini_service import enhance_timeline_labels_sync
+                timeline_items = enhance_timeline_labels_sync(timeline_raw, language="vi")
+                print(f"[TIMELINE] ✅ Đã tạo {len(timeline_items)} chapters (enhanced labels)")
+            except Exception as enhance_err:
+                print(f"[TIMELINE] ⚠️ Enhance lỗi, dùng label gốc: {enhance_err}")
+                from app.modules.ai.timeline_service import strip_raw_text
+                timeline_items = strip_raw_text(timeline_raw)
+
             db.videos.update_one(
                 {"_id": ObjectId(video_id)},
                 {
@@ -181,7 +196,9 @@ class VideoService:
                         "transcript": transcript,
                         "transcript_segments": segments,
                         "ai_status": "ready",
-                        "ai_cache": {},
+                        "ai_cache": {
+                            "timeline": {"vi": timeline_items},
+                        },
                         "updated_at": datetime.utcnow(),
                     }
                 },
@@ -242,33 +259,11 @@ class VideoService:
                         },
                         upsert=True,
                     )
-                    print(f"[SUMMARY]  Summary đã tạo thành công cho video {video_id}")
+                    print(f"[SUMMARY] ✅ Summary đã tạo thành công cho video {video_id}")
                 else:
                     print(f"[SUMMARY] ⚠️ Gemini không khả dụng, summary chưa được tạo cho video {video_id}")
             except Exception as summary_err:
-                print(f"[SUMMARY]  Lỗi auto-generate summary cho video {video_id}: {summary_err}")
-
-            # ===================== AUTO GENERATE TIMELINE =====================
-            try:
-                from app.modules.ai.gemini_service import generate_timeline_json_sync
-
-                timeline_items = generate_timeline_json_sync(ctx, "vi")
-
-                if timeline_items:
-                    db.videos.update_one(
-                        {"_id": ObjectId(video_id)},
-                        {
-                            "$set": {
-                                "ai_cache.timeline.vi": timeline_items,
-                                "updated_at": datetime.utcnow(),
-                            }
-                        }
-                    )
-                    print(f"[TIMELINE] Timeline đã tạo thành công cho video {video_id}")
-                else:
-                    print(f"[TIMELINE] ⚠️ Gemini không khả dụng, timeline chưa được tạo cho video {video_id}")
-            except Exception as timeline_err:
-                print(f"[TIMELINE] ❌ Lỗi auto-generate timeline cho video {video_id}: {timeline_err}")
+                print(f"[SUMMARY] ❌ Lỗi auto-generate summary cho video {video_id}: {summary_err}")
 
         except Exception as e:
             print(f"[STT] Lỗi tạo transcript cho video {video_id}: {e}")

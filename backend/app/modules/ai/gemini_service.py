@@ -85,19 +85,6 @@ def _fallback_mindmap(ctx: LessonContext):
 """
 
 
-def _fallback_timeline(ctx: LessonContext):
-    return [
-        {
-            "time": "00:00",
-            "seconds": 0,
-            "label": f"Bắt đầu bài học: {ctx.title}"
-        },
-        {
-            "time": "01:00",
-            "seconds": 60,
-            "label": "Nội dung chính"
-        }
-    ]
 
 
 # =========================
@@ -489,113 +476,94 @@ Transcript:
     return result
 
 
-def _build_timeline_prompt(ctx: LessonContext, language: str) -> str:
-    if ctx.transcript_segments:
-        segments_text = ""
-        for s in ctx.transcript_segments:
-            start_s = int(s['start'])
-            start_hhmm = f"{start_s // 60:02d}:{start_s % 60:02d}"
-            segments_text += f"[{start_hhmm}] {s['text']}\n"
-            
-        return f"""
-Bạn là AI chuyên phân tích video bài giảng. Nhiệm vụ của bạn là tạo các mốc thời gian quan trọng (timeline / chapters) cho bài học bằng ngôn ngữ {language}.
-Dưới đây là hội thoại của video kèm theo timestamp chính xác:
+def enhance_timeline_labels_sync(
+    timeline_items: list,
+    language: str = "vi",
+) -> list:
+    """
+    Dùng Gemini để đặt tên chapter ngắn gọn cho từng entry trong timeline.
 
-{segments_text}
+    - Timestamps KHÔNG bao giờ thay đổi — chỉ label được AI đặt lại.
+    - Nếu AI lỗi / trả về sai số lượng → giữ nguyên label gốc (truncated text).
+    - Field "_raw_text" được dùng làm input cho AI, không được lưu DB.
 
-YÊU CẦU QUAN TRỌNG:
-- Trích xuất các khoảnh khắc chuyển giao ý chính (key moments / chapters).
-- Thời gian (time) CHỈ ĐƯỢC CHỌN TỪ các timestamp có sẵn trong đoạn text bên trên. KHÔNG TỰ CHẾ HOẶC ƯỚC LƯỢNG THỜI GIAN.
-- "time" là định dạng MM:SS (ví dụ 01:30).
-- "seconds" là số giây tương ứng với "time" (ví dụ 01:30 -> 90).
-- "label" là tiêu đề ngắn gọn cho chapter đó.
-- Trả về kết quả dưới dạng JSON array. KHÔNG có format markdown bên ngoài JSON, không giải thích thêm.
+    Args:
+        timeline_items: list có field "time", "seconds", "label", "_raw_text"
+        language:       ngôn ngữ đầu ra (mặc định "vi")
 
-FORMAT:
-[
-  {{
-    "time": "00:00",
-    "seconds": 0,
-    "label": "Giới thiệu"
-  }}
-]
-"""
-    else:
-        duration_info = f" (Thời lượng tối đa của video: {ctx.duration})" if ctx.duration and ctx.duration != "0" and ctx.duration != "00:00" else ""
-        return f"""
-Tạo các mốc thời gian quan trọng (timeline) cho bài học bằng {language}.
-Dựa vào transcript hoặc mô tả, hãy trích xuất các khoảnh khắc (key moments).
-Nếu transcript không có timestamp, hãy tự ước lượng khoảng thời gian hợp lý (ví dụ mỗi ý chính cách nhau vài phút).
-QUAN TRỌNG: Đảm bảo thời gian được tạo ra KHÔNG VƯỢT QUÁ thời lượng video{duration_info}. 
-Phân bổ thời gian logic từ 00:00 đến thời lượng tối đa.
+    Returns:
+        list với label đã được AI enhance, "_raw_text" đã được xóa
+    """
+    if not timeline_items:
+        return []
+
+    # Chỉ enhance các item có _raw_text
+    items_to_enhance = [i for i in timeline_items if i.get("_raw_text")]
+    if not items_to_enhance:
+        # Không có raw text → trả về như cũ, strip _raw_text nếu có
+        return [{k: v for k, v in item.items() if k != "_raw_text"} for item in timeline_items]
+
+    # Build input cho prompt
+    input_list = json.dumps(
+        [{"seconds": item["seconds"], "text": item["_raw_text"]} for item in items_to_enhance],
+        ensure_ascii=False,
+        indent=2,
+    )
+
+    lang_name = "tiếng Việt" if language in ("vi", "vn") else language
+
+    prompt = f"""Bạn là AI đặt tên chapter cho video bài giảng.
+
+Dưới đây là {len(items_to_enhance)} đoạn transcript kèm timestamp (giây).
+Hãy đặt tên chapter ngắn gọn (3-5 từ bằng {lang_name}) cho từng đoạn.
 
 YÊU CẦU:
-- Trả về JSON array
-- KHÔNG thêm text ngoài JSON
-- Format:
+- Mỗi tên phản ánh ý chính của đoạn
+- Ngắn gọn, súc tích (3-5 từ), KHÔNG dài dòng
+- Trả về JSON array gồm đúng {len(items_to_enhance)} chuỗi, theo đúng thứ tự
+- KHÔNG thêm bất kỳ text nào ngoài JSON array
 
-[
-  {{
-    "time": "00:00",
-    "seconds": 0,
-    "label": "Giới thiệu"
-  }},
-  {{
-    "time": "01:30",
-    "seconds": 90,
-    "label": "Khái niệm chính"
-  }}
-]
+Input:
+{input_list}
 
-Nội dung:
-Tiêu đề: {ctx.title}
-Mô tả: {ctx.description}
-Transcript: {ctx.transcript}
+Output (chỉ JSON array):
+["Tên chapter 1", "Tên chapter 2", ...]
 """
 
+    raw = _call_gemini_sync(prompt)
+    if not raw:
+        print("[TIMELINE_ENHANCE] Gemini trả về None → giữ label gốc")
+        return [{k: v for k, v in item.items() if k != "_raw_text"} for item in timeline_items]
 
-async def generate_timeline_json(
-    ctx: LessonContext,
-    language: str = "Vietnamese"
-):
-    prompt = _build_timeline_prompt(ctx, language)
-    result = await _call_gemini(prompt)
-
-    if not result:
-        return _fallback_timeline(ctx)
-
-    clean_json = _extract_json(result)
-
-    if not clean_json:
-        return _fallback_timeline(ctx)
+    clean = _extract_json(raw)
+    if not clean:
+        print("[TIMELINE_ENHANCE] Không parse được JSON → giữ label gốc")
+        return [{k: v for k, v in item.items() if k != "_raw_text"} for item in timeline_items]
 
     try:
-        return json.loads(clean_json)
+        labels = json.loads(clean)
     except Exception as e:
-        print("⚠️ JSON parse lỗi:", e)
-        return _fallback_timeline(ctx)
+        print(f"[TIMELINE_ENHANCE] JSON parse lỗi: {e} → giữ label gốc")
+        return [{k: v for k, v in item.items() if k != "_raw_text"} for item in timeline_items]
 
+    if not isinstance(labels, list) or len(labels) != len(items_to_enhance):
+        print(
+            f"[TIMELINE_ENHANCE] Số lượng label không khớp "
+            f"({len(labels)} vs {len(items_to_enhance)}) → giữ label gốc"
+        )
+        return [{k: v for k, v in item.items() if k != "_raw_text"} for item in timeline_items]
 
-def generate_timeline_json_sync(
-    ctx: LessonContext,
-    language: str = "Vietnamese"
-):
-    """SYNC version - dùng cho background task (video_service)"""
-    prompt = _build_timeline_prompt(ctx, language)
-    result = _call_gemini_sync(prompt)
+    # Merge: gán label mới vào đúng vị trí, giữ item không có _raw_text nguyên vẹn
+    enhance_idx = 0
+    result = []
+    for item in timeline_items:
+        clean_item = {k: v for k, v in item.items() if k != "_raw_text"}
+        if item.get("_raw_text"):
+            ai_label = str(labels[enhance_idx]).strip()
+            if ai_label:
+                clean_item["label"] = ai_label
+            enhance_idx += 1
+        result.append(clean_item)
 
-    if not result:
-        print("[TIMELINE] Gemini trả về None → không tạo timeline")
-        return None
-
-    clean_json = _extract_json(result)
-
-    if not clean_json:
-        return None
-
-    try:
-        return json.loads(clean_json)
-    except Exception as e:
-        print("⚠️ [SYNC] JSON parse lỗi (timeline):", e)
-        return None
-
+    print(f"[TIMELINE_ENHANCE] Enhanced {len(items_to_enhance)} chapter labels thành công")
+    return result

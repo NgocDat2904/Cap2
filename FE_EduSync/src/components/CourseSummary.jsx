@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { aiSummaryAPI, aiSummaryByVideoAPI, getSummaryByVideoAPI } from "../services/aiAPI";
+import { getSummaryByVideoAPI } from "../services/aiAPI";
 import ReactMarkdown from "react-markdown";
 
 const CourseSummary = ({ lessonContext, videoId }) => {
@@ -8,10 +8,10 @@ const CourseSummary = ({ lessonContext, videoId }) => {
   const [error, setError] = useState("");
   const [status, setStatus] = useState("loading"); // loading | ready | pending | error
 
-  const fetchSummary = async (usePost = false) => {
+  const fetchSummary = async () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      setError("Please sign in to view the AI summary.");
+      setError("Vui lòng đăng nhập để xem tóm tắt bài học.");
       setStatus("error");
       setLoading(false);
       return;
@@ -21,24 +21,12 @@ const CourseSummary = ({ lessonContext, videoId }) => {
     setSummary("");
     setStatus("loading");
     try {
-      let data;
-      if (usePost) {
-        // POST = regenerate via AI
-        data = videoId
-          ? await aiSummaryByVideoAPI(token, videoId, "vi")
-          : await aiSummaryAPI(token, lessonContext, "vi");
-      } else {
-        // GET = read from DB (fast)
-        if (!videoId) {
-          setStatus("pending");
-          setLoading(false);
-          return;
-        }
-        console.log("Fetching summary for videoId:", videoId);
-        data = await getSummaryByVideoAPI(token, videoId, "vi");
-        console.log("Summary GET response:", data);
+      if (!videoId) {
+        setStatus("pending");
+        setLoading(false);
+        return;
       }
-
+      const data = await getSummaryByVideoAPI(token, videoId, "vi");
       if (data && data.summary) {
         setSummary(data.summary);
         setStatus("ready");
@@ -57,7 +45,7 @@ const CourseSummary = ({ lessonContext, videoId }) => {
   useEffect(() => {
     let cancelled = false;
     const run = async () => {
-      await fetchSummary(false);
+      await fetchSummary();
     };
     run();
     return () => { cancelled = true; };
@@ -72,20 +60,20 @@ const CourseSummary = ({ lessonContext, videoId }) => {
     return (
       <div className="animate-fade-slide-up text-slate-600">
         <h3 className="text-lg font-bold text-slate-800 mb-3">
-          Lesson Summary 
+          Lesson Summary
         </h3>
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <p className="text-sm font-bold text-slate-600">
             Summary đang được chuẩn bị
           </p>
           <p className="text-xs text-slate-500 text-center max-w-sm">
-            Hệ thống đang xử lý. Summary sẽ có khi transcript được phân tích xong.
+            Hệ thống đang xử lý transcript. Summary sẽ tự động hiện khi hoàn tất, vui lòng quay lại sau ít phút.
           </p>
           <button
-            onClick={() => fetchSummary(true)}
-            className="mt-2 px-5 py-2 bg-amber-500 text-white text-xs font-bold rounded-xl hover:bg-amber-600 transition-all active:scale-95 shadow-sm"
+            onClick={() => fetchSummary()}
+            className="mt-2 px-5 py-2 bg-slate-200 text-slate-700 text-xs font-bold rounded-xl hover:bg-slate-300 transition-all active:scale-95 shadow-sm"
           >
-            Tạo ngay
+            Kiểm tra lại
           </button>
         </div>
       </div>

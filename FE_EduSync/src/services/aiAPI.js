@@ -161,6 +161,16 @@ export async function aiTimelineAPI(token, context, language = "vi") {
   return res.json();
 }
 
+// Ưu tiên: GET (nhanh hơn, đọc thẳng cache)
+export async function getTimelineByVideoAPI(token, videoId, language = "vi") {
+  const res = await fetch(`${BASE_URL}/learner/ai/timeline/${videoId}?language=${language}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await parseError(res, "Failed to load timeline"));
+  return res.json();
+}
+
+// Fallback: POST (rebuild từ segments nếu chưa có cache)
 export async function aiTimelineByVideoAPI(token, videoId, language = "vi") {
   const res = await fetch(`${BASE_URL}/learner/ai/timeline-by-video`, {
     method: "POST",

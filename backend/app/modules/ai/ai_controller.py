@@ -18,6 +18,7 @@ from app.modules.ai.ai_schema import (
     LessonContext,
 )
 from app.modules.ai import gemini_service
+from app.modules.ai.timeline_service import build_timeline_from_segments
 from app.database.mongodb import db
 
 router = APIRouter(prefix="/learner/ai", tags=["learner-ai"])
@@ -364,30 +365,82 @@ async def ai_mindmap_by_video(
         _handle_ai_error(e)
 
 
+
+# =========================
+# TIMELINE ENDPOINTS
+# =========================
+
+@router.get("/timeline/{video_id}")
+async def get_timeline(
+    video_id: str,
+    language: str = "vi",
+    user=Depends(require_role(["learner"]))
+):
+    """GET timeline từ DB — đọc nhanh, không gọi AI."""
+    if not ObjectId.is_valid(video_id):
+        raise HTTPException(400, "Invalid video_id")
+
+    video = db.videos.find_one({"_id": ObjectId(video_id)})
+    if not video:
+        raise HTTPException(404, "Video not found")
+
+    # Đọc từ ai_cache
+    cached = (video.get("ai_cache") or {}).get("timeline", {}).get(language)
+    if cached:
+        return {"timeline": cached, "status": "ready"}
+
+    # Chưa có cache → build on-the-fly từ segments
+    segments = video.get("transcript_segments") or []
+    if segments:
+        timeline = build_timeline_from_segments(segments)
+        # Lưu cache để lần sau đọc nhanh
+        db.videos.update_one(
+            {"_id": ObjectId(video_id)},
+            {"$set": {f"ai_cache.timeline.{language}": timeline}}
+        )
+        return {"timeline": timeline, "status": "ready"}
+
+    return {"timeline": [], "status": "pending"}
+
+
+@router.post("/timeline")
+async def ai_timeline(
+    body: TimelineRequest,
+    user=Depends(require_role(["learner"]))
+):
+    """POST timeline từ context trực tiếp (dùng transcript_segments nếu có)."""
+    segments = body.context.transcript_segments or []
+    if not segments:
+        raise HTTPException(422, "Cần transcript_segments để tạo timeline chính xác")
+
+    items = build_timeline_from_segments(segments)
+    return {"timeline": items}
+
+
 @router.post("/timeline-by-video")
 async def ai_timeline_by_video(
     body: VideoTimelineRequest,
     user=Depends(require_role(["learner"]))
 ):
+    """POST timeline theo video_id — đọc cache, hoặc build từ segments."""
     video = await _video_doc(body.video_id)
 
-    cache = _cache_get(video, "timeline") or {}
+    # 1. Đọc cache
+    cached = (video.get("ai_cache") or {}).get("timeline", {}).get(body.language)
+    if cached:
+        return {"timeline": cached}
 
-    if body.language in cache:
-        return {"timeline": cache[body.language]}
-
-    context = await _context_from_video(body.video_id)
-
-    try:
-        items = await gemini_service.generate_timeline_json(
-            context,
-            body.language,
+    # 2. Build từ segments
+    segments = video.get("transcript_segments") or []
+    if not segments:
+        raise HTTPException(
+            409,
+            "Video chưa có transcript_segments — cần chạy STT trước"
         )
 
-        cache[body.language] = items
-        await _cache_set(body.video_id, "timeline", cache)
+    items = build_timeline_from_segments(segments)
 
-        return {"timeline": items}
+    # Lưu cache
+    await _cache_set(body.video_id, f"timeline.{body.language}", items)
 
-    except Exception as e:
-        _handle_ai_error(e)
+    return {"timeline": items}
