@@ -184,59 +184,44 @@ class RevenueService:
 
     def get_student_stats_by_year(self, year=2026):
         """
-        Lấy thống kê students theo tháng trong năm
+        Lấy thống kê students đã đăng kí học theo tháng trong năm
         """
         start_date = datetime(year, 1, 1)
         end_date = datetime(year, 12, 31, 23, 59, 59)
 
-        # Get all successful payments in period
-        pipeline = [
-            {
-                "$match": {
-                    "status": "success",
-                    "paid_at": {"$gte": start_date, "$lte": end_date}
-                }
-            },
-            {
-                "$group": {
-                    "_id": {
-                        "month": {"$month": "$paid_at"},
-                        "user_id": "$user_id"
-                    },
-                    "first_purchase": {"$min": "$paid_at"}
-                }
-            },
-            {
-                "$group": {
-                    "_id": {
-                        "month": "$_id.month"
-                    },
-                    "students": {"$sum": 1}
-                }
-            },
-            {
-                "$sort": {"_id.month": 1}
+        # Get all enrollments in period - query với datetime object
+        enrollments = list(db.enrollments.find({
+            "created_at": {
+                "$gte": start_date,
+                "$lte": end_date
             }
-        ]
+        }))
 
-        results = list(db.payments.aggregate(pipeline))
+        # Group by month and unique user
+        seen_users_per_month = {}
+        
+        for enrollment in enrollments:
+            created_at = enrollment.get("created_at")
+            user_id = str(enrollment.get("user_id", ""))
+            
+            # created_at đã là datetime object
+            if isinstance(created_at, datetime):
+                month = created_at.month
+                
+                # Track unique users per month
+                if month not in seen_users_per_month:
+                    seen_users_per_month[month] = set()
+                
+                seen_users_per_month[month].add(user_id)
 
-        # Tạo data cho 12 tháng (bổ sung tháng thiếu với giá trị 0)
+        # Create chart data for 12 months
         chart_data = []
-        results_dict = {r['_id']['month']: r for r in results}
-
         for month in range(1, 13):
-            if month in results_dict:
-                r = results_dict[month]
-                chart_data.append({
-                    "month": f"Th{month:02d}",
-                    "students": r["students"]
-                })
-            else:
-                chart_data.append({
-                    "month": f"Th{month:02d}",
-                    "students": 0
-                })
+            user_count = len(seen_users_per_month.get(month, set()))
+            chart_data.append({
+                "month": f"Th{month:02d}",
+                "users": user_count
+            })
 
         return chart_data
 
