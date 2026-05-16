@@ -12,7 +12,6 @@ import {
   faChevronDown,
   faSearch,
   faSpinner,
-  faCheckCircle,
   faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 import toast from "../../utils/toast";
