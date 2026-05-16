@@ -32,6 +32,7 @@ def build_timeline_from_segments(
     min_gap_sec: float = 15.0,
     max_chapters: int = 20,
     min_chapter_sec: float = 8.0,
+    ideal_chapter_sec: float = 90.0,
     include_raw: bool = False,
 ) -> List[Dict[str, Any]]:
     """
@@ -42,6 +43,7 @@ def build_timeline_from_segments(
         min_gap_sec:      Khoảng nghỉ tối thiểu (giây) để tách chapter mới
         max_chapters:     Số chapter tối đa trả về
         min_chapter_sec:  Thời gian tối thiểu mỗi chapter (giây)
+        ideal_chapter_sec: Thời gian lý tưởng mỗi chapter, ép cắt nếu vượt quá (giây)
         include_raw:      Nếu True, mỗi item có thêm field "_raw_text"
                           (dùng nội bộ cho AI enhance, không lưu DB)
 
@@ -75,10 +77,19 @@ def build_timeline_from_segments(
         gap = curr["start"] - prev.get("end", prev["start"])
         block_duration = curr["start"] - current_block[0]["start"]
 
-        # tách chapter mới khi:
-        # - gap đủ lớn, VÀ
-        # - chapter hiện tại đã đủ thời gian tối thiểu
-        if gap >= min_gap_sec and block_duration >= min_chapter_sec:
+        should_split = False
+        
+        # 1. Giảm gap xuống 3.0s nếu block_duration > 30s
+        if gap >= 3.0 and block_duration >= 30.0:
+            should_split = True
+        # 2. Hoặc nếu gap >= min_gap_sec (15.0) và đủ độ dài tối thiểu
+        elif gap >= min_gap_sec and block_duration >= min_chapter_sec:
+            should_split = True
+        # 3. Ép cắt nếu chapter đã vượt quá thời gian lý tưởng (90s)
+        elif block_duration >= ideal_chapter_sec:
+            should_split = True
+
+        if should_split:
             blocks.append(current_block)
             current_block = [curr]
         else:
