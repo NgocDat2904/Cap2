@@ -1,3 +1,7 @@
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+
+
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -174,14 +178,41 @@ const CourseChatbot = ({ lessonContext, videoId }) => {
 
             {/* MESSAGE */}
             <div
-              className={`p-3 rounded-2xl max-w-[80%] text-sm shadow-sm ${
+              className={`p-4 rounded-2xl max-w-[80%] text-sm shadow-sm leading-7 whitespace-pre-wrap ${
                 msg.isAi
                   ? "bg-white border border-slate-200 text-slate-700 rounded-tl-none"
                   : "bg-blue-600 text-white rounded-tr-none"
               }`}
-            >
-              {msg.text}
-            </div>
+          >
+            {msg.isAi ? (
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  p: ({ children }) => (
+                    <p className="mb-2 last:mb-0">{children}</p>
+                  ),
+
+                  strong: ({ children }) => (
+                    <strong className="font-semibold text-slate-900">
+                      {children}
+                    </strong>
+                  ),
+
+                  ul: ({ children }) => (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {children}
+                    </ul>
+                  ),
+
+                  li: ({ children }) => <li>{children}</li>,
+                }}
+              >
+                {msg.text}
+              </ReactMarkdown>
+            ) : (
+              msg.text
+            )}
+          </div>
           </div>
         ))}
 
