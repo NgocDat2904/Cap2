@@ -81,6 +81,8 @@ const AdminRevenueReport = () => {
 
   const maxRevenueValue =
     revenueChartData.length > 0 ? Math.max(...revenueChartData.map((d) => d.revenue)) : 1;
+    console.log("maxRevenueValue",maxRevenueValue);
+    
   const maxStudentsValue = 100;
 
   return (
@@ -211,7 +213,7 @@ const AdminRevenueReport = () => {
                   >
                     <span className="text-[10px] font-bold text-slate-400 -translate-y-1/2 bg-white pr-2">
                       {formatMoney((maxRevenueValue * percent) / 100).replace(
-                        ".00",
+                        "",
                         "",
                       )}
                     </span>
